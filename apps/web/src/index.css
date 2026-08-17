@@ -5,88 +5,207 @@
 @layer base {
   html, body, #root { min-height: 100%; }
   body {
-    background: #080a0e;
-    color: #ede9e1;
+    background: #070b12;
+    color: #e8eef8;
     font-family: 'DM Sans', system-ui, sans-serif;
   }
-  ::selection { background: rgba(212, 175, 90, 0.28); color: #f7f5f1; }
-  * { scrollbar-width: thin; scrollbar-color: #2a3140 transparent; }
+  ::selection { background: rgba(56, 189, 248, 0.28); color: #f0f7ff; }
+  * { scrollbar-width: thin; scrollbar-color: #1e2a3a transparent; }
 }
 
 @layer components {
-  /* Surfaces — denser, more “menu jeu” than SaaS card */
   .panel {
-    @apply rounded-panel border border-white/[0.06] bg-[#12161d]/95 shadow-panel;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(13, 20, 32, 0.92);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
   }
   .panel-soft {
-    @apply rounded-panel border border-white/[0.05] bg-[#0e1218]/80;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(10, 16, 24, 0.75);
   }
   .panel-hero {
-    @apply relative overflow-hidden rounded-panel border border-white/[0.08] bg-gradient-to-br from-[#1a2030] via-[#12161d] to-[#0a0d12] shadow-lift;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: linear-gradient(135deg, #122033 0%, #0d1522 45%, #070b12 100%);
   }
   .label-caps {
-    @apply text-[10px] font-semibold uppercase tracking-[0.16em] text-mist-400;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #94a3b8;
   }
   .data-num {
-    @apply font-mono tabular-nums tracking-tight;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
   }
 
-  /* Nav — active state like game menus (accent bar + fill) */
-  .nav-item {
-    @apply flex w-full items-center gap-3 rounded-md px-3 py-2 text-[13px] font-medium text-mist-300 transition-colors duration-150;
+  .top-tab {
+    position: relative;
+    padding: 0.75rem 0.75rem;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #94a3b8;
+    transition: color 0.15s;
+    white-space: nowrap;
   }
-  .nav-item:hover { @apply bg-white/[0.04] text-mist-100; }
-  .nav-item-active {
-    @apply bg-white/[0.06] text-mist-50;
-    box-shadow: inset 2px 0 0 #d4af5a;
+  .top-tab:hover { color: #fff; }
+  .top-tab-active { color: #fff; }
+  .top-tab-active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0.5rem;
+    right: 0.5rem;
+    height: 2px;
+    border-radius: 999px;
+    background: #38bdf8;
+  }
+
+  .subtabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .subtab {
+    position: relative;
+    padding: 0.65rem 1rem;
+    font-size: 13px;
+    font-weight: 500;
+    color: #94a3b8;
+    transition: color 0.15s;
+  }
+  .subtab:hover { color: #f1f5f9; }
+  .subtab-active { color: #fff; }
+  .subtab-active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #38bdf8;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-[13px] font-semibold tracking-wide transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: all 0.15s;
   }
+  .btn:disabled { cursor: not-allowed; opacity: 0.4; }
   .btn-primary {
-    @apply btn bg-brass-400 text-ink-950 hover:bg-brass-300 active:translate-y-px;
+    background: #0ea5e9;
+    color: #020617;
   }
+  .btn-primary:hover { background: #38bdf8; }
   .btn-secondary {
-    @apply btn border border-white/10 bg-white/[0.04] text-mist-100 hover:border-brass-500/40 hover:bg-white/[0.07];
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: #f1f5f9;
   }
-  .btn-ghost {
-    @apply btn text-mist-300 hover:bg-white/[0.05] hover:text-mist-50;
-  }
+  .btn-secondary:hover { border-color: rgba(56,189,248,0.4); background: rgba(255,255,255,0.07); }
+  .btn-ghost { color: #cbd5e1; }
+  .btn-ghost:hover { background: rgba(255,255,255,0.05); color: #fff; }
   .btn-danger {
-    @apply btn border border-signal-bad/40 bg-signal-bad/10 text-signal-bad hover:bg-signal-bad/20;
+    border: 1px solid rgba(244,63,94,0.4);
+    background: rgba(244,63,94,0.1);
+    color: #fb7185;
   }
 
   .field {
-    @apply w-full rounded-md border border-white/10 bg-[#0a0d12] px-3 py-2.5 text-sm text-mist-100 outline-none transition placeholder:text-mist-500 focus:border-brass-500/50 focus:ring-1 focus:ring-brass-500/25;
+    width: 100%;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: #070b12;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    color: #f1f5f9;
+    outline: none;
+  }
+  .field:focus {
+    border-color: rgba(56,189,248,0.5);
+    box-shadow: 0 0 0 1px rgba(56,189,248,0.25);
   }
 
   .table-row {
-    @apply border-b border-white/[0.04] transition-colors hover:bg-white/[0.03];
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.15s;
+  }
+  .table-row:hover { background: rgba(255,255,255,0.03); }
+  .table-row-active {
+    background: rgba(14,165,233,0.1);
+    border-left: 2px solid #38bdf8;
   }
 
-  /* Game UI chips */
   .chip {
-    @apply inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
-  .chip-brass { @apply chip bg-brass-500/15 text-brass-300; }
-  .chip-good { @apply chip bg-signal-good/15 text-signal-good; }
-  .chip-bad { @apply chip bg-signal-bad/15 text-signal-bad; }
-  .chip-muted { @apply chip bg-white/[0.06] text-mist-300; }
+  .chip-brass { background: rgba(245,158,11,0.15); color: #fcd34d; }
+  .chip-good { background: rgba(16,185,129,0.15); color: #34d399; }
+  .chip-bad { background: rgba(244,63,94,0.15); color: #fb7185; }
+  .chip-muted { background: rgba(255,255,255,0.06); color: #cbd5e1; }
+  .chip-sky { background: rgba(14,165,233,0.15); color: #7dd3fc; }
 
-  /* Horizontal sub-tabs (FC-like secondary nav) */
-  .subtabs {
-    @apply flex flex-wrap gap-1 border-b border-white/[0.06] pb-0;
+  .hub-tile {
+    position: relative;
+    min-width: 160px;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: #0d1420;
+    transition: border-color 0.15s;
   }
-  .subtab {
-    @apply relative px-4 py-2.5 text-[13px] font-medium text-mist-400 transition-colors hover:text-mist-100;
+  .hub-tile:hover { border-color: rgba(56,189,248,0.4); }
+
+  .ovr {
+    display: inline-flex;
+    height: 2rem;
+    width: 2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.25rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #020617;
   }
-  .subtab-active {
-    @apply text-mist-50;
+  .ovr-elite { background: #fbbf24; }
+  .ovr-high { background: #34d399; }
+  .ovr-mid { background: #38bdf8; }
+  .ovr-low { background: #94a3b8; }
+
+  .stage-bg {
+    background:
+      radial-gradient(ellipse 90% 55% at 50% -15%, rgba(56, 189, 248, 0.12), transparent 55%),
+      radial-gradient(ellipse 50% 40% at 85% 90%, rgba(99, 102, 241, 0.1), transparent 50%),
+      #070b12;
   }
-  .subtab-active::after {
-    content: '';
-    @apply absolute bottom-0 left-0 right-0 h-0.5 bg-brass-400;
+  .career-bg {
+    background:
+      radial-gradient(ellipse 70% 40% at 70% 0%, rgba(56, 189, 248, 0.08), transparent 50%),
+      linear-gradient(180deg, #0a1220 0%, #070b12 40%, #070b12 100%);
   }
 }
 
@@ -94,12 +213,4 @@
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.animate-enter { animation: enter-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
-
-/* Ambient stage for title / splash */
-.stage-bg {
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212, 175, 90, 0.08), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(30, 50, 80, 0.25), transparent 50%),
-    #080a0e;
-}
+.animate-enter { animation: enter-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }

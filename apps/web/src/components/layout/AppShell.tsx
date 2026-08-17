@@ -1,161 +1,148 @@
 import { ReactNode, useState } from 'react';
-import { AlymLogo, MylaMark } from '../Logo';
+import { AlymLogo } from '../Logo';
 import { useGame, type Tab } from '../../store/gameStore';
 import { money } from '../ui';
 
-const NAV: { group: string; items: { id: Tab; label: string }[] }[] = [
-  {
-    group: 'Home',
-    items: [
-      { id: 'home', label: 'Central' },
-      { id: 'messages', label: 'Courrier' },
-      { id: 'live', label: 'Manager Live' },
-    ],
-  },
-  {
-    group: 'Team',
-    items: [
-      { id: 'squad', label: 'Effectif' },
-      { id: 'tactics', label: 'Tactique' },
-      { id: 'training', label: 'Développement' },
-      { id: 'youth', label: 'Académie' },
-    ],
-  },
-  {
-    group: 'Match',
-    items: [{ id: 'match', label: 'Match Center' }],
-  },
-  {
-    group: 'Transfers',
-    items: [
-      { id: 'market', label: 'Mercato' },
-      { id: 'legends', label: 'Légendes' },
-    ],
-  },
-  {
-    group: 'Club',
-    items: [
-      { id: 'board', label: 'Conseil' },
-      { id: 'budget', label: 'Finances' },
-      { id: 'shop', label: 'Boutique' },
-      { id: 'achievements', label: 'Succès' },
-    ],
-  },
-  {
-    group: 'World',
-    items: [{ id: 'mgrmarket', label: 'Manager Market' }],
-  },
+const PRIMARY: { id: Tab; label: string }[] = [
+  { id: 'home', label: 'Central' },
+  { id: 'live', label: 'Live' },
+  { id: 'squad', label: 'Effectif' },
+  { id: 'tactics', label: 'Tactique' },
+  { id: 'match', label: 'Match' },
+  { id: 'market', label: 'Mercato' },
+  { id: 'mgrmarket', label: 'Manager Market' },
+  { id: 'board', label: 'Club' },
+];
+
+const MORE: { id: Tab; label: string }[] = [
+  { id: 'messages', label: 'Courrier' },
+  { id: 'training', label: 'Développement' },
+  { id: 'youth', label: 'Académie' },
+  { id: 'legends', label: 'Légendes' },
+  { id: 'budget', label: 'Finances' },
+  { id: 'shop', label: 'Boutique' },
+  { id: 'achievements', label: 'Succès' },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { tab, switchTab, team, userLabel, messages, logout } = useGame();
-  const [open, setOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const unread = messages.filter((m) => !m.read).length;
   const sec = team?.jobSecurity ?? 70;
-
-  function go(id: Tab) {
-    switchTab(id);
-    setOpen(false);
-  }
-
-  const side = (
-    <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0c0f14]">
-      <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-4">
-        <AlymLogo size={36} />
-        <div className="min-w-0">
-          <div className="truncate text-sm font-semibold tracking-[0.12em] text-mist-50">ALYM</div>
-          <MylaMark />
-        </div>
-      </div>
-
-      <nav className="flex-1 overflow-y-auto px-2 py-3">
-        {NAV.map((g) => (
-          <div key={g.group} className="mb-4">
-            <div className="label-caps mb-1.5 px-3 opacity-70">{g.group}</div>
-            <div className="space-y-0.5">
-              {g.items.map((item) => {
-                const active = tab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => go(item.id)}
-                    className={`nav-item ${active ? 'nav-item-active' : ''}`}
-                  >
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {item.id === 'messages' && unread > 0 && (
-                      <span className="rounded bg-brass-500/20 px-1.5 py-0.5 text-[10px] font-bold text-brass-300">
-                        {unread}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      <div className="border-t border-white/[0.06] p-3">
-        <div className="mb-2 px-1">
-          <div className="label-caps mb-1">Sécurité poste</div>
-          <div className="h-1 overflow-hidden rounded-full bg-white/[0.06]">
-            <div
-              className={`h-full rounded-full ${sec < 35 ? 'bg-signal-bad' : sec < 55 ? 'bg-brass-400' : 'bg-signal-good'}`}
-              style={{ width: `${Math.min(100, sec)}%` }}
-            />
-          </div>
-        </div>
-        <div className="truncate px-1 text-xs text-mist-400">{userLabel}</div>
-        <button type="button" className="btn-ghost mt-1 w-full justify-start px-2 py-1.5 text-xs" onClick={logout}>
-          Déconnexion
-        </button>
-      </div>
-    </aside>
-  );
+  const primaryIds = PRIMARY.map((p) => p.id);
+  const moreActive = MORE.some((m) => m.id === tab);
 
   return (
-    <div className="flex min-h-screen bg-[#080a0e]">
-      <div className="hidden lg:flex">{side}</div>
-
-      {open && (
-        <div className="fixed inset-0 z-40 flex lg:hidden">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setOpen(false)} />
-          <div className="relative z-10 h-full">{side}</div>
-        </div>
-      )}
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center gap-4 border-b border-white/[0.06] bg-[#080a0e]/90 px-4 py-3 backdrop-blur-md">
-          <button type="button" className="btn-ghost px-2 py-1 lg:hidden" onClick={() => setOpen(true)} aria-label="Menu">
-            ☰
-          </button>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold text-mist-50">{team?.name ?? '—'}</div>
-            <div className="text-[11px] text-mist-400">
-              {team?.nation ?? '—'} · {team?.tacticalVision ?? 'standard'}
+    <div className="career-bg flex min-h-screen flex-col">
+      {/* Top bar */}
+      <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#070b12]/92 backdrop-blur-md">
+        <div className="flex items-center gap-3 px-3 py-2 sm:px-5">
+          <div className="flex items-center gap-2.5">
+            <AlymLogo size={32} />
+            <div className="hidden min-w-0 sm:block">
+              <div className="truncate text-sm font-semibold tracking-[0.14em] text-white">ALYM</div>
+              <div className="truncate text-[10px] uppercase tracking-[0.18em] text-slate-500">LA MYLA</div>
             </div>
           </div>
-          <div className="hidden items-stretch gap-0 sm:flex">
-            {[
-              { label: 'Budget', value: team ? money(team.budget) : '—', tone: 'text-mist-100' },
-              { label: 'Or', value: String(team?.goldBalance ?? 0), tone: 'text-brass-300' },
-              {
-                label: 'Bilan',
-                value: team ? `${team.wins}V ${team.draws}N ${team.losses}D` : '—',
-                tone: 'text-mist-100',
-              },
-            ].map((s) => (
-              <div key={s.label} className="border-l border-white/[0.06] px-4 text-right">
-                <div className="label-caps">{s.label}</div>
-                <div className={`data-num text-sm font-semibold ${s.tone}`}>{s.value}</div>
-              </div>
-            ))}
-          </div>
-        </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
-      </div>
+          <div className="mx-2 hidden h-8 w-px bg-white/10 md:block" />
+
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold text-white">{team?.name ?? '—'}</div>
+            <div className="truncate text-[11px] text-slate-400">
+              {team?.nation ?? '—'} · {team?.tacticalVision ?? 'standard'} · Sécurité {sec}%
+            </div>
+          </div>
+
+          <div className="hidden items-center gap-4 sm:flex">
+            <div className="text-right">
+              <div className="label-caps">Budget</div>
+              <div className="data-num text-sm font-semibold text-amber-300">{team ? money(team.budget) : '—'}</div>
+            </div>
+            <div className="text-right">
+              <div className="label-caps">Bilan</div>
+              <div className="data-num text-sm font-semibold text-white">
+                {team ? `${team.wins}V ${team.draws}N ${team.losses}D` : '—'}
+              </div>
+            </div>
+          </div>
+
+          <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={logout} title={userLabel}>
+            Quitter
+          </button>
+        </div>
+
+        {/* Level-1 tabs */}
+        <nav className="flex items-stretch gap-0 overflow-x-auto px-1 sm:px-3">
+          {PRIMARY.map((item) => {
+            const active = tab === item.id || (item.id === 'board' && ['board', 'budget', 'shop', 'achievements'].includes(tab));
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  switchTab(item.id);
+                  setMoreOpen(false);
+                }}
+                className={`top-tab whitespace-nowrap ${active && primaryIds.includes(tab) || (item.id === 'board' && ['board','budget','shop','achievements'].includes(tab)) ? 'top-tab-active' : ''}`}
+              >
+                {item.label}
+                {item.id === 'home' && unread > 0 && (
+                  <span className="ml-1.5 rounded bg-sky-500/20 px-1.5 py-0.5 text-[10px] font-bold text-sky-300">{unread}</span>
+                )}
+              </button>
+            );
+          })}
+          <div className="relative">
+            <button
+              type="button"
+              className={`top-tab whitespace-nowrap ${moreActive ? 'top-tab-active' : ''}`}
+              onClick={() => setMoreOpen((v) => !v)}
+            >
+              Plus
+            </button>
+            {moreOpen && (
+              <div className="absolute right-0 top-full z-40 mt-1 min-w-[180px] rounded-lg border border-white/10 bg-[#0d1420] py-1 shadow-xl">
+                {MORE.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-white/5 ${tab === m.id ? 'text-sky-300' : 'text-slate-200'}`}
+                    onClick={() => {
+                      switchTab(m.id);
+                      setMoreOpen(false);
+                    }}
+                  >
+                    {m.label}
+                    {m.id === 'messages' && unread > 0 && (
+                      <span className="rounded bg-sky-500/20 px-1.5 text-[10px] font-bold text-sky-300">{unread}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </nav>
+      </header>
+
+      <main className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6">{children}</main>
+
+      {/* Bottom contextual bar */}
+      <footer className="sticky bottom-0 z-20 flex items-center justify-between border-t border-white/[0.07] bg-[#070b12]/95 px-3 py-2 backdrop-blur sm:px-5">
+        <div className="flex items-center gap-2 text-[11px] text-slate-500">
+          <span className="hidden sm:inline">ALYM</span>
+          <span className="text-slate-600">·</span>
+          <span>Carrière manager</span>
+        </div>
+        <div className="flex gap-2">
+          <button type="button" className="btn-secondary py-1.5 text-xs" onClick={() => switchTab('messages')}>
+            Courrier{unread ? ` (${unread})` : ''}
+          </button>
+          <button type="button" className="btn-primary py-1.5 text-xs" onClick={() => switchTab('match')}>
+            Match Center
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }

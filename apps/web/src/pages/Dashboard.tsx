@@ -29,38 +29,50 @@ function Home() {
 
   return (
     <div className="animate-enter space-y-6">
-      <PageHeader title="Central" subtitle="Cockpit quotidien du manager" />
+      <PageHeader title="Central" subtitle="Hub quotidien · Objectifs · Prochain match" />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="panel-hero p-6 lg:col-span-2">
           <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-brass-500/10 blur-3xl" />
-          <div className="relative flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="label-caps text-brass-300">Prochain match</div>
-              <div className="mt-2 text-2xl font-semibold tracking-tight text-mist-50 sm:text-3xl">
-                {lastMatch ? `vs ${lastMatch.opponent}` : 'Adversaire à venir'}
+          <div className="relative">
+            <div className="label-caps text-sky-300">Prochain match · Championnat</div>
+            <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+              <div className="text-right">
+                <div className="text-lg font-semibold text-white sm:text-2xl">{team?.name ?? 'Vous'}</div>
+                <div className="text-xs text-slate-400">Domicile</div>
               </div>
-              <p className="mt-2 text-sm text-mist-400">Championnat · Domicile · Enjeu carrière</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/40 data-num text-sm font-bold text-sky-300">
+                VS
+              </div>
+              <div className="text-left">
+                <div className="text-lg font-semibold text-white sm:text-2xl">
+                  {lastMatch?.opponent ?? 'Adversaire'}
+                </div>
+                <div className="text-xs text-slate-400">Extérieur</div>
+              </div>
             </div>
-            <Button onClick={() => switchTab('match')}>Match Center</Button>
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-slate-400">Enjeu carrière · Préparation requise</p>
+              <Button onClick={() => switchTab('match')}>Entrer Match Center</Button>
+            </div>
           </div>
           {lastMatch && (
             <div className="relative mt-6 grid gap-3 sm:grid-cols-3">
               <div className="rounded-md border border-white/[0.06] bg-black/30 px-3 py-3">
                 <div className="label-caps">Score</div>
-                <div className="data-num mt-1 text-xl font-semibold text-mist-50">
+                <div className="data-num mt-1 text-xl font-semibold text-white">
                   {lastMatch.homeScore} — {lastMatch.awayScore}
                 </div>
               </div>
               <div className="rounded-md border border-white/[0.06] bg-black/30 px-3 py-3">
                 <div className="label-caps">Résultat</div>
-                <div className="mt-1 text-sm font-medium text-mist-100">
+                <div className="mt-1 text-sm font-medium text-slate-100">
                   {lastMatch.result === 'W' ? 'Victoire' : lastMatch.result === 'D' ? 'Nul' : 'Défaite'}
                 </div>
               </div>
               <div className="rounded-md border border-white/[0.06] bg-black/30 px-3 py-3">
                 <div className="label-caps">Prime</div>
-                <div className="data-num mt-1 text-lg font-semibold text-brass-300">{money(lastMatch.prize)}</div>
+                <div className="data-num mt-1 text-lg font-semibold text-amber-300">{money(lastMatch.prize)}</div>
               </div>
             </div>
           )}
@@ -68,7 +80,7 @@ function Home() {
 
         <Panel className="p-5">
           <div className="label-caps">Confiance du conseil</div>
-          <div className="mt-3 text-3xl font-semibold data-num text-mist-50">{sec}%</div>
+          <div className="mt-3 text-3xl font-semibold data-num text-white">{sec}%</div>
           <div className="mt-3">
             <ProgressBar value={sec} tone={sec < 35 ? 'bad' : sec < 55 ? 'brass' : 'good'} />
           </div>
@@ -94,9 +106,9 @@ function Home() {
                 <button
                   type="button"
                   onClick={() => switchTab(t.id as any)}
-                  className="flex w-full items-center justify-between rounded-lg border border-ink-700 px-3 py-2 text-left text-sm hover:border-mist-400/30"
+                  className="flex w-full items-center justify-between rounded-lg border border-white/10 px-3 py-2 text-left text-sm hover:border-sky-400/30"
                 >
-                  <span className={t.done ? 'text-mist-400' : 'text-mist-100'}>{t.label}</span>
+                  <span className={t.done ? 'text-slate-400' : 'text-slate-100'}>{t.label}</span>
                   <Badge tone={t.done ? 'good' : 'brass'}>{t.done ? 'OK' : 'À faire'}</Badge>
                 </button>
               </li>
@@ -107,18 +119,18 @@ function Home() {
         <Panel className="p-5">
           <div className="mb-3 flex items-center justify-between">
             <div className="label-caps">Courrier</div>
-            <button type="button" className="text-xs text-brass-300" onClick={() => switchTab('messages')}>
+            <button type="button" className="text-xs text-amber-300" onClick={() => switchTab('messages')}>
               Ouvrir
             </button>
           </div>
           {unread.length === 0 ? (
-            <p className="text-sm text-mist-400">Aucun non lu.</p>
+            <p className="text-sm text-slate-400">Aucun non lu.</p>
           ) : (
             <ul className="space-y-2">
               {unread.map((m) => (
-                <li key={m.id} className="rounded-lg border border-ink-700 bg-ink-950/40 px-3 py-2">
-                  <div className="text-sm font-medium text-mist-100">{m.title}</div>
-                  <div className="text-xs text-mist-400">{m.sender}</div>
+                <li key={m.id} className="rounded-lg border border-white/10 bg-black/30 px-3 py-2">
+                  <div className="text-sm font-medium text-slate-100">{m.title}</div>
+                  <div className="text-xs text-slate-400">{m.sender}</div>
                 </li>
               ))}
             </ul>
@@ -128,9 +140,9 @@ function Home() {
         <Panel className="p-5">
           <div className="label-caps mb-3">Monde / Market</div>
           {(marketHeadlines ?? []).length === 0 ? (
-            <p className="text-sm text-mist-400">Jouez un match pour faire tourner le Manager Market.</p>
+            <p className="text-sm text-slate-400">Jouez un match pour faire tourner le Manager Market.</p>
           ) : (
-            <ul className="space-y-2 text-sm text-mist-300">
+            <ul className="space-y-2 text-sm text-slate-300">
               {marketHeadlines.slice(0, 4).map((h, i) => (
                 <li key={i} className="border-l-2 border-brass-500/40 pl-2">
                   {h}
@@ -169,37 +181,37 @@ function Match() {
           </div>
         }
       />
-      {error && <p className="text-sm text-signal-bad">{error}</p>}
-      {challengeNote && <Panel className="border-brass-500/30 p-4 text-sm text-mist-200">{challengeNote}</Panel>}
+      {error && <p className="text-sm text-rose-400">{error}</p>}
+      {challengeNote && <Panel className="border-sky-500/30 p-4 text-sm text-slate-200">{challengeNote}</Panel>}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel className="p-5">
           <div className="label-caps">Avant-match</div>
           {matchPreview ? (
             <div className="mt-3 space-y-3">
-              <div className="text-xl font-semibold text-mist-50">
-                {matchPreview.homeName} <span className="text-mist-500">vs</span> {matchPreview.opponent}
+              <div className="text-xl font-semibold text-white">
+                {matchPreview.homeName} <span className="text-white0">vs</span> {matchPreview.opponent}
               </div>
               <div className="flex flex-wrap gap-2 text-xs">
                 <Badge>{matchPreview.competition}</Badge>
                 <Badge tone="brass">{matchPreview.venue}</Badge>
                 <Badge tone="neutral">{matchPreview.kickoffLabel}</Badge>
               </div>
-              <p className="text-sm text-mist-400">
+              <p className="text-sm text-slate-400">
                 Effectif dispo {matchPreview.availablePlayers} · Forme {matchPreview.formHint} · Vision{' '}
                 {matchPreview.tacticalVision}
               </p>
               <div className="grid grid-cols-4 gap-2">
                 {(['attack', 'midfield', 'defense', 'gk'] as const).map((k) => (
-                  <div key={k} className="rounded-lg border border-ink-700 px-2 py-2 text-center">
+                  <div key={k} className="rounded-lg border border-white/10 px-2 py-2 text-center">
                     <div className="label-caps">{k}</div>
-                    <div className="data-num text-sm text-mist-100">{matchPreview.strength[k]}</div>
+                    <div className="data-num text-sm text-slate-100">{matchPreview.strength[k]}</div>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-mist-400">Ouvrez cet onglet pour charger la preview.</p>
+            <p className="mt-3 text-sm text-slate-400">Ouvrez cet onglet pour charger la preview.</p>
           )}
         </Panel>
 
@@ -208,10 +220,10 @@ function Match() {
           {lastMatch ? (
             <div className="mt-3 space-y-4">
               <div className="text-center">
-                <div className="text-sm text-mist-400">vs {lastMatch.opponent}</div>
-                <div className="mt-2 text-4xl font-semibold data-num text-mist-50">
+                <div className="text-sm text-slate-400">vs {lastMatch.opponent}</div>
+                <div className="mt-2 text-4xl font-semibold data-num text-white">
                   {lastMatch.homeScore}
-                  <span className="mx-2 text-mist-500">—</span>
+                  <span className="mx-2 text-white0">—</span>
                   {lastMatch.awayScore}
                 </div>
                 <div className="mt-2 flex justify-center gap-2">
@@ -225,19 +237,19 @@ function Match() {
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div>
                     <div className="label-caps">Possession</div>
-                    <div className="data-num text-mist-100">
+                    <div className="data-num text-slate-100">
                       {lastMatch.stats.possessionHome}% — {lastMatch.stats.possessionAway}%
                     </div>
                   </div>
                   <div>
                     <div className="label-caps">Tirs</div>
-                    <div className="data-num text-mist-100">
+                    <div className="data-num text-slate-100">
                       {lastMatch.stats.shotsHome} — {lastMatch.stats.shotsAway}
                     </div>
                   </div>
                   <div>
                     <div className="label-caps">Cadrés</div>
-                    <div className="data-num text-mist-100">
+                    <div className="data-num text-slate-100">
                       {lastMatch.stats.shotsOnHome} — {lastMatch.stats.shotsOnAway}
                     </div>
                   </div>
@@ -255,11 +267,11 @@ function Match() {
           <div className="label-caps mb-3">Timeline</div>
           <ul className="space-y-2">
             {lastMatch.timeline.map((e, i) => (
-              <li key={i} className="flex items-center gap-3 border-b border-ink-700/60 py-1.5 text-sm last:border-0">
-                <span className="data-num w-10 text-mist-400">{e.minute}&apos;</span>
+              <li key={i} className="flex items-center gap-3 border-b border-white/10/60 py-1.5 text-sm last:border-0">
+                <span className="data-num w-10 text-slate-400">{e.minute}&apos;</span>
                 <Badge tone={e.type === 'goal' ? 'good' : e.type === 'yellow' ? 'warn' : 'neutral'}>{e.type}</Badge>
-                <span className="text-mist-200">{e.label}</span>
-                <span className="ml-auto text-xs text-mist-500">{e.side}</span>
+                <span className="text-slate-200">{e.label}</span>
+                <span className="ml-auto text-xs text-white0">{e.side}</span>
               </li>
             ))}
           </ul>
@@ -269,7 +281,7 @@ function Match() {
       <Modal open={!!activeEvent} title={activeEvent?.title ?? 'Événement'}>
         {activeEvent && (
           <div className="space-y-4">
-            <p className="text-sm text-mist-300">{activeEvent.body}</p>
+            <p className="text-sm text-slate-300">{activeEvent.body}</p>
             <div className="label-caps">{activeEvent.category}</div>
             <div className="flex flex-col gap-2">
               {activeEvent.choices.map((c) => (
@@ -322,7 +334,7 @@ function Squad() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>
-                <tr className="border-b border-ink-700 text-xs uppercase tracking-wider text-mist-400">
+                <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-400">
                   <th className="px-4 py-3 font-medium">Pos</th>
                   <th className="px-4 py-3 font-medium">Joueur</th>
                   <th className="px-4 py-3 font-medium">OVR</th>
@@ -334,23 +346,25 @@ function Squad() {
                 {filtered.map((p) => (
                   <tr
                     key={p.id}
-                    className={`table-row cursor-pointer ${selectedPlayerId === p.id ? 'bg-ink-800' : ''}`}
+                    className={`table-row cursor-pointer ${selectedPlayerId === p.id ? 'table-row-active' : ''}`}
                     onClick={() => setSelectedPlayerId(p.id)}
                   >
                     <td className="px-4 py-2.5">
                       <PosBadge pos={p.position} />
                     </td>
-                    <td className="px-4 py-2.5 font-medium text-mist-100">
+                    <td className="px-4 py-2.5 font-medium text-slate-100">
                       {p.name}
-                      {p.isYouth && <span className="ml-2 text-[10px] text-brass-300">JEUNE</span>}
-                      {p.isLegend && <span className="ml-2 text-[10px] text-brass-300">LÉGENDE</span>}
-                      {p.onLoan && <span className="ml-2 text-[10px] text-mist-400">PRÊT</span>}
+                      {p.isYouth && <span className="ml-2 text-[10px] text-sky-300">JEUNE</span>}
+                      {p.isLegend && <span className="ml-2 text-[10px] text-amber-300">LÉGENDE</span>}
+                      {p.onLoan && <span className="ml-2 text-[10px] text-slate-400">PRÊT</span>}
                     </td>
                     <td className="px-4 py-2.5">
-                      <Rating value={p.rating ?? 0} />
+                      <span className={(p.rating ?? 0) >= 80 ? 'ovr-elite' : (p.rating ?? 0) >= 72 ? 'ovr-high' : (p.rating ?? 0) >= 64 ? 'ovr-mid' : 'ovr-low'}>
+                        {p.rating ?? '—'}
+                      </span>
                     </td>
-                    <td className="px-4 py-2.5 data-num text-mist-300">{p.potential ?? '—'}</td>
-                    <td className="px-4 py-2.5 data-num text-mist-300">{money(p.salary)}</td>
+                    <td className="px-4 py-2.5 data-num text-slate-300">{p.potential ?? '—'}</td>
+                    <td className="px-4 py-2.5 data-num text-slate-300">{money(p.salary)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -364,9 +378,9 @@ function Squad() {
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <PosBadge pos={selected.position} />
-                  <h2 className="text-xl font-semibold text-mist-50">{selected.name}</h2>
+                  <h2 className="text-xl font-semibold text-white">{selected.name}</h2>
                 </div>
-                <p className="mt-1 text-sm text-mist-400">{selected.nation ?? '—'}</p>
+                <p className="mt-1 text-sm text-slate-400">{selected.nation ?? '—'}</p>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <StatCard label="OVR" value={selected.rating ?? '—'} />
@@ -378,16 +392,16 @@ function Squad() {
                 <div className="space-y-2">
                   {attrs.map(([label, val]) => (
                     <div key={String(label)}>
-                      <div className="mb-0.5 flex justify-between text-xs text-mist-400">
+                      <div className="mb-0.5 flex justify-between text-xs text-slate-400">
                         <span>{label}</span>
-                        <span className="data-num text-mist-200">{val ?? '—'}</span>
+                        <span className="data-num text-slate-200">{val ?? '—'}</span>
                       </div>
                       <ProgressBar value={Number(val ?? 0)} max={99} />
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="text-xs text-mist-400">
+              <div className="text-xs text-slate-400">
                 Contrat :{' '}
                 {selected.contractUntil
                   ? new Date(selected.contractUntil).toLocaleDateString('fr-FR')
@@ -420,12 +434,12 @@ function Tactics() {
       <PageHeader title="Tactique" subtitle="Vision de jeu du club" />
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel className="relative flex min-h-[280px] items-center justify-center overflow-hidden p-6">
-          <div className="absolute inset-4 rounded-panel border border-ink-600 bg-gradient-to-b from-ink-800 to-ink-950" />
+          <div className="absolute inset-4 rounded-panel border border-white/10 bg-gradient-to-b from-ink-800 to-ink-950" />
           <div className="absolute inset-x-10 top-1/2 h-px bg-ink-600" />
           <div className="absolute left-1/2 top-8 bottom-8 w-px bg-ink-600" />
           <div className="relative text-center">
             <div className="label-caps">Vision active</div>
-            <div className="mt-2 text-2xl font-semibold capitalize text-mist-50">{current.replace('_', ' ')}</div>
+            <div className="mt-2 text-2xl font-semibold capitalize text-white">{current.replace('_', ' ')}</div>
           </div>
         </Panel>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -438,11 +452,11 @@ function Tactics() {
               className={`rounded-panel border p-4 text-left transition ${
                 current === v.id
                   ? 'border-brass-500/50 bg-brass-500/10'
-                  : 'border-ink-600 bg-ink-900 hover:border-mist-400/30'
+                  : 'border-white/10 bg-[#0d1420] hover:border-sky-400/30'
               }`}
             >
-              <div className="text-sm font-semibold text-mist-50">{v.name}</div>
-              <div className="mt-1 text-xs text-mist-400">{v.desc}</div>
+              <div className="text-sm font-semibold text-white">{v.name}</div>
+              <div className="mt-1 text-xs text-slate-400">{v.desc}</div>
             </button>
           ))}
           {visions.length === 0 && (
@@ -463,7 +477,7 @@ function Board() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel className="p-5">
           <div className="label-caps">Sécurité du poste</div>
-          <div className="mt-2 text-4xl font-semibold data-num text-mist-50">{sec}%</div>
+          <div className="mt-2 text-4xl font-semibold data-num text-white">{sec}%</div>
           <div className="mt-4">
             <ProgressBar value={sec} tone={sec < 35 ? 'bad' : 'good'} />
           </div>
@@ -474,15 +488,15 @@ function Board() {
             {(board?.objectives ?? []).map((o) => (
               <div key={o.code}>
                 <div className="mb-1 flex justify-between text-sm">
-                  <span className="text-mist-200">{o.label}</span>
-                  <span className="data-num text-mist-400">
+                  <span className="text-slate-200">{o.label}</span>
+                  <span className="data-num text-slate-400">
                     {o.current}/{o.target}
                   </span>
                 </div>
                 <ProgressBar value={o.current} max={Math.max(o.target, 1)} />
               </div>
             ))}
-            {!board?.objectives?.length && <p className="text-sm text-mist-400">Aucun objectif chargé.</p>}
+            {!board?.objectives?.length && <p className="text-sm text-slate-400">Aucun objectif chargé.</p>}
           </div>
         </Panel>
       </div>
@@ -495,7 +509,7 @@ function Market() {
   return (
     <div className="animate-enter space-y-6">
       <PageHeader title="Mercato" subtitle={`Budget disponible ${money(team?.budget ?? 0)}`} />
-      {error && <p className="text-sm text-signal-bad">{error}</p>}
+      {error && <p className="text-sm text-rose-400">{error}</p>}
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {listings.map((l, i) => (
           <Panel key={l.tempId ?? `${l.name}-${i}`} className="p-4">
@@ -503,15 +517,15 @@ function Market() {
               <div>
                 <div className="flex items-center gap-2">
                   <PosBadge pos={l.position} />
-                  <span className="font-semibold text-mist-50">{l.name}</span>
+                  <span className="font-semibold text-white">{l.name}</span>
                 </div>
-                <div className="mt-1 text-xs text-mist-400">{l.nation ?? '—'}</div>
+                <div className="mt-1 text-xs text-slate-400">{l.nation ?? '—'}</div>
               </div>
               <Rating value={l.rating} />
             </div>
             <div className="mt-3 flex items-center justify-between text-sm">
-              <span className="data-num text-brass-300">{money(l.price)}</span>
-              <span className="text-xs text-mist-400">Pot. {l.potential}</span>
+              <span className="data-num text-amber-300">{money(l.price)}</span>
+              <span className="text-xs text-slate-400">Pot. {l.potential}</span>
             </div>
             <Button className="mt-3 w-full" disabled={loading} onClick={() => buyListing(l)}>
               Recruter
@@ -537,16 +551,16 @@ function Youth() {
           </Button>
         }
       />
-      {error && <p className="text-sm text-signal-bad">{error}</p>}
+      {error && <p className="text-sm text-rose-400">{error}</p>}
       <div className="grid gap-3 md:grid-cols-2">
         {youth.map((p) => (
           <Panel key={p.id} className="flex items-center justify-between gap-3 p-4">
             <div>
               <div className="flex items-center gap-2">
                 <PosBadge pos={p.position} />
-                <span className="font-medium text-mist-50">{p.name}</span>
+                <span className="font-medium text-white">{p.name}</span>
               </div>
-              <div className="mt-1 text-xs text-mist-400">
+              <div className="mt-1 text-xs text-slate-400">
                 Note {p.rating ?? '—'} · Pot. {p.potential ?? '—'}
               </div>
             </div>
@@ -568,13 +582,13 @@ function Live() {
 
   return (
     <div className="animate-enter space-y-6">
-      <PageHeader title="Manager Live" subtitle="Hub de défis — paramètres visibles avant lancement" />
+      <PageHeader title="Manager Live Hub" subtitle="Défis saisonniers · Objectifs · Récompenses" />
 
       <div className="subtabs">
         {(
           [
             ['active', 'Actif'],
-            ['catalog', 'Catalogue'],
+            ['catalog', 'Pour vous'],
             ['done', 'Terminés'],
           ] as const
         ).map(([id, label]) => (
@@ -592,12 +606,12 @@ function Live() {
       {tab === 'active' && (
         <div>
           {active ? (
-            <Panel className="border-brass-500/30 p-5">
+            <Panel className="border-sky-500/30 p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="label-caps">Défi en cours</div>
-                  <div className="mt-1 text-xl font-semibold text-mist-50">{active.title}</div>
-                  <p className="mt-1 text-sm text-mist-400">{active.description}</p>
+                  <div className="mt-1 text-xl font-semibold text-white">{active.title}</div>
+                  <p className="mt-1 text-sm text-slate-400">{active.description}</p>
                 </div>
                 <Badge tone="brass">{active.difficulty}</Badge>
               </div>
@@ -631,36 +645,36 @@ function Live() {
       )}
 
       {tab === 'catalog' && (
-        <div className="grid gap-3 md:grid-cols-2">
-          {(challenges?.catalog ?? []).map((c) => (
-            <Panel key={c.id} className="p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div className="font-semibold text-mist-50">{c.title}</div>
-                <Badge>{c.difficulty}</Badge>
-              </div>
-              <p className="mt-2 text-sm text-mist-400">{c.description}</p>
-              <div className="mt-3 text-xs text-mist-400">
-                Objectif {c.goalTarget} · {c.matchesLimit} matchs max · {c.rewardGold} Or · {money(c.rewardBudget)}
-              </div>
-              {c.parameters && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {Object.entries(c.parameters).map(([k, v]) =>
-                    v ? (
-                      <Badge key={k} tone="neutral">
-                        {v}
-                      </Badge>
-                    ) : null
-                  )}
+        <div>
+          <div className="label-caps mb-3 text-sky-300">Catalogue de défis</div>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {(challenges?.catalog ?? []).map((c) => (
+              <div key={c.id} className="hub-tile w-[220px] p-4">
+                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500/80 to-indigo-500/40" />
+                <div className="mt-1 flex items-start justify-between gap-2">
+                  <div className="text-sm font-semibold leading-snug text-white">{c.title}</div>
+                  <span className="chip-sky">{c.difficulty}</span>
                 </div>
-              )}
-              {c.restriction && (
-                <p className="mt-2 text-xs text-signal-warn">Restriction : {c.restriction}</p>
-              )}
-              <Button className="mt-3" disabled={loading || !!active} onClick={() => startChallenge(c.id)}>
-                Lancer
-              </Button>
-            </Panel>
-          ))}
+                <p className="mt-2 line-clamp-3 text-xs text-slate-400">{c.description}</p>
+                <div className="mt-3 space-y-1 text-[11px] text-slate-400">
+                  <div>Objectif {c.goalTarget} · {c.matchesLimit} matchs</div>
+                  <div className="text-amber-300">{c.rewardGold} Or · {money(c.rewardBudget)}</div>
+                </div>
+                {c.parameters && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {Object.entries(c.parameters).map(([k, v]) =>
+                      v ? (
+                        <span key={k} className="chip-muted">{String(v)}</span>
+                      ) : null
+                    )}
+                  </div>
+                )}
+                <Button className="mt-3 w-full" disabled={loading || !!active} onClick={() => startChallenge(c.id)}>
+                  Start Job
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -692,7 +706,7 @@ function Training() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
-              <tr className="border-b border-ink-700 text-xs uppercase tracking-wider text-mist-400">
+              <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-400">
                 <th className="px-4 py-3">Joueur</th>
                 <th className="px-4 py-3">Plan</th>
                 <th className="px-4 py-3">Actions</th>
@@ -702,7 +716,7 @@ function Training() {
               {(training?.players ?? []).map((p) => (
                 <tr key={p.id} className="table-row">
                   <td className="px-4 py-2.5">
-                    <PosBadge pos={p.position} /> <span className="ml-2 text-mist-100">{p.name}</span>
+                    <PosBadge pos={p.position} /> <span className="ml-2 text-slate-100">{p.name}</span>
                   </td>
                   <td className="px-4 py-2.5">
                     <select
@@ -750,16 +764,16 @@ function Messages() {
             key={m.id}
             type="button"
             onClick={() => !m.read && markRead(m.id)}
-            className={`panel w-full p-4 text-left transition hover:border-mist-400/20 ${!m.read ? 'border-brass-500/30' : ''}`}
+            className={`panel w-full p-4 text-left transition hover:border-mist-400/20 ${!m.read ? 'border-sky-500/30' : ''}`}
           >
             <div className="flex items-center justify-between gap-2">
-              <div className="font-medium text-mist-50">{m.title}</div>
+              <div className="font-medium text-white">{m.title}</div>
               {!m.read && <Badge tone="brass">Nouveau</Badge>}
             </div>
-            <div className="mt-1 text-xs text-mist-400">
+            <div className="mt-1 text-xs text-slate-400">
               {m.sender} · {new Date(m.messageDate).toLocaleString('fr-FR')}
             </div>
-            <p className="mt-2 text-sm text-mist-300">{m.content}</p>
+            <p className="mt-2 text-sm text-slate-300">{m.content}</p>
           </button>
         ))}
         {!messages.length && <EmptyState title="Boîte vide" />}
@@ -783,7 +797,7 @@ function Budget() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[520px] text-left text-sm">
             <thead>
-              <tr className="border-b border-ink-700 text-xs uppercase tracking-wider text-mist-400">
+              <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-400">
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Type</th>
                 <th className="px-4 py-3">Motif</th>
@@ -793,10 +807,10 @@ function Budget() {
             <tbody>
               {(budgetInfo?.transactions ?? []).map((t) => (
                 <tr key={t.id} className="table-row">
-                  <td className="px-4 py-2.5 text-mist-400">{new Date(t.transactionDate).toLocaleDateString('fr-FR')}</td>
+                  <td className="px-4 py-2.5 text-slate-400">{new Date(t.transactionDate).toLocaleDateString('fr-FR')}</td>
                   <td className="px-4 py-2.5">{t.type}</td>
-                  <td className="px-4 py-2.5 text-mist-300">{t.reason ?? '—'}</td>
-                  <td className={`px-4 py-2.5 data-num ${t.amount >= 0 ? 'text-signal-good' : 'text-signal-bad'}`}>
+                  <td className="px-4 py-2.5 text-slate-300">{t.reason ?? '—'}</td>
+                  <td className={`px-4 py-2.5 data-num ${t.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {money(t.amount)}
                   </td>
                 </tr>
@@ -817,10 +831,10 @@ function Shop() {
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {shopItems.map((item) => (
           <Panel key={item.id} className="p-4">
-            <div className="font-semibold text-mist-50">{item.name}</div>
-            <p className="mt-1 text-sm text-mist-400">{item.effect}</p>
+            <div className="font-semibold text-white">{item.name}</div>
+            <p className="mt-1 text-sm text-slate-400">{item.effect}</p>
             <div className="mt-3 flex items-center justify-between">
-              <span className="data-num text-brass-300">{item.price} Or</span>
+              <span className="data-num text-amber-300">{item.price} Or</span>
               <Button disabled={loading} onClick={() => buyShop(item.id)}>
                 Acheter
               </Button>
@@ -841,10 +855,10 @@ function Legends() {
         {legends.map((l) => (
           <Panel key={l.code} className="p-4">
             <div className="flex items-center justify-between">
-              <div className="font-semibold text-mist-50">{l.name}</div>
+              <div className="font-semibold text-white">{l.name}</div>
               <PosBadge pos={l.position} />
             </div>
-            <p className="mt-1 text-xs text-mist-400">{l.nation} · {l.unlock}</p>
+            <p className="mt-1 text-xs text-slate-400">{l.nation} · {l.unlock}</p>
             <div className="mt-3 flex flex-wrap gap-1">
               {l.owned && <Badge tone="good">Dans l’effectif</Badge>}
               {!l.unlocked && <Badge tone="warn">Verrouillé</Badge>}
@@ -869,7 +883,7 @@ function MgrMarket() {
   return (
     <div className="animate-enter space-y-6">
       <PageHeader title="Manager Market" subtitle="Mouvements IA · postes · candidatures" />
-      {challengeNote && <Panel className="border-brass-500/30 p-3 text-sm text-mist-200">{challengeNote}</Panel>}
+      {challengeNote && <Panel className="border-sky-500/30 p-3 text-sm text-slate-200">{challengeNote}</Panel>}
 
       <div className="subtabs">
         {(
@@ -896,8 +910,8 @@ function MgrMarket() {
             <Panel key={j.clubId} className="p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="font-semibold text-mist-50">{j.clubName}</div>
-                  <div className="text-xs text-mist-400">
+                  <div className="font-semibold text-white">{j.clubName}</div>
+                  <div className="text-xs text-slate-400">
                     {j.nation ?? '—'} · Vision {j.tacticalVision} · Rep {j.reputation}
                   </div>
                 </div>
@@ -906,9 +920,9 @@ function MgrMarket() {
                 </Badge>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                <span className="data-num text-brass-300">{j.compatibility}% compat.</span>
+                <span className="data-num text-amber-300">{j.compatibility}% compat.</span>
                 <Badge tone="brass">Chance {j.likelihood}</Badge>
-                {j.managerName && <span className="text-xs text-mist-500">Coach : {j.managerName}</span>}
+                {j.managerName && <span className="text-xs text-white0">Coach : {j.managerName}</span>}
               </div>
               <Button className="mt-3" disabled={loading} onClick={() => applyJob(j.clubId)}>
                 Candidater
@@ -927,17 +941,17 @@ function MgrMarket() {
             {(mgrMarket?.clubs ?? []).map((c) => (
               <div
                 key={c.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ink-700 px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2"
               >
                 <div>
-                  <div className="font-medium text-mist-50">{c.name}</div>
-                  <div className="text-xs text-mist-400">
+                  <div className="font-medium text-white">{c.name}</div>
+                  <div className="text-xs text-slate-400">
                     {c.manager ? `${c.manager.name} · ${c.manager.status}` : 'Poste vacant'} · {c.tacticalVision}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="data-num text-sm text-mist-200">{c.jobSecurity}%</div>
-                  <div className="text-[10px] text-mist-500">{c.record}</div>
+                  <div className="data-num text-sm text-slate-200">{c.jobSecurity}%</div>
+                  <div className="text-[10px] text-white0">{c.record}</div>
                 </div>
               </div>
             ))}
@@ -951,18 +965,18 @@ function MgrMarket() {
             <div className="label-caps mb-2">Agents libres</div>
             <ul className="space-y-1 text-sm">
               {(mgrMarket?.freeAgents ?? []).map((m) => (
-                <li key={m.id} className="text-mist-200">
-                  {m.name} <span className="text-mist-500">· rep {m.reputation}</span>
+                <li key={m.id} className="text-slate-200">
+                  {m.name} <span className="text-white0">· rep {m.reputation}</span>
                 </li>
               ))}
             </ul>
           </Panel>
           <Panel className="p-4">
             <div className="label-caps mb-2">Événements</div>
-            <ul className="space-y-2 text-xs text-mist-300">
+            <ul className="space-y-2 text-xs text-slate-300">
               {(mgrMarket?.events ?? []).slice(0, 15).map((e) => (
                 <li key={e.id}>
-                  <span className="text-brass-300">{e.type}</span> · {e.clubName}
+                  <span className="text-amber-300">{e.type}</span> · {e.clubName}
                   {e.managerName ? ` · ${e.managerName}` : ''}
                   {e.detail ? ` · ${e.detail}` : ''}
                 </li>
@@ -984,12 +998,12 @@ function Achievements() {
       <PageHeader title="Succès" />
       <div className="grid gap-3 md:grid-cols-2">
         {achievements.map((a) => (
-          <Panel key={a.code} className={`p-4 ${a.unlocked ? 'border-brass-500/30' : 'opacity-70'}`}>
+          <Panel key={a.code} className={`p-4 ${a.unlocked ? 'border-sky-500/30' : 'opacity-70'}`}>
             <div className="flex items-center justify-between">
-              <div className="font-semibold text-mist-50">{a.name}</div>
+              <div className="font-semibold text-white">{a.name}</div>
               <Badge tone={a.unlocked ? 'brass' : 'neutral'}>{a.unlocked ? 'Débloqué' : 'Verrouillé'}</Badge>
             </div>
-            <p className="mt-1 text-sm text-mist-400">{a.description}</p>
+            <p className="mt-1 text-sm text-slate-400">{a.description}</p>
           </Panel>
         ))}
       </div>

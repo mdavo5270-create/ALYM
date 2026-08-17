@@ -16,8 +16,8 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-mist-50 sm:text-2xl">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-mist-400">{subtitle}</p>}
+        <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{title}</h1>
+        {subtitle && <p className="mt-1 text-sm text-slate-400">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -37,19 +37,19 @@ export function StatCard({
 }) {
   const toneCls =
     tone === 'good'
-      ? 'text-signal-good'
+      ? 'text-emerald-400'
       : tone === 'warn'
         ? 'text-signal-warn'
         : tone === 'bad'
-          ? 'text-signal-bad'
+          ? 'text-rose-400'
           : tone === 'brass'
-            ? 'text-brass-400'
-            : 'text-mist-50';
+            ? 'text-amber-400'
+            : 'text-white';
   return (
     <div className="panel-soft p-4">
       <div className="label-caps">{label}</div>
       <div className={`mt-2 text-2xl font-semibold data-num ${toneCls}`}>{value}</div>
-      {hint && <div className="mt-1 text-xs text-mist-400">{hint}</div>}
+      {hint && <div className="mt-1 text-xs text-slate-400">{hint}</div>}
     </div>
   );
 }
@@ -62,11 +62,11 @@ export function Badge({
   tone?: 'neutral' | 'good' | 'warn' | 'bad' | 'brass';
 }) {
   const map = {
-    neutral: 'bg-ink-700 text-mist-200',
-    good: 'bg-signal-good/15 text-signal-good',
+    neutral: 'bg-white/10 text-slate-200',
+    good: 'bg-emerald-500/15 text-emerald-400',
     warn: 'bg-signal-warn/15 text-signal-warn',
-    bad: 'bg-signal-bad/15 text-signal-bad',
-    brass: 'bg-brass-500/15 text-brass-300',
+    bad: 'bg-rose-500/15 text-rose-400',
+    brass: 'bg-amber-500/15 text-amber-300',
   };
   return (
     <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ${map[tone]}`}>
@@ -78,9 +78,9 @@ export function Badge({
 export function ProgressBar({ value, max = 100, tone = 'brass' }: { value: number; max?: number; tone?: 'brass' | 'good' | 'bad' }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   const bar =
-    tone === 'good' ? 'bg-signal-good' : tone === 'bad' ? 'bg-signal-bad' : 'bg-brass-400';
+    tone === 'good' ? 'bg-emerald-500' : tone === 'bad' ? 'bg-rose-500' : 'bg-amber-400';
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink-700">
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
       <div className={`h-full rounded-full transition-all duration-500 ${bar}`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -132,9 +132,9 @@ export function Modal({
       <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]" onClick={onClose} />
       <div className="panel relative z-10 w-full max-w-md animate-enter p-5 shadow-lift">
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 className="text-lg font-semibold text-mist-50">{title}</h2>
+          <h2 className="text-lg font-semibold text-white">{title}</h2>
           {onClose && (
-            <button type="button" className="btn-ghost px-2 py-1 text-mist-400" onClick={onClose} aria-label="Fermer">
+            <button type="button" className="btn-ghost px-2 py-1 text-slate-400" onClick={onClose} aria-label="Fermer">
               ✕
             </button>
           )}
@@ -146,7 +146,7 @@ export function Modal({
 }
 
 export function Rating({ value }: { value: number }) {
-  const tone = value >= 80 ? 'text-brass-300' : value >= 70 ? 'text-mist-100' : 'text-mist-400';
+  const tone = value >= 80 ? 'text-amber-300' : value >= 70 ? 'text-slate-100' : 'text-slate-400';
   return <span className={`data-num font-semibold ${tone}`}>{value}</span>;
 }
 
@@ -160,8 +160,8 @@ export function PosBadge({ pos }: { pos: string }) {
 export function EmptyState({ title, body }: { title: string; body?: string }) {
   return (
     <div className="panel-soft flex flex-col items-center justify-center px-6 py-12 text-center">
-      <p className="text-sm font-medium text-mist-200">{title}</p>
-      {body && <p className="mt-1 max-w-sm text-xs text-mist-400">{body}</p>}
+      <p className="text-sm font-medium text-slate-200">{title}</p>
+      {body && <p className="mt-1 max-w-sm text-xs text-slate-400">{body}</p>}
     </div>
   );
 }
