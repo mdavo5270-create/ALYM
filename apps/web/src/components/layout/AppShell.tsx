@@ -11,6 +11,26 @@ import {
   type MoreSection,
 } from '../../store/nav';
 
+const BM_KEY = 'alym_bookmarks';
+
+type Bm = (typeof DEFAULT_BOOKMARKS)[number];
+
+function loadBookmarks(): Bm[] {
+  try {
+    const raw = localStorage.getItem(BM_KEY);
+    if (!raw) return DEFAULT_BOOKMARKS;
+    const parsed = JSON.parse(raw) as Bm[];
+    if (Array.isArray(parsed) && parsed.length) return parsed;
+  } catch {}
+  return DEFAULT_BOOKMARKS;
+}
+
+function saveBookmarks(list: Bm[]) {
+  try {
+    localStorage.setItem(BM_KEY, JSON.stringify(list));
+  } catch {}
+}
+
 /**
  * AppShell FM26-inspired — desktop-first
  * Top domain nav + context strip + bookmarks + workspace
@@ -36,6 +56,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     matchPreview,
   } = useGame();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [bookmarks, setBookmarks] = useState<Bm[]>(() =>
+    typeof window !== 'undefined' ? loadBookmarks() : DEFAULT_BOOKMARKS
+  );
   const unread = messages.filter((m) => !m.read).length;
   const season = '2026/27';
   const week = useMemo(() => {
@@ -199,7 +222,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="mr-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">
               ★
             </span>
-            {DEFAULT_BOOKMARKS.map((b) => (
+            {bookmarks.map((b) => (
               <button
                 key={b.id}
                 type="button"
@@ -209,6 +232,17 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {b.label}
               </button>
             ))}
+            <button
+              type="button"
+              className="ml-auto shrink-0 px-2 py-1 text-[10px] uppercase tracking-wider text-[var(--ink-faint)] hover:text-[var(--ink-dim)]"
+              title="Reset bookmarks"
+              onClick={() => {
+                setBookmarks(DEFAULT_BOOKMARKS);
+                saveBookmarks(DEFAULT_BOOKMARKS);
+              }}
+            >
+              Reset ★
+            </button>
           </div>
         </div>
       </header>

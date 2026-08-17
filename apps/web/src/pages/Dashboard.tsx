@@ -469,6 +469,67 @@ function CentralHub() {
         </div>
       </div>
 
+      {/* Fixtures + squad status — Portal density */}
+      <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="panel overflow-hidden">
+          <div className="flex items-center justify-between border-b border-[var(--rule)] px-3 py-2">
+            <span className="label-caps text-[var(--brass)]">Fixtures</span>
+            <button type="button" className="text-[11px] text-[var(--brass)]" onClick={() => goMore('calendar')}>
+              Calendar ›
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => goSpace('match', 'preview')}
+            className="flex w-full items-center justify-between border-b border-[var(--rule)] px-3 py-3 text-left hover:bg-[var(--panel-2)]"
+          >
+            <div>
+              <div className="text-[11px] uppercase tracking-wider text-[var(--ink-faint)]">
+                {matchPreview?.competition ?? 'League'} · Next
+              </div>
+              <div className="mt-0.5 text-[14px] font-semibold text-[var(--ink)]">
+                {team?.name ?? 'You'} vs {matchPreview?.opponent ?? 'Opponent'}
+              </div>
+            </div>
+            <div className="text-right text-[12px] text-[var(--ink-dim)]">
+              {matchPreview?.kickoffLabel ?? 'TBD'}
+            </div>
+          </button>
+          {lastMatch && (
+            <div className="flex items-center justify-between px-3 py-3 text-[13px]">
+              <span className="text-[var(--ink-dim)]">Last result</span>
+              <span className="data-num font-semibold text-[var(--ink)]">
+                {lastMatch.homeScore}–{lastMatch.awayScore} vs {lastMatch.opponent}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="panel overflow-hidden">
+          <div className="border-b border-[var(--rule)] px-3 py-2 label-caps text-[var(--brass)]">Squad status</div>
+          <div className="grid grid-cols-3 gap-px bg-[var(--rule)]">
+            <div className="bg-[var(--panel)] px-3 py-3 text-center">
+              <div className="data-num text-xl text-[var(--ink)]">{team?.wins ?? 0}</div>
+              <div className="label-caps">W</div>
+            </div>
+            <div className="bg-[var(--panel)] px-3 py-3 text-center">
+              <div className="data-num text-xl text-[var(--ink)]">{team?.draws ?? 0}</div>
+              <div className="label-caps">D</div>
+            </div>
+            <div className="bg-[var(--panel)] px-3 py-3 text-center">
+              <div className="data-num text-xl text-[var(--ink)]">{team?.losses ?? 0}</div>
+              <div className="label-caps">L</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="w-full px-3 py-2.5 text-left text-[12px] text-[var(--brass)] hover:bg-[var(--panel-2)]"
+            onClick={() => goSpace('squad', 'players')}
+          >
+            Open squad ›
+          </button>
+        </div>
+      </div>
+
       <ChronicleFeed preview />
     </div>
   );
@@ -868,7 +929,13 @@ function MatchHub() {
           <div className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--brass)]/85">
             {matchPreview?.competition ?? 'Super Ligue'} · {matchPreview?.venue ?? 'Domicile'}
           </div>
-          <div className="mt-8 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          {showScore && (
+            <div className="broadcast-bar mb-4 flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.14em] text-[var(--brass)]">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--signal)]" />
+              {sub === 'live' ? 'Live' : 'Full time'}
+            </div>
+          )}
+          <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
             <div className="text-right">
               <div className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{team?.name ?? 'Vous'}</div>
               <div className="mt-1 text-[11px] text-white/40">DOM</div>
@@ -1401,6 +1468,134 @@ function MoreNews() {
   );
 }
 
+
+function MoreScouting() {
+  const { listings, youth, scoutYouth, loading, goSpace } = useGame();
+  const [sel, setSel] = useState<number | null>(null);
+  const pool = listings.length ? listings : [];
+  const selected = sel != null ? pool[sel] : null;
+
+  return (
+    <div className="animate-enter space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="type-display text-[26px] text-[var(--ink)]">Scouting</h1>
+          <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">
+            Analysis · potential · tactical fit · risk
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button disabled={loading} onClick={() => scoutYouth()}>
+            Youth scout
+          </Button>
+          <Button disabled={loading} onClick={() => goSpace('market', 'search')}>
+            Open market
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <LevelTile label="Reports" level={String(pool.length)} tone="mid" />
+        <LevelTile label="High potential" level={String(pool.filter((p) => (p.potential ?? 0) >= 82).length)} tone="high" />
+        <LevelTile label="Academy" level={String(youth.length)} tone="mid" />
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="panel overflow-hidden">
+          <div className="grid grid-cols-[40px_36px_1fr_48px_72px] gap-2 border-b border-[var(--rule)] px-3 py-1.5 text-[10px] uppercase tracking-wider text-[var(--ink-faint)]">
+            <span>OVR</span>
+            <span>Pos</span>
+            <span>Player</span>
+            <span className="text-right">POT</span>
+            <span className="text-right">Value</span>
+          </div>
+          {pool.map((l, idx) => (
+            <button
+              key={l.tempId ?? `${l.name}-${idx}`}
+              type="button"
+              onClick={() => setSel(idx)}
+              className={`grid w-full grid-cols-[40px_36px_1fr_48px_72px] items-center gap-2 border-b border-[var(--rule)] px-3 py-2.5 text-left hover:bg-[var(--panel-2)] ${
+                sel === idx ? 'bg-[var(--panel-2)] border-l-2 border-l-[var(--brass)]' : 'border-l-2 border-l-transparent'
+              }`}
+            >
+              <span className="data-num text-[13px] font-semibold text-[var(--ink)]">{l.rating}</span>
+              <span className="text-[11px] text-[var(--brass)]">{l.position}</span>
+              <span className="truncate text-[13px] text-[var(--ink)]">{l.name}</span>
+              <span className="data-num text-right text-[12px] text-[var(--ok)]">{l.potential}</span>
+              <span className="data-num text-right text-[12px] text-[var(--brass)]">{money(l.price)}</span>
+            </button>
+          ))}
+          {!pool.length && (
+            <p className="px-3 py-6 text-[13px] text-[var(--ink-dim)]">
+              No reports yet — play a match or open the transfer market.
+            </p>
+          )}
+        </div>
+
+        <div className="panel p-4">
+          {selected ? (
+            <>
+              <div className="label-caps text-[var(--brass)]">Scout report</div>
+              <div className="mt-3 type-display text-xl text-[var(--ink)]">{selected.name}</div>
+              <div className="mt-1 text-[12px] text-[var(--ink-dim)]">
+                {selected.position} · OVR {selected.rating} · POT {selected.potential}
+              </div>
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-[var(--ink-dim)]">Recommendation</span>
+                  <span className="font-semibold text-[var(--ok)]">
+                    {(selected.potential ?? 0) >= 82 ? 'SIGN' : (selected.potential ?? 0) >= 75 ? 'MONITOR' : 'PASS'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-[var(--ink-dim)]">Confidence</span>
+                  <span className="data-num text-[var(--ink)]">{70 + ((selected.rating ?? 60) % 20)}%</span>
+                </div>
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-[var(--ink-dim)]">Tactical fit</span>
+                  <span className="text-[var(--ink)]">Medium</span>
+                </div>
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-[var(--ink-dim)]">Risk</span>
+                  <span className={(selected.price ?? 0) > 5_000_000 ? 'text-[var(--signal)]' : 'text-[var(--ink)]'}>
+                    {(selected.price ?? 0) > 5_000_000 ? 'High fee' : 'Controlled'}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <LevelTile
+                  label="Potential"
+                  level={(selected.potential ?? 0) >= 85 ? 'Elite' : (selected.potential ?? 0) >= 78 ? 'High' : 'Fair'}
+                  tone={(selected.potential ?? 0) >= 85 ? 'high' : 'mid'}
+                />
+                <LevelTile label="Current" level={String(selected.rating)} tone="mid" />
+                <LevelTile label="Value" level={money(selected.price)} tone="low" />
+              </div>
+              <Button
+                className="mt-4 w-full"
+                disabled={loading}
+                onClick={() => {
+                  useGame.getState().openNego(selected, Math.round(selected.price * 0.9));
+                  goSpace('market', 'negotiations');
+                }}
+              >
+                Start negotiation
+              </Button>
+            </>
+          ) : (
+            <div className="flex min-h-[220px] flex-col items-center justify-center text-center">
+              <div className="label-caps text-[var(--ink-faint)]">Master / Detail</div>
+              <p className="mt-2 max-w-[200px] text-[13px] text-[var(--ink-dim)]">
+                Select a player for full scout report.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MoreAcademy() {
   const { youth, scoutYouth, promote, loading } = useGame();
   return (
@@ -1787,8 +1982,9 @@ function MoreRouter() {
     case 'news':
       return <MoreNews />;
     case 'academy':
-    case 'scouting':
       return <MoreAcademy />;
+    case 'scouting':
+      return <MoreScouting />;
     case 'tactics':
       return (
         <div className="animate-enter">
