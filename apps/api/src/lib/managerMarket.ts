@@ -292,7 +292,7 @@ export async function tickManagerMarket(playerTeamId?: number) {
   // 2) Firings
   for (const club of clubs2) {
     if (!club.manager) continue;
-    if (club.jobSecurity < 25 && club.manager.seasonsAtClub >= 1 && roll() < 0.55) {
+    if (club.jobSecurity < 38 && club.manager.seasonsAtClub >= 1 && roll() < 0.42) {
       const mgrName = club.manager.name;
       await prisma.aiClub.update({ where: { id: club.id }, data: { managerId: null, jobSecurity: 40 } });
       await prisma.aiManager.update({
@@ -415,5 +415,13 @@ export async function tickManagerMarket(playerTeamId?: number) {
     });
   }
 
+  // Toujours un signal monde si rien de majeur n'a bougé
+  if (headlines.length === 0 && clubs.length) {
+    const c = clubs[Math.floor(Math.random() * clubs.length)];
+    const form = `${c.wins}V-${c.draws}N-${c.losses}D`;
+    headlines.push(`${c.name} (${form}) · vision ${c.tacticalVision}`);
+  }
+
   return { headlines, assignments: assignments.length };
+
 }

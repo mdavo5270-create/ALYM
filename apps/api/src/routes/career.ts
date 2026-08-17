@@ -378,7 +378,7 @@ router.post('/market/sell/:playerId', async (req, res) => {
 
   const rating =
     (player.speed + player.dribble + player.shot + player.pass + player.defense + player.physique) / 6;
-  const fee = Math.round(rating * 6000 + player.salary * 2);
+  const fee = Math.round(rating * 2200 + player.salary * 4);
 
   await prisma.player.delete({ where: { id: playerId } });
   await prisma.team.update({

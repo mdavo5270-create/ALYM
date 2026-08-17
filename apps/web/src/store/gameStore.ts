@@ -319,7 +319,15 @@ export const useGame = create<State>((set, get) => ({
       }
       if (tab === 'home') {
         try {
-          set({ challenges: await api.challenges(team.id) });
+          const [ch, ev] = await Promise.all([
+            api.challenges(team.id),
+            api.events(team.id, 'pending'),
+          ]);
+          set({
+            challenges: ch,
+            activeEvent: ev.legacy ?? get().activeEvent,
+            matchPreview: await api.matchPreview(team.id).catch(() => get().matchPreview),
+          });
         } catch {
           /* ignore */
         }

@@ -174,6 +174,9 @@ function CentralHub() {
     markRead,
     spaceSub,
     setSpaceSub,
+    activeEvent,
+    resolveEvent,
+    loading,
   } = useGame();
   const unread = messages.filter((m) => !m.read);
   const sec = team?.jobSecurity ?? board?.jobSecurity ?? 70;
@@ -206,6 +209,14 @@ function CentralHub() {
         more: 'board',
       },
       {
+        id: 'event',
+        label: activeEvent ? `Décision : ${activeEvent.title}` : 'Aucun événement urgent',
+        priority: activeEvent ? 'urgent' : 'fyi',
+        done: !activeEvent,
+        space: 'match',
+        sub: 'preview',
+      },
+      {
         id: 'live',
         label: challenges?.active ? `Défi : ${challenges.active.title}` : 'Choisir un défi Manager Live',
         priority: 'important',
@@ -221,7 +232,7 @@ function CentralHub() {
         sub: 'overview',
       },
     ],
-    [unread.length, sec, challenges]
+    [unread.length, sec, challenges, activeEvent]
   );
 
   const runTask = (t: ManagerTask) => {
@@ -239,6 +250,23 @@ function CentralHub() {
   return (
     <div className="animate-enter space-y-4">
       <SectionTitle title="Central" sub="Cockpit manager · même club · même saison" />
+
+      {activeEvent && (
+        <Card className="border-amber-500/30 bg-amber-500/10 p-4">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+            {activeEvent.priority ?? activeEvent.category} · décision requise
+          </div>
+          <div className="mt-1 text-[16px] font-bold text-white">{activeEvent.title}</div>
+          <p className="mt-1 text-[13px] text-[var(--muted)]">{activeEvent.body}</p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            {activeEvent.choices.map((c) => (
+              <Button key={c.id} disabled={loading} onClick={() => resolveEvent(c)}>
+                {c.label}
+              </Button>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Hero next match */}
       <Card className="relative overflow-hidden p-5">
@@ -458,8 +486,6 @@ function MatchHub() {
     lastMatch,
     playMatch,
     loading,
-    activeEvent,
-    resolveEvent,
     team,
     challengeNote,
   } = useGame();
@@ -567,53 +593,6 @@ function MatchHub() {
       )}
 
       {sub === 'tactics' && <TacticsInline />}
-
-      {activeEvent && (
-        <Modal open onClose={() => {}}>
-          <div className="text-[11px] uppercase text-amber-300">{activeEvent.category}</div>
-          <div className="mt-1 text-lg font-bold text-white">{activeEvent.title}</div>
-          <p className="mt-2 text-[14px] text-[var(--muted)]">{activeEvent.body}</p>
-          <div className="mt-4 space-y-2">
-            {activeEvent.choices.map((c) => (
-              <Button key={c.id} className="w-full" onClick={() => resolveEvent(c)}>
-                {c.label}
-              </Button>
-            ))}
-          </div>
-        </Modal>
-      )}
-    </div>
-  );
-}
-
-function TacticsInline() {
-  const { board, setVision, loading, team } = useGame();
-  const visions = board?.visions ?? [
-    { id: 'standard', name: 'Équilibré', desc: 'Approche polyvalente' },
-    { id: 'possession', name: 'Possession', desc: 'Contrôle du ballon' },
-    { id: 'high_press', name: 'Pressing', desc: 'Intensité haute' },
-    { id: 'counter', name: 'Contre', desc: 'Transitions rapides' },
-    { id: 'wing_play', name: 'Ailes', desc: 'Largeur offensive' },
-    { id: 'park_bus', name: 'Bloc bas', desc: 'Solidité défensive' },
-  ];
-  const current = team?.tacticalVision ?? board?.tacticalVision ?? 'standard';
-
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {visions.map((v) => (
-        <button
-          key={v.id}
-          type="button"
-          disabled={loading}
-          onClick={() => setVision(v.id)}
-          className={`rounded-2xl border p-4 text-left transition ${
-            current === v.id ? 'border-sky-400/50 bg-sky-500/10' : 'border-white/8 bg-[var(--surface)] hover:border-white/15'
-          }`}
-        >
-          <div className="font-semibold text-white">{v.name}</div>
-          <div className="mt-1 text-[12px] text-[var(--muted)]">{v.desc}</div>
-        </button>
-      ))}
     </div>
   );
 }
@@ -888,6 +867,153 @@ function MoreAcademy() {
   );
 }
 
+
+function MoreTraining() {
+  const { training, players, setTraining, loading } = useGame();
+  const plans = training?.plans ?? [
+    { id: 'balanced', name: 'Équilibré', focus: 'all' },
+    { id: 'attacking', name: 'Offensif', focus: 'shot' },
+    { id: 'defensive', name: 'Défensif', focus: 'defense' },
+    { id: 'technical', name: 'Technique', focus: 'dribble' },
+    { id: 'physical', name: 'Physique', focus: 'physique' },
+  ];
+  return (
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Entraînement" sub="Plans individuels · gains après match" />
+      <div className="grid gap-2 sm:grid-cols-2">
+        {players.filter((p) => !p.onLoan).map((p) => (
+          <Card key={p.id} className="p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="font-semibold text-white">{p.name}</div>
+                <div className="text-[12px] text-[var(--muted)]">{p.position} · plan {p.trainingPlan ?? 'balanced'}</div>
+              </div>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1">
+              {plans.map((pl) => (
+                <button
+                  key={pl.id}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => setTraining(p.id, pl.id)}
+                  className={`rounded-lg px-2 py-1 text-[11px] ${
+                    (p.trainingPlan ?? 'balanced') === pl.id
+                      ? 'bg-sky-500/20 text-sky-200'
+                      : 'bg-white/5 text-[var(--muted)]'
+                  }`}
+                >
+                  {pl.name}
+                </button>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MoreLegends() {
+  const { legends, recruitLegend, loading, team } = useGame();
+  return (
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Légendes" sub="ICONs & Heroes · £80k" />
+      <div className="grid gap-3 sm:grid-cols-2">
+        {(legends ?? []).map((l) => (
+          <Card key={l.code} className={`p-4 ${l.owned ? 'border-emerald-500/30' : ''}`}>
+            <div className="flex justify-between gap-2">
+              <div>
+                <div className="font-bold text-white">{l.name}</div>
+                <div className="text-[12px] text-[var(--muted)]">{l.position} · {l.nation}</div>
+              </div>
+              <Badge tone={l.owned ? 'good' : l.unlocked ? 'brass' : 'neutral'}>
+                {l.owned ? 'Recruté' : l.unlocked ? 'Dispo' : 'Verrouillé'}
+              </Badge>
+            </div>
+            <p className="mt-2 text-[12px] text-[var(--muted)]">Déblocage : {l.unlock}</p>
+            <Button
+              className="mt-3"
+              disabled={loading || !l.unlocked || l.owned || (team?.budget ?? 0) < 80000}
+              onClick={() => recruitLegend(l.code)}
+            >
+              Recruter · £80,000
+            </Button>
+          </Card>
+        ))}
+      </div>
+      {!(legends ?? []).length && <EmptyState title="Chargement…" body="Ouvre cet onglet après connexion." />}
+    </div>
+  );
+}
+
+function MoreShop() {
+  const { shopItems, buyShop, loading, team } = useGame();
+  return (
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Boutique" sub={`Or disponible : ${team?.goldBalance ?? 0}`} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        {(shopItems ?? []).map((it) => (
+          <Card key={it.id} className="p-4">
+            <div className="font-semibold text-white">{it.name}</div>
+            <div className="mt-1 text-[12px] text-[var(--muted)]">{it.effect}</div>
+            <Button className="mt-3" disabled={loading || (team?.goldBalance ?? 0) < it.price} onClick={() => buyShop(it.id)}>
+              Acheter · {it.price} Or
+            </Button>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MoreAchievements() {
+  const { achievements } = useGame();
+  return (
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Succès" />
+      <div className="grid gap-2 sm:grid-cols-2">
+        {(achievements ?? []).map((a) => (
+          <Card key={a.code} className={`p-3 ${a.unlocked ? 'border-sky-500/30' : 'opacity-70'}`}>
+            <div className="flex justify-between">
+              <span className="font-semibold text-white">{a.name}</span>
+              <Badge tone={a.unlocked ? 'brass' : 'neutral'}>{a.unlocked ? 'OK' : '—'}</Badge>
+            </div>
+            <p className="mt-1 text-[12px] text-[var(--muted)]">{a.description}</p>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MoreCalendar() {
+  const { team, lastMatch, matchPreview } = useGame();
+  const played = (team?.wins ?? 0) + (team?.draws ?? 0) + (team?.losses ?? 0);
+  const days = Array.from({ length: 14 }, (_, i) => {
+    const j = played + i;
+    const isMatch = i % 3 === 0;
+    return { j, isMatch, label: isMatch ? (i === 0 ? matchPreview?.opponent ?? 'Adversaire' : 'Journée') : 'Entraînement' };
+  });
+  return (
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Calendrier" sub={`Saison 1 · J${played + 1}`} />
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {days.map((d) => (
+          <Card key={d.j} className={`p-3 ${d.isMatch ? 'border-sky-500/25' : ''}`}>
+            <div className="text-[11px] text-[var(--muted)]">J{d.j + 1}</div>
+            <div className="text-[13px] font-medium text-white">{d.label}</div>
+          </Card>
+        ))}
+      </div>
+      {lastMatch && (
+        <p className="text-[12px] text-[var(--muted)]">
+          Dernier : {lastMatch.homeScore}-{lastMatch.awayScore} vs {lastMatch.opponent}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function MoreGeneric({ title, body }: { title: string; body: string }) {
   return (
     <div className="animate-enter">
@@ -923,7 +1049,7 @@ function MoreRouter() {
         </div>
       );
     case 'training':
-      return <MoreGeneric title="Entraînement" body="Plans par joueur — ouvrez un joueur depuis l’Effectif." />;
+      return <MoreTraining />;
     case 'manager':
     case 'world':
       return (
@@ -933,13 +1059,13 @@ function MoreRouter() {
         </div>
       );
     case 'legends':
-      return <MoreGeneric title="Légendes" body="ICONs & Heroes — déblocage par objectifs de carrière." />;
+      return <MoreLegends />;
     case 'shop':
-      return <MoreGeneric title="Boutique" body="Améliorations Or — branché API shop." />;
+      return <MoreShop />;
     case 'achievements':
-      return <MoreGeneric title="Succès" body="Succès de carrière partagés sur le même compte." />;
+      return <MoreAchievements />;
     case 'calendar':
-      return <MoreGeneric title="Calendrier" body="Journée · saison · fenêtres mercato (structure prête)." />;
+      return <MoreCalendar />;
     case 'competitions':
       return <MoreGeneric title="Compétitions" body="Classement · fixtures — données ligue à peupler." />;
     case 'analytics':
@@ -966,10 +1092,30 @@ export function Dashboard() {
   else if (space === 'live') body = <LiveHub />;
   else body = <MoreRouter />;
 
+  const activeEvent = useGame((s) => s.activeEvent);
+  const resolveEvent = useGame((s) => s.resolveEvent);
+  const loading = useGame((s) => s.loading);
+
   return (
     <AppShell>
       {body}
       <PlayerDrawer />
+      {activeEvent && (
+        <Modal open onClose={() => {}}>
+          <div className="text-[11px] uppercase text-amber-300">
+            {activeEvent.priority ?? activeEvent.category} · événement
+          </div>
+          <div className="mt-1 text-lg font-bold text-white">{activeEvent.title}</div>
+          <p className="mt-2 text-[14px] text-[var(--muted)]">{activeEvent.body}</p>
+          <div className="mt-4 space-y-2">
+            {activeEvent.choices.map((c) => (
+              <Button key={c.id} className="w-full" disabled={loading} onClick={() => resolveEvent(c)}>
+                {c.label}
+              </Button>
+            ))}
+          </div>
+        </Modal>
+      )}
     </AppShell>
   );
 }

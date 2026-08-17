@@ -22,7 +22,7 @@ export async function seedStarterPlayers(teamId, nation = 'France') {
             name,
             position,
             nation,
-            salary: rand(4000, 12000),
+            salary: rand(800, 4200), // vs budget £200k
             speed: rand(base, base + 25),
             dribble: rand(base - 5, base + 25),
             shot: rand(base - 10, base + 20),

@@ -161,10 +161,16 @@ router.post('/play', async (req, res) => {
         challengeStreak = 0;
         challengeYouth = 0;
       } else {
+        const progressLabel =
+          def.goalType === 'wins'
+            ? `${challengeWins}/${def.goalTarget} victoires · ${challengeMatches}/${def.matchesLimit} matchs`
+            : def.goalType === 'no_loss_streak'
+              ? `Série ${challengeStreak}/${def.goalTarget} · ${challengeMatches}/${def.matchesLimit} matchs`
+              : `Progression ${challengeMatches}/${def.matchesLimit}`;
         challengeResult = {
           status: 'ongoing',
           title: def.title,
-          note: `Progression ${challengeMatches}/${def.matchesLimit}`,
+          note: progressLabel,
         };
       }
     }
