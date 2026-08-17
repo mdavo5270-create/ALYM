@@ -13,8 +13,12 @@ declare global {
 
 const secret = () => process.env.JWT_SECRET || 'dev-secret-change-me';
 
+/** Sessions qui expirent — défaut 24h prod, 7j dev */
 export function signToken(payload: AuthPayload): string {
-  return jwt.sign(payload, secret(), { expiresIn: '7d' });
+  const expiresIn =
+    process.env.JWT_EXPIRES_IN ||
+    (process.env.NODE_ENV === 'production' ? '24h' : '7d');
+  return jwt.sign(payload, secret(), { expiresIn } as jwt.SignOptions);
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {

@@ -99,8 +99,8 @@ export function Auth() {
           <Input
             type="password"
             required
-            minLength={6}
-            placeholder="Mot de passe (6+ caractères)"
+            minLength={8}
+            placeholder="Mot de passe (8+ · lettre + chiffre)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />

@@ -847,7 +847,7 @@ esbuild@^0.21.3:
     "@esbuild/win32-ia32" "0.21.5"
     "@esbuild/win32-x64" "0.21.5"
 
-esbuild@~0.28.0:
+esbuild@^0.28.2, esbuild@~0.28.0:
   version "0.28.2"
   resolved "http://35.245.43.102/npm/esbuild/-/esbuild-0.28.2.tgz"
   integrity sha512-HKVLS8dvII+xoKW9kmqxbRKrnWEXfJJr/FZhhJmiqIB0e053QNYFqOBouTMO/k5sID4MvCiUCvv8b9M4h32wIA==

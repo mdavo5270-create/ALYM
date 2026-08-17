@@ -20,52 +20,95 @@ import staffRoutes from './routes/staff.js';
 import competitionRoutes from './routes/competitions.js';
 import transferRoutes from './routes/transfers.js';
 import chronicleRoutes from './routes/chronicle.js';
-import { rateLimit, securityHeaders, requireJwtSecret } from './middleware/security.js';
+import { requireAuth } from './middleware/auth.js';
+import { requireTeamOwner } from './middleware/ownership.js';
+import {
+  rateLimit,
+  securityHeaders,
+  requireJwtSecret,
+  productionErrorHandler,
+  rejectUploads,
+  logInfo,
+} from './middleware/security.js';
+
 requireJwtSecret();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isProd = process.env.NODE_ENV === 'production';
 
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
 app.use(securityHeaders);
+app.use(rejectUploads);
+
+const corsOrigin = process.env.CORS_ORIGIN?.split(',').map((s) => s.trim()).filter(Boolean);
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN?.split(',') || true,
+    origin: corsOrigin && corsOrigin.length ? corsOrigin : isProd ? false : true,
     credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 600,
   })
 );
-app.use(express.json({ limit: '100kb' }));
+
+app.use(
+  express.json({
+    limit: '100kb',
+    verify: (req, _res, buf) => {
+      (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+    },
+  })
+);
 app.use(rateLimit(120, 60_000));
 
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'alym', version: '1.0.0-chronicle', studio: 'LA MYLA', feature: 'chronicle' });
+  res.json({
+    status: 'ok',
+    service: 'alym',
+    version: '1.0.1-secure',
+    studio: 'LA MYLA',
+    feature: 'chronicle',
+  });
 });
 
-app.use('/api/auth', rateLimit(20, 60_000), authRoutes);
+// Auth — rate limit strict (anti brute-force)
+app.use('/api/auth', rateLimit(10, 60_000), authRoutes);
+
+// Teams list/create (auth inside router)
 app.use('/api/teams', teamRoutes);
-app.use('/api/teams/:teamId/messages', messageRoutes);
-app.use('/api/teams/:teamId/players', playerRoutes);
-app.use('/api/teams/:teamId/matches', matchRoutes);
-app.use('/api/teams/:teamId/shop', shopRoutes);
-app.use('/api/teams/:teamId/achievements', achievementRoutes);
-app.use('/api/teams/:teamId/budget', budgetRoutes);
-app.use('/api/teams/:teamId/career', careerRoutes);
-app.use('/api/teams/:teamId/live', liveRoutes);
-app.use('/api/teams/:teamId/legends', legendRoutes);
-app.use('/api/teams/:teamId/manager-market', managerMarketRoutes);
-app.use('/api/teams/:teamId/events', eventRoutes);
-app.use('/api/teams/:teamId/staff', staffRoutes);
-app.use('/api/teams/:teamId/competitions', competitionRoutes);
-app.use('/api/teams/:teamId/transfers', transferRoutes);
-app.use('/api/teams/:teamId/chronicle', chronicleRoutes);
+
+// Toutes les routes club : JWT + ownership serveur
+const teamScoped = [
+  ['/api/teams/:teamId/messages', messageRoutes],
+  ['/api/teams/:teamId/players', playerRoutes],
+  ['/api/teams/:teamId/matches', matchRoutes],
+  ['/api/teams/:teamId/shop', shopRoutes],
+  ['/api/teams/:teamId/achievements', achievementRoutes],
+  ['/api/teams/:teamId/budget', budgetRoutes],
+  ['/api/teams/:teamId/career', careerRoutes],
+  ['/api/teams/:teamId/live', liveRoutes],
+  ['/api/teams/:teamId/legends', legendRoutes],
+  ['/api/teams/:teamId/manager-market', managerMarketRoutes],
+  ['/api/teams/:teamId/events', eventRoutes],
+  ['/api/teams/:teamId/staff', staffRoutes],
+  ['/api/teams/:teamId/competitions', competitionRoutes],
+  ['/api/teams/:teamId/transfers', transferRoutes],
+  ['/api/teams/:teamId/chronicle', chronicleRoutes],
+] as const;
+
+for (const [pathPrefix, routes] of teamScoped) {
+  app.use(pathPrefix, requireAuth, requireTeamOwner, routes);
+}
 
 app.get('/api', (_req, res) => {
-  res.json({ name: 'ALYM API', version: '1.0.0-chronicle', studio: 'LA MYLA' });
+  res.json({ name: 'ALYM API', version: '1.0.1-secure', studio: 'LA MYLA' });
 });
 
 const webDist = path.resolve(__dirname, '../../web/dist');
-app.use(express.static(webDist));
+app.use(express.static(webDist, { maxAge: isProd ? '1h' : 0 }));
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api') || req.path === '/health') return next();
   res.sendFile(path.join(webDist, 'index.html'), (err) => {
@@ -73,9 +116,10 @@ app.get('*', (req, res, next) => {
   });
 });
 
+app.use(productionErrorHandler);
+
 app.listen(PORT, () => {
-  console.log(`ALYM running on port ${PORT}`);
-  // Keep-alive interne (process) — complète le ping externe anti-sleep Render free
+  logInfo(`ALYM running on port ${PORT}`);
   const selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.KEEP_ALIVE_URL;
   if (selfUrl) {
     setInterval(() => {

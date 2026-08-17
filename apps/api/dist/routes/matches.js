@@ -1,300 +1,292 @@
-import { Router } from 'express';
-import { prisma } from '../lib/prisma.js';
-import { requireAuth } from '../middleware/auth.js';
-import { strengthFromPlayers, simulateMatch, withTimeline, randomOpponentName, randomOpponentStrength, } from '../lib/matchEngine.js';
-import { tickCareerEvents, toLegacyUnexpectedShape, getPendingEvent, } from '../lib/eventEngine.js';
-import { applyMatchToLeague } from '../lib/league.js';
-import { getChallenge } from '../lib/challenges.js';
-import { applyTrainingGains } from './live.js';
-import { tickManagerMarket } from '../lib/managerMarket.js';
+import { Router } from "express";
+import { prisma } from "../lib/prisma.js";
+import { requireAuth } from "../middleware/auth.js";
+import {
+  strengthFromPlayers,
+  simulateMatch,
+  withTimeline,
+  randomOpponentName,
+  randomOpponentStrength
+} from "../lib/matchEngine.js";
+import {
+  tickCareerEvents,
+  toLegacyUnexpectedShape,
+  getPendingEvent
+} from "../lib/eventEngine.js";
+import { applyMatchToLeague } from "../lib/league.js";
+import { getChallenge } from "../lib/challenges.js";
+import { applyTrainingGains } from "./live.js";
+import { tickManagerMarket } from "../lib/managerMarket.js";
 const router = Router({ mergeParams: true });
 router.use(requireAuth);
-router.get('/preview', async (req, res) => {
-    const teamId = Number(req.params.teamId);
-    const team = await prisma.team.findFirst({
-        where: { id: teamId, userId: req.user.userId },
-        include: { players: true },
-    });
-    if (!team)
-        return res.status(404).json({ error: 'Équipe introuvable' });
-    const available = team.players.filter((p) => !p.onLoan);
-    const opponent = randomOpponentName();
-    const home = strengthFromPlayers(available);
-    res.json({
-        homeName: team.name,
-        opponent,
-        competition: 'Championnat',
-        venue: 'Domicile',
-        kickoffLabel: 'Prochaine journée',
-        availablePlayers: available.length,
-        formHint: `${team.wins}V · ${team.draws}N · ${team.losses}D`,
-        tacticalVision: team.tacticalVision,
-        strength: {
-            attack: Math.round(home.attack),
-            midfield: Math.round(home.midfield),
-            defense: Math.round(home.defense),
-            gk: Math.round(home.gk),
-        },
-    });
+router.get("/preview", async (req, res) => {
+  const teamId = Number(req.params.teamId);
+  const team = await prisma.team.findFirst({
+    where: { id: teamId, userId: req.user.userId },
+    include: { players: true }
+  });
+  if (!team) return res.status(404).json({ error: "\xC9quipe introuvable" });
+  const available = team.players.filter((p) => !p.onLoan);
+  const opponent = randomOpponentName();
+  const home = strengthFromPlayers(available);
+  res.json({
+    homeName: team.name,
+    opponent,
+    competition: "Championnat",
+    venue: "Domicile",
+    kickoffLabel: "Prochaine journ\xE9e",
+    availablePlayers: available.length,
+    formHint: `${team.wins}V \xB7 ${team.draws}N \xB7 ${team.losses}D`,
+    tacticalVision: team.tacticalVision,
+    strength: {
+      attack: Math.round(home.attack),
+      midfield: Math.round(home.midfield),
+      defense: Math.round(home.defense),
+      gk: Math.round(home.gk)
+    }
+  });
 });
-router.post('/play', async (req, res) => {
-    const teamId = Number(req.params.teamId);
-    const team = await prisma.team.findFirst({
-        where: { id: teamId, userId: req.user.userId },
-        include: { players: true },
-    });
-    if (!team)
-        return res.status(404).json({ error: 'Équipe introuvable' });
-    const available = team.players.filter((p) => !p.onLoan);
-    if (available.length < 11) {
-        return res.status(400).json({ error: 'Il faut au moins 11 joueurs disponibles (hors prêt)' });
+router.post("/play", async (req, res) => {
+  const teamId = Number(req.params.teamId);
+  const team = await prisma.team.findFirst({
+    where: { id: teamId, userId: req.user.userId },
+    include: { players: true }
+  });
+  if (!team) return res.status(404).json({ error: "\xC9quipe introuvable" });
+  const available = team.players.filter((p) => !p.onLoan);
+  if (available.length < 11) {
+    return res.status(400).json({ error: "Il faut au moins 11 joueurs disponibles (hors pr\xEAt)" });
+  }
+  const home = strengthFromPlayers(available);
+  const awayName = randomOpponentName();
+  const away = randomOpponentStrength();
+  const raw = simulateMatch(home, away);
+  const sim = withTimeline(raw, team.name, awayName);
+  const wins = team.wins + (sim.result === "W" ? 1 : 0);
+  const draws = team.draws + (sim.result === "D" ? 1 : 0);
+  const losses = team.losses + (sim.result === "L" ? 1 : 0);
+  let newBudget = team.budget + sim.prize;
+  let goldBalance = team.goldBalance;
+  let challengeId = team.challengeId;
+  let challengeWins = team.challengeWins;
+  let challengeMatches = team.challengeMatches;
+  let challengeStreak = team.challengeStreak;
+  let challengeYouth = team.challengeYouth;
+  let challengeResult = null;
+  if (challengeId) {
+    const def = getChallenge(challengeId);
+    challengeMatches += 1;
+    if (sim.result === "W") {
+      challengeWins += 1;
+      challengeStreak += 1;
+    } else if (sim.result === "L") {
+      challengeStreak = 0;
+    } else {
+      challengeStreak += 1;
     }
-    const home = strengthFromPlayers(available);
-    const awayName = randomOpponentName();
-    const away = randomOpponentStrength();
-    const raw = simulateMatch(home, away);
-    const sim = withTimeline(raw, team.name, awayName);
-    const wins = team.wins + (sim.result === 'W' ? 1 : 0);
-    const draws = team.draws + (sim.result === 'D' ? 1 : 0);
-    const losses = team.losses + (sim.result === 'L' ? 1 : 0);
-    let newBudget = team.budget + sim.prize;
-    let goldBalance = team.goldBalance;
-    let challengeId = team.challengeId;
-    let challengeWins = team.challengeWins;
-    let challengeMatches = team.challengeMatches;
-    let challengeStreak = team.challengeStreak;
-    let challengeYouth = team.challengeYouth;
-    let challengeResult = null;
-    if (challengeId) {
-        const def = getChallenge(challengeId);
-        challengeMatches += 1;
-        if (sim.result === 'W') {
-            challengeWins += 1;
-            challengeStreak += 1;
-        }
-        else if (sim.result === 'L') {
-            challengeStreak = 0;
-        }
-        else {
-            challengeStreak += 1;
-        }
-        if (def) {
-            let completed = false;
-            let failed = false;
-            if (def.goalType === 'wins' && challengeWins >= def.goalTarget)
-                completed = true;
-            if (def.goalType === 'no_loss_streak' && challengeStreak >= def.goalTarget)
-                completed = true;
-            if (def.goalType === 'youth' && challengeYouth >= def.goalTarget)
-                completed = true;
-            if (def.goalType === 'budget' && newBudget >= def.goalTarget)
-                completed = true;
-            if (challengeMatches >= def.matchesLimit && !completed)
-                failed = true;
-            if (completed) {
-                newBudget += def.rewardBudget;
-                goldBalance += def.rewardGold;
-                challengeResult = {
-                    status: 'won',
-                    title: def.title,
-                    note: `Défi réussi ! +${def.rewardGold} Or + £${def.rewardBudget.toLocaleString()}`,
-                };
-                await prisma.message.create({
-                    data: {
-                        teamId,
-                        sender: 'MANAGER LIVE',
-                        title: `Défi réussi : ${def.title}`,
-                        content: challengeResult.note,
-                    },
-                });
-                await prisma.transaction.create({
-                    data: {
-                        teamId,
-                        type: 'challenge_reward',
-                        amount: def.rewardBudget,
-                        reason: `Récompense ${def.title}`,
-                    },
-                });
-                const hasCW = await prisma.achievement.findFirst({
-                    where: { teamId, achievementCode: 'challenge_won' },
-                });
-                if (!hasCW) {
-                    await prisma.achievement.create({
-                        data: { teamId, achievementCode: 'challenge_won' },
-                    });
-                }
-                challengeId = null;
-                challengeWins = 0;
-                challengeMatches = 0;
-                challengeStreak = 0;
-                challengeYouth = 0;
-            }
-            else if (failed) {
-                challengeResult = {
-                    status: 'failed',
-                    title: def.title,
-                    note: 'Défi échoué — limite de matchs atteinte.',
-                };
-                await prisma.message.create({
-                    data: {
-                        teamId,
-                        sender: 'MANAGER LIVE',
-                        title: `Défi échoué : ${def.title}`,
-                        content: challengeResult.note,
-                    },
-                });
-                challengeId = null;
-                challengeWins = 0;
-                challengeMatches = 0;
-                challengeStreak = 0;
-                challengeYouth = 0;
-            }
-            else {
-                const progressLabel = def.goalType === 'wins'
-                    ? `${challengeWins}/${def.goalTarget} victoires · ${challengeMatches}/${def.matchesLimit} matchs`
-                    : def.goalType === 'no_loss_streak'
-                        ? `Série ${challengeStreak}/${def.goalTarget} · ${challengeMatches}/${def.matchesLimit} matchs`
-                        : `Progression ${challengeMatches}/${def.matchesLimit}`;
-                challengeResult = {
-                    status: 'ongoing',
-                    title: def.title,
-                    note: progressLabel,
-                };
-            }
-        }
-    }
-    await prisma.team.update({
-        where: { id: teamId },
-        data: {
-            wins,
-            draws,
-            losses,
-            budget: newBudget,
-            goldBalance,
-            challengeId,
-            challengeWins,
-            challengeMatches,
-            challengeStreak,
-            challengeYouth,
-        },
-    });
-    await prisma.transaction.create({
-        data: {
+    if (def) {
+      let completed = false;
+      let failed = false;
+      if (def.goalType === "wins" && challengeWins >= def.goalTarget) completed = true;
+      if (def.goalType === "no_loss_streak" && challengeStreak >= def.goalTarget) completed = true;
+      if (def.goalType === "youth" && challengeYouth >= def.goalTarget) completed = true;
+      if (def.goalType === "budget" && newBudget >= def.goalTarget) completed = true;
+      if (challengeMatches >= def.matchesLimit && !completed) failed = true;
+      if (completed) {
+        newBudget += def.rewardBudget;
+        goldBalance += def.rewardGold;
+        challengeResult = {
+          status: "won",
+          title: def.title,
+          note: `D\xE9fi r\xE9ussi ! +${def.rewardGold} Or + \xA3${def.rewardBudget.toLocaleString()}`
+        };
+        await prisma.message.create({
+          data: {
             teamId,
-            type: 'match_prize',
-            amount: sim.prize,
-            reason: `Match vs ${awayName} (${sim.homeScore}-${sim.awayScore})`,
-        },
-    });
-    const resultLabel = sim.result === 'W' ? 'Victoire' : sim.result === 'D' ? 'Match nul' : 'Défaite';
-    await prisma.message.create({
-        data: {
+            sender: "MANAGER LIVE",
+            title: `D\xE9fi r\xE9ussi : ${def.title}`,
+            content: challengeResult.note
+          }
+        });
+        await prisma.transaction.create({
+          data: {
             teamId,
-            sender: 'REPORTING MATCH',
-            title: `${resultLabel} ${sim.homeScore}-${sim.awayScore} vs ${awayName}`,
-            content: `Prime : £${sim.prize.toLocaleString()}.`,
-        },
-    });
-    if (sim.result === 'W') {
-        const hasFirst = await prisma.achievement.findFirst({
-            where: { teamId, achievementCode: 'first_win' },
+            type: "challenge_reward",
+            amount: def.rewardBudget,
+            reason: `R\xE9compense ${def.title}`
+          }
         });
-        if (!hasFirst) {
-            await prisma.achievement.create({ data: { teamId, achievementCode: 'first_win' } });
-            await prisma.message.create({
-                data: {
-                    teamId,
-                    sender: 'SUCCÈS',
-                    title: 'First Blood',
-                    content: 'Succès débloqué : première victoire !',
-                },
-            });
-        }
-        if (wins >= 5) {
-            const hasRoll = await prisma.achievement.findFirst({
-                where: { teamId, achievementCode: 'five_wins' },
-            });
-            if (!hasRoll) {
-                await prisma.achievement.create({ data: { teamId, achievementCode: 'five_wins' } });
-            }
-        }
-    }
-    await applyTrainingGains(teamId);
-    let leagueTable = null;
-    try {
-        leagueTable = await applyMatchToLeague(teamId, sim.result, sim.homeScore, sim.awayScore);
-    }
-    catch (e) {
-        console.error('league update failed', e);
-    }
-    // Chronicle — le match entre dans le récit
-    try {
-        const { matchChronicleText, writeChronicle } = await import('../lib/chronicle.js');
-        const ch = matchChronicleText(team.name, awayName, sim.homeScore, sim.awayScore, sim.result);
-        await writeChronicle(teamId, {
-            type: 'match',
-            tone: ch.tone,
-            headline: ch.headline,
-            body: ch.body,
-            meta: { result: sim.result, homeScore: sim.homeScore, awayScore: sim.awayScore, opponent: awayName },
+        const hasCW = await prisma.achievement.findFirst({
+          where: { teamId, achievementCode: "challenge_won" }
         });
-    }
-    catch (e) {
-        console.error('chronicle match failed', e);
-    }
-    // Manager Market AI world tick
-    let marketHeadlines = [];
-    try {
-        const market = await tickManagerMarket(teamId);
-        marketHeadlines = market.headlines;
-        if (marketHeadlines.length) {
-            const { writeChronicle } = await import('../lib/chronicle.js');
-            await writeChronicle(teamId, {
-                type: 'market',
-                tone: 'tension',
-                headline: marketHeadlines[0].slice(0, 120),
-                body: marketHeadlines.slice(0, 3).join(' · '),
-                meta: { headlines: marketHeadlines },
-            });
+        if (!hasCW) {
+          await prisma.achievement.create({
+            data: { teamId, achievementCode: "challenge_won" }
+          });
         }
+        challengeId = null;
+        challengeWins = 0;
+        challengeMatches = 0;
+        challengeStreak = 0;
+        challengeYouth = 0;
+      } else if (failed) {
+        challengeResult = {
+          status: "failed",
+          title: def.title,
+          note: "D\xE9fi \xE9chou\xE9 \u2014 limite de matchs atteinte."
+        };
+        await prisma.message.create({
+          data: {
+            teamId,
+            sender: "MANAGER LIVE",
+            title: `D\xE9fi \xE9chou\xE9 : ${def.title}`,
+            content: challengeResult.note
+          }
+        });
+        challengeId = null;
+        challengeWins = 0;
+        challengeMatches = 0;
+        challengeStreak = 0;
+        challengeYouth = 0;
+      } else {
+        const progressLabel = def.goalType === "wins" ? `${challengeWins}/${def.goalTarget} victoires \xB7 ${challengeMatches}/${def.matchesLimit} matchs` : def.goalType === "no_loss_streak" ? `S\xE9rie ${challengeStreak}/${def.goalTarget} \xB7 ${challengeMatches}/${def.matchesLimit} matchs` : `Progression ${challengeMatches}/${def.matchesLimit}`;
+        challengeResult = {
+          status: "ongoing",
+          title: def.title,
+          note: progressLabel
+        };
+      }
     }
-    catch (e) {
-        console.error('manager market tick failed', e);
+  }
+  await prisma.team.update({
+    where: { id: teamId },
+    data: {
+      wins,
+      draws,
+      losses,
+      budget: newBudget,
+      goldBalance,
+      challengeId,
+      challengeWins,
+      challengeMatches,
+      challengeStreak,
+      challengeYouth
     }
-    let event = null;
-    let eventsCreated = [];
-    try {
-        eventsCreated = await tickCareerEvents(teamId, { result: sim.result });
-        event = toLegacyUnexpectedShape(await getPendingEvent(teamId));
+  });
+  await prisma.transaction.create({
+    data: {
+      teamId,
+      type: "match_prize",
+      amount: sim.prize,
+      reason: `Match vs ${awayName} (${sim.homeScore}-${sim.awayScore})`
     }
-    catch (e) {
-        console.error('event engine tick failed', e);
+  });
+  const resultLabel = sim.result === "W" ? "Victoire" : sim.result === "D" ? "Match nul" : "D\xE9faite";
+  await prisma.message.create({
+    data: {
+      teamId,
+      sender: "REPORTING MATCH",
+      title: `${resultLabel} ${sim.homeScore}-${sim.awayScore} vs ${awayName}`,
+      content: `Prime : \xA3${sim.prize.toLocaleString()}.`
     }
-    res.json({
-        match: {
-            opponent: awayName,
-            homeName: team.name,
-            homeScore: sim.homeScore,
-            awayScore: sim.awayScore,
-            result: sim.result,
-            prize: sim.prize,
-            stats: sim.stats,
-            timeline: sim.timeline,
-            venue: 'Domicile',
-            competition: 'Championnat',
-        },
-        preview: {
-            opponent: awayName,
-            competition: 'Championnat',
-            venue: 'Domicile',
-            importance: sim.result === 'W' ? 'élevée' : 'normale',
-        },
-        team: { wins, draws, losses, budget: newBudget, goldBalance },
-        event,
-        eventsCreated,
-        challenge: challengeResult,
-        marketHeadlines,
-        leagueTable: leagueTable?.slice(0, 12) ?? null,
+  });
+  if (sim.result === "W") {
+    const hasFirst = await prisma.achievement.findFirst({
+      where: { teamId, achievementCode: "first_win" }
     });
+    if (!hasFirst) {
+      await prisma.achievement.create({ data: { teamId, achievementCode: "first_win" } });
+      await prisma.message.create({
+        data: {
+          teamId,
+          sender: "SUCC\xC8S",
+          title: "First Blood",
+          content: "Succ\xE8s d\xE9bloqu\xE9 : premi\xE8re victoire !"
+        }
+      });
+    }
+    if (wins >= 5) {
+      const hasRoll = await prisma.achievement.findFirst({
+        where: { teamId, achievementCode: "five_wins" }
+      });
+      if (!hasRoll) {
+        await prisma.achievement.create({ data: { teamId, achievementCode: "five_wins" } });
+      }
+    }
+  }
+  await applyTrainingGains(teamId);
+  let leagueTable = null;
+  try {
+    leagueTable = await applyMatchToLeague(teamId, sim.result, sim.homeScore, sim.awayScore);
+  } catch (e) {
+    console.error("league update failed", e);
+  }
+  try {
+    const { matchChronicleText, writeChronicle } = await import("../lib/chronicle.js");
+    const ch = matchChronicleText(team.name, awayName, sim.homeScore, sim.awayScore, sim.result);
+    await writeChronicle(teamId, {
+      type: "match",
+      tone: ch.tone,
+      headline: ch.headline,
+      body: ch.body,
+      meta: { result: sim.result, homeScore: sim.homeScore, awayScore: sim.awayScore, opponent: awayName }
+    });
+  } catch (e) {
+    console.error("chronicle match failed", e);
+  }
+  let marketHeadlines = [];
+  try {
+    const market = await tickManagerMarket(teamId);
+    marketHeadlines = market.headlines;
+    if (marketHeadlines.length) {
+      const { writeChronicle } = await import("../lib/chronicle.js");
+      await writeChronicle(teamId, {
+        type: "market",
+        tone: "tension",
+        headline: marketHeadlines[0].slice(0, 120),
+        body: marketHeadlines.slice(0, 3).join(" \xB7 "),
+        meta: { headlines: marketHeadlines }
+      });
+    }
+  } catch (e) {
+    console.error("manager market tick failed", e);
+  }
+  let event = null;
+  let eventsCreated = [];
+  try {
+    eventsCreated = await tickCareerEvents(teamId, { result: sim.result });
+    event = toLegacyUnexpectedShape(await getPendingEvent(teamId));
+  } catch (e) {
+    console.error("event engine tick failed", e);
+  }
+  res.json({
+    match: {
+      opponent: awayName,
+      homeName: team.name,
+      homeScore: sim.homeScore,
+      awayScore: sim.awayScore,
+      result: sim.result,
+      prize: sim.prize,
+      stats: sim.stats,
+      timeline: sim.timeline,
+      venue: "Domicile",
+      competition: "Championnat"
+    },
+    preview: {
+      opponent: awayName,
+      competition: "Championnat",
+      venue: "Domicile",
+      importance: sim.result === "W" ? "\xE9lev\xE9e" : "normale"
+    },
+    team: { wins, draws, losses, budget: newBudget, goldBalance },
+    event,
+    eventsCreated,
+    challenge: challengeResult,
+    marketHeadlines,
+    leagueTable: leagueTable?.slice(0, 12) ?? null
+  });
 });
-export default router;
+var matches_default = router;
+export {
+  matches_default as default
+};
