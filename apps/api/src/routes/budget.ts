@@ -6,7 +6,7 @@ const router = Router({ mergeParams: true });
 router.use(requireAuth);
 
 router.get('/', async (req, res) => {
-  const teamId = Number(req.params.teamId);
+  const teamId = Number((req.params as Record<string, string>).teamId);
   const team = await prisma.team.findFirst({
     where: { id: teamId, userId: req.user!.userId },
     include: { players: true },
