@@ -54,6 +54,17 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="alym-shell flex min-h-screen flex-col">
+      {/* Bandeau redesign — visible dès l’entrée en carrière */}
+      <div className="border-b border-[var(--brass)]/35 bg-[var(--brass)]/12 px-3 py-1.5 text-center">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brass)]">
+          FC-Density v0.3
+        </span>
+        <span className="mx-1.5 text-[var(--ink-faint)]">·</span>
+        <span className="text-[10px] text-[var(--ink-dim)]">
+          Bureau · Effectif rows · plus de cards clones
+        </span>
+      </div>
+
       {/* Top context bar */}
       <header className="shell-top">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-3 py-2.5 sm:px-4">
@@ -96,7 +107,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             ✉
             {unread > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-sky-500 px-1 text-[10px] font-bold text-white">
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--brass)] px-1 text-[10px] font-bold text-black">
                 {unread}
               </span>
             )}
@@ -123,7 +134,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span>
               Vision <strong className="text-white">{team?.tacticalVision ?? 'standard'}</strong>
             </span>
-            <span className="text-[var(--muted)]">LA MYLA · ALYM</span>
+            <span className="text-[var(--brass)]">v0.3 FC-Density</span>
           </div>
         </div>
       </header>
