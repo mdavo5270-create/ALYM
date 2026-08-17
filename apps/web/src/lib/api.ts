@@ -45,13 +45,26 @@ export const api = {
   createTeam: (body: { name: string; nation?: string; stadiumName?: string; badgeDesign?: number }) =>
     request<{ team: Team }>('/teams', { method: 'POST', body: JSON.stringify(body) }),
   getTeam: (id: number) => request<{ team: TeamDetail }>(`/teams/${id}`),
-  messages: (teamId: number, filter?: 'unread' | 'read') =>
-    request<{ messages: GameMessage[] }>(
-      `/teams/${teamId}/messages${filter ? `?filter=${filter}` : ''}`
-    ),
+  messages: (teamId: number) => request<{ messages: GameMessage[] }>(`/teams/${teamId}/messages`),
   markRead: (teamId: number, messageId: number) =>
     request<{ ok: boolean }>(`/teams/${teamId}/messages/${messageId}/read`, { method: 'PATCH' }),
   players: (teamId: number) => request<{ players: Player[] }>(`/teams/${teamId}/players`),
+  playMatch: (teamId: number) =>
+    request<{
+      match: { opponent: string; homeScore: number; awayScore: number; result: string; prize: number };
+      team: { wins: number; draws: number; losses: number; budget: number };
+    }>(`/teams/${teamId}/matches/play`, { method: 'POST' }),
+  shop: (teamId: number) =>
+    request<{ gold: number; items: ShopItem[] }>(`/teams/${teamId}/shop`),
+  buy: (teamId: number, itemId: string) =>
+    request<{ ok: boolean; gold: number; budget: number }>(`/teams/${teamId}/shop/buy`, {
+      method: 'POST',
+      body: JSON.stringify({ itemId }),
+    }),
+  achievements: (teamId: number) =>
+    request<{ achievements: Achievement[] }>(`/teams/${teamId}/achievements`),
+  budget: (teamId: number) =>
+    request<BudgetInfo>(`/teams/${teamId}/budget`),
 };
 
 export type Team = {
@@ -86,11 +99,24 @@ export type Player = {
   position: string;
   nation: string | null;
   salary: number;
-  speed: number;
-  dribble: number;
-  shot: number;
-  pass: number;
-  defense: number;
-  physique: number;
   rating: number;
+};
+
+export type ShopItem = { id: string; name: string; price: number; effect: string };
+
+export type Achievement = {
+  code: string;
+  name: string;
+  description: string;
+  unlocked: boolean;
+  unlockedAt: string | null;
+};
+
+export type BudgetInfo = {
+  budget: number;
+  gold: number;
+  weeklySalaries: number;
+  income: number;
+  expenses: number;
+  transactions: { id: number; type: string; amount: number; reason: string | null; transactionDate: string }[];
 };
