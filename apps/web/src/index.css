@@ -145,6 +145,14 @@
     border: 1px solid var(--rule);
     background: var(--panel);
   }
+  .panel-elevated {
+    border-radius: 2px;
+    border: 1px solid var(--rule);
+    background: var(--panel-2);
+  }
+  .player-row:hover {
+    background: var(--panel-2);
+  }
   .panel-soft {
     border-radius: 2px;
     border: 1px solid var(--rule);
@@ -224,6 +232,9 @@
   }
 
   .data-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+    letter-spacing: -0.02em;
     font-family: 'IBM Plex Mono', ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum';

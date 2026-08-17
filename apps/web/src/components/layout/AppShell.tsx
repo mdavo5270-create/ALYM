@@ -59,11 +59,25 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-3 py-2.5 sm:px-4">
           <AlymLogo size={28} />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[15px] font-semibold tracking-tight text-white">
+            <div className="truncate text-[15px] font-semibold tracking-tight text-[var(--ink)]">
               {team?.name ?? 'ALYM'}
             </div>
-            <div className="truncate text-[11px] text-[var(--muted)]">
-              {team?.nation ?? 'Carrière'} · {season} · {week} · Sécurité {team?.jobSecurity ?? 70}%
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 truncate text-[11px] text-[var(--ink-dim)]">
+              <span>{team?.nation ?? 'Carrière'}</span>
+              <span className="text-[var(--rule)]">·</span>
+              <span>{season}</span>
+              <span className="text-[var(--rule)]">·</span>
+              <span>{week}</span>
+              <span className="text-[var(--rule)]">·</span>
+              <span className={((team?.jobSecurity ?? 70) < 50 ? 'text-[var(--signal)]' : 'text-[var(--ink-dim)]')}>
+                Conseil {team?.jobSecurity ?? 70}%
+              </span>
+              {team?.budget != null && (
+                <>
+                  <span className="text-[var(--rule)]">·</span>
+                  <span className="data-num text-[var(--brass)]">{money(team.budget)}</span>
+                </>
+              )}
             </div>
           </div>
           <button

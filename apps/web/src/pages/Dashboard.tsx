@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { AppShell } from '../components/layout/AppShell';
-import { PlayerCard, OvrBadge, PosChip } from '../components/PlayerCard';
+import { PlayerCard, OvrBadge, PosChip, PlayerRow, PlayerListHeader } from '../components/PlayerCard';
 import {
   ArenaPanel,
   BigStat,
@@ -47,7 +47,7 @@ function SubNav({
           type="button"
           className={`shrink-0 border-b-2 px-3 py-2 text-[13px] font-medium transition ${
             active === it.id
-              ? 'border-sky-400 text-sky-300'
+              ? 'border-[var(--brass)] text-[var(--brass)]'
               : 'border-transparent text-[var(--muted)] hover:text-white'
           }`}
           onClick={() => onChange(it.id)}
@@ -106,7 +106,7 @@ function PlayerDrawer() {
         className="flex h-full w-full max-w-md flex-col border-l border-white/10 bg-[var(--elevated)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start gap-4 border-b border-white/8 bg-gradient-to-br from-sky-950/40 to-transparent p-4">
+        <div className="flex items-start gap-4 border-b border-white/8 bg-gradient-to-br from-[var(--brass)]/5 to-transparent p-4">
           <div className="text-center">
             <div className="data-num text-4xl font-bold text-white">{p.rating ?? 65}</div>
             <div className="text-[10px] uppercase tracking-wide text-white/45">OVR</div>
@@ -120,7 +120,7 @@ function PlayerDrawer() {
             </div>
             <div className="mt-2 text-[12px] text-amber-200/90">{money(p.salary)}/sem</div>
           </div>
-          <button type="button" className="text-sky-400" onClick={() => setDrawer(null)}>
+          <button type="button" className="text-[var(--brass)]" onClick={() => setDrawer(null)}>
             Fermer
           </button>
         </div>
@@ -142,7 +142,7 @@ function PlayerDrawer() {
                     <span className="data-num text-white">{v ?? '—'}</span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full rounded-full bg-sky-500/80" style={{ width: `${v ?? 50}%` }} />
+                    <div className="h-full rounded-full bg-[var(--brass)]/80" style={{ width: `${v ?? 50}%` }} />
                   </div>
                 </div>
               ))}
@@ -256,13 +256,20 @@ function CentralHub() {
   const priorityColor: Record<string, string> = {
     urgent: 'text-red-400',
     action: 'text-amber-300',
-    important: 'text-sky-300',
+    important: 'text-[var(--brass)]',
     fyi: 'text-[var(--muted)]',
   };
 
   return (
-    <div className="animate-enter space-y-4">
-      <SectionTitle title="Central" sub="Cockpit manager · même club · même saison" />
+    <div className="animate-enter space-y-5">
+      <div className="mb-1">
+        <h1 className="type-display text-[26px] tracking-tight text-[var(--ink)] sm:text-[30px]">
+          Bureau
+        </h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">
+          Command Center · priorités · prochain match · confiance
+        </p>
+      </div>
 
       {activeEvent && (
         <Card className="border-amber-500/30 bg-amber-500/10 p-4">
@@ -284,7 +291,7 @@ function CentralHub() {
       {/* Club identity strip — FC26 club-select density */}
       <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr_0.9fr]">
         <ArenaPanel className="p-4">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-sky-300/90">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--brass)]">
             {matchPreview?.competition ?? 'Super Ligue'} · {matchPreview?.kickoffLabel ?? 'Prochain match'}
           </div>
           <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
@@ -292,7 +299,7 @@ function CentralHub() {
               <div className="text-xl font-bold tracking-tight text-white sm:text-2xl">{team?.name ?? 'Vous'}</div>
               <div className="text-[11px] text-white/45">Domicile</div>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-sky-400/40 bg-sky-500/15 text-[12px] font-bold text-sky-200">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--brass)]/40 bg-[var(--brass)]/10 text-[12px] font-bold text-[var(--brass)]">
               VS
             </div>
             <div>
@@ -349,7 +356,7 @@ function CentralHub() {
             <div className="text-[15px] font-semibold text-white">Tâches manager</div>
             <button
               type="button"
-              className="text-[12px] text-sky-400"
+              className="text-[12px] text-[var(--brass)]"
               onClick={() => setSpaceSub(spaceSub === 'tasks' ? 'home' : 'tasks')}
             >
               Voir tout
@@ -386,7 +393,7 @@ function CentralHub() {
           <div className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Confiance conseil</div>
           <BigStat value={`${sec}%`} label="Job security" size="lg" tone={sec >= 55 ? 'good' : 'bad'} />
           <ProgressBar value={sec} className="mt-3" />
-          <button type="button" className="mt-3 text-[12px] text-sky-400" onClick={() => goMore('board')}>
+          <button type="button" className="mt-3 text-[12px] text-[var(--brass)]" onClick={() => goMore('board')}>
             Objectifs ›
           </button>
         </Card>
@@ -396,7 +403,7 @@ function CentralHub() {
         <Card className="p-4">
           <div className="mb-2 flex justify-between">
             <span className="text-[15px] font-semibold text-white">Courrier</span>
-            <button type="button" className="text-[12px] text-sky-400" onClick={() => goMore('news')}>
+            <button type="button" className="text-[12px] text-[var(--brass)]" onClick={() => goMore('news')}>
               Inbox ›
             </button>
           </div>
@@ -419,7 +426,7 @@ function CentralHub() {
         <Card className="p-4">
           <div className="mb-2 flex justify-between">
             <span className="text-[15px] font-semibold text-white">Monde</span>
-            <button type="button" className="text-[12px] text-sky-400" onClick={() => goMore('manager')}>
+            <button type="button" className="text-[12px] text-[var(--brass)]" onClick={() => goMore('manager')}>
               Market ›
             </button>
           </div>
@@ -443,7 +450,7 @@ function toneClass(tone: string) {
   if (tone === 'triumph') return 'border-l-emerald-400';
   if (tone === 'setback') return 'border-l-rose-400';
   if (tone === 'tension') return 'border-l-amber-400';
-  if (tone === 'hope') return 'border-l-sky-400';
+  if (tone === 'hope') return 'border-l-[var(--brass)]';
   if (tone === 'turning') return 'border-l-violet-400';
   return 'border-l-white/25';
 }
@@ -460,18 +467,18 @@ function ChronicleFeed({ preview }: { preview?: boolean }) {
           <div className="text-[11px] text-[var(--muted)]">Le club comme récit · signature ALYM</div>
         </div>
         {preview ? (
-          <button type="button" className="text-[12px] text-sky-400" onClick={() => goMore('chronicle')}>
+          <button type="button" className="text-[12px] text-[var(--brass)]" onClick={() => goMore('chronicle')}>
             Toute la saison ›
           </button>
         ) : (
-          <button type="button" className="text-[12px] text-sky-400" onClick={() => loadChronicle()}>
+          <button type="button" className="text-[12px] text-[var(--brass)]" onClick={() => loadChronicle()}>
             Actualiser
           </button>
         )}
       </div>
       {!preview && seasonReview && (
         <div className="mb-4 rounded-xl border border-white/8 bg-black/30 p-3">
-          <div className="text-[11px] uppercase tracking-wide text-sky-300/80">La saison dont on se souvient</div>
+          <div className="text-[11px] uppercase tracking-wide text-[var(--brass)]/80">La saison dont on se souvient</div>
           <p className="mt-1 text-[13px] leading-relaxed text-white/70">{seasonReview.narrative}</p>
           <div className="mt-2 data-num text-[12px] text-white/45">
             {seasonReview.record.wins}V · {seasonReview.record.draws}N · {seasonReview.record.losses}D ·{' '}
@@ -527,6 +534,7 @@ function SquadHub() {
     setSelectedPlayerId,
     setDrawer,
     team,
+    selectedPlayerId,
   } = useGame();
   const sub = (SQUAD_SUBS.find((s) => s.id === spaceSub) ? spaceSub : 'players') as string;
 
@@ -536,8 +544,16 @@ function SquadHub() {
     for (const p of players) {
       (g[p.position] ?? (g[p.position] = [])).push(p);
     }
-    return order.map((pos) => ({ pos, list: g[pos] ?? [] }));
+    return order.map((pos) => ({
+      pos,
+      list: (g[pos] ?? []).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)),
+    }));
   }, [players]);
+
+  const sorted = useMemo(
+    () => [...players].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)),
+    [players]
+  );
 
   const openPlayer = (id: number) => {
     setSelectedPlayerId(id);
@@ -546,45 +562,91 @@ function SquadHub() {
 
   return (
     <div className="animate-enter">
-      <SectionTitle title="Effectif" sub={`${players.length} joueurs · ${team?.name ?? ''}`} />
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="type-display text-[26px] tracking-tight text-[var(--ink)] sm:text-[30px]">
+            Effectif
+          </h1>
+          <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">
+            {players.length} joueurs · {team?.name ?? 'Club'} · densité Squad Hub
+          </p>
+        </div>
+        <div className="flex items-center gap-3 text-[12px] text-[var(--ink-dim)]">
+          <span>
+            <span className="data-num text-[var(--ink)]">
+              {players.filter((p) => (p.rating ?? 0) >= 75).length}
+            </span>{' '}
+            élites
+          </span>
+          <span className="text-[var(--rule)]">|</span>
+          <span>
+            <span className="data-num text-[var(--ink)]">
+              {players.filter((p) => p.isYouth).length}
+            </span>{' '}
+            jeunes
+          </span>
+        </div>
+      </div>
+
       <SubNav items={SQUAD_SUBS} active={sub} onChange={setSpaceSub} />
 
       {(sub === 'overview' || sub === 'depth') && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="space-y-5">
           {byPos.map(({ pos, list }) => (
-            <Card key={pos} className="p-3">
-              <div className="mb-2 flex items-center justify-between">
+            <div key={pos}>
+              <div className="mb-1.5 flex items-center gap-2 px-1">
                 <PosChip pos={pos} />
-                <span className="text-[12px] text-[var(--muted)]">{list.length}</span>
+                <span className="text-[12px] text-[var(--ink-dim)]">{list.length}</span>
               </div>
-              <div className="space-y-1">
-                {list.slice(0, 5).map((p) => (
-                  <PlayerCard key={p.id} player={p} variant="compact" onClick={() => openPlayer(p.id)} />
+              <div className="panel overflow-hidden">
+                <PlayerListHeader />
+                {list.map((p) => (
+                  <PlayerRow
+                    key={p.id}
+                    player={p}
+                    selected={selectedPlayerId === p.id}
+                    onClick={() => openPlayer(p.id)}
+                  />
                 ))}
+                {!list.length && (
+                  <div className="px-3 py-4 text-[13px] text-[var(--ink-dim)]">
+                    Aucun joueur à ce poste.
+                  </div>
+                )}
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       )}
 
       {(sub === 'players' || sub === 'development' || sub === 'contracts') && (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {players.map((p) => (
-            <PlayerCard
+        <div className="panel overflow-hidden">
+          <PlayerListHeader
+            showValue={sub !== 'development'}
+            showFitness={sub !== 'contracts'}
+            showContract={sub === 'contracts' || sub === 'players'}
+          />
+          {sorted.map((p) => (
+            <PlayerRow
               key={p.id}
               player={p}
-              variant={sub === 'development' ? 'detailed' : 'standard'}
+              selected={selectedPlayerId === p.id}
               onClick={() => openPlayer(p.id)}
+              showValue={sub !== 'development'}
+              showFitness={sub !== 'contracts'}
+              showContract={sub === 'contracts' || sub === 'players'}
             />
           ))}
-          {!players.length && <EmptyState title="Aucun joueur" body="Créez une équipe pour commencer." />}
+          {!players.length && (
+            <div className="px-3 py-8 text-center text-[13px] text-[var(--ink-dim)]">
+              Aucun joueur — créez une équipe pour commencer.
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
-
-/* ─── MATCH ─── */
 
 function MatchHub() {
   const {
@@ -607,7 +669,7 @@ function MatchHub() {
 
       {(sub === 'preview' || sub === 'live' || sub === 'post') && (
         <ArenaPanel className="p-6">
-          <div className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-300/85">
+          <div className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--brass)]/85">
             {matchPreview?.competition ?? 'Super Ligue'} · {matchPreview?.venue ?? 'Domicile'}
           </div>
           <div className="mt-8 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
@@ -623,7 +685,7 @@ function MatchHub() {
                   {lastMatch!.awayScore}
                 </div>
               ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full border border-sky-400/50 bg-sky-500/15 text-sm font-bold text-sky-200">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[var(--brass)]/50 bg-[var(--brass)]/10 text-sm font-bold text-[var(--brass)]">
                   VS
                 </div>
               )}
@@ -694,7 +756,7 @@ function MatchHub() {
                 </div>
                 <div className="flex h-1.5 overflow-hidden rounded-full bg-white/10">
                   <div
-                    className="bg-sky-400"
+                    className="bg-[var(--brass)]"
                     style={{ width: `${pct ? a : Math.min(100, (Number(a) / Math.max(1, Number(a) + Number(b))) * 100)}%` }}
                   />
                   <div className="flex-1 bg-white/15" />
@@ -711,7 +773,7 @@ function MatchHub() {
           <ul className="space-y-2">
             {lastMatch.timeline.map((e, i) => (
               <li key={i} className="flex gap-3 border-b border-white/5 py-2 text-[13px] last:border-0">
-                <span className="data-num w-10 shrink-0 font-semibold text-sky-300/90">{e.minute}'</span>
+                <span className="data-num w-10 shrink-0 font-semibold text-[var(--brass)]">{e.minute}'</span>
                 <span className="text-white">{e.label}</span>
               </li>
             ))}
@@ -795,7 +857,7 @@ function MarketHub() {
 
       {sub === 'mgr' && (
         <div className="space-y-3">
-          <button type="button" className="text-[13px] text-sky-400" onClick={() => goMore('manager')}>
+          <button type="button" className="text-[13px] text-[var(--brass)]" onClick={() => goMore('manager')}>
             Ouvrir Manager Market complet ›
           </button>
           {(managerJobs ?? []).slice(0, 6).map((j) => (
@@ -1003,7 +1065,7 @@ function MoreNews() {
             type="button"
             onClick={() => markRead(m.id)}
             className={`w-full rounded-2xl border p-4 text-left ${
-              m.read ? 'border-white/5 bg-white/[0.02]' : 'border-sky-500/20 bg-sky-500/5'
+              m.read ? 'border-white/5 bg-white/[0.02]' : 'border-[var(--brass)]/25 bg-[var(--brass)]/5'
             }`}
           >
             <div className="flex justify-between gap-2">
@@ -1074,7 +1136,7 @@ function MoreTraining() {
                   onClick={() => setTraining(p.id, pl.id)}
                   className={`rounded-lg px-2 py-1 text-[11px] ${
                     (p.trainingPlan ?? 'balanced') === pl.id
-                      ? 'bg-sky-500/20 text-sky-200'
+                      ? 'bg-[var(--brass)]/20 text-[var(--brass)]'
                       : 'bg-white/5 text-[var(--muted)]'
                   }`}
                 >
@@ -1149,7 +1211,7 @@ function MoreAchievements() {
       <SectionTitle title="Succès" />
       <div className="grid gap-2 sm:grid-cols-2">
         {(achievements ?? []).map((a) => (
-          <Card key={a.code} className={`p-3 ${a.unlocked ? 'border-sky-500/30' : 'opacity-70'}`}>
+          <Card key={a.code} className={`p-3 ${a.unlocked ? 'border-[var(--brass)]/30' : 'opacity-70'}`}>
             <div className="flex justify-between">
               <span className="font-semibold text-white">{a.name}</span>
               <Badge tone={a.unlocked ? 'brass' : 'neutral'}>{a.unlocked ? 'OK' : '—'}</Badge>
@@ -1175,7 +1237,7 @@ function MoreCalendar() {
       <SectionTitle title="Calendrier" sub={`Saison 1 · J${played + 1}`} />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {days.map((d) => (
-          <Card key={d.j} className={`p-3 ${d.isMatch ? 'border-sky-500/25' : ''}`}>
+          <Card key={d.j} className={`p-3 ${d.isMatch ? 'border-[var(--brass)]/25' : ''}`}>
             <div className="text-[11px] text-[var(--muted)]">J{d.j + 1}</div>
             <div className="text-[13px] font-medium text-white">{d.label}</div>
           </Card>
@@ -1309,7 +1371,7 @@ function MoreCompetitions() {
           <div
             key={r.teamName}
             className={`grid grid-cols-[2rem_1fr_repeat(5,2rem)] gap-1 px-3 py-2 text-[13px] ${
-              r.isPlayer ? 'bg-sky-500/10 font-semibold text-sky-100' : 'text-white'
+              r.isPlayer ? 'bg-[var(--brass)]/10 font-semibold text-[var(--ink)]' : 'text-white'
             }`}
           >
             <span className="data-num text-[var(--muted)]">{r.rank}</span>

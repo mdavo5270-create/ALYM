@@ -1,13 +1,14 @@
+import type { ReactNode } from 'react';
 import type { Player } from '../lib/api';
 import { money } from './ui';
 
 export type PlayerCardVariant = 'compact' | 'standard' | 'detailed' | 'match' | 'transfer' | 'scout';
 
 function ovrTone(r: number) {
-  if (r >= 82) return 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10';
-  if (r >= 74) return 'text-sky-300 border-sky-500/40 bg-sky-500/10';
-  if (r >= 66) return 'text-amber-300 border-amber-500/30 bg-amber-500/10';
-  return 'text-slate-300 border-white/10 bg-white/5';
+  if (r >= 82) return 'border-[var(--ok)]/50 text-[var(--ok)] bg-[var(--ok)]/10';
+  if (r >= 74) return 'border-[var(--brass)]/55 text-[var(--brass)] bg-[var(--brass)]/10';
+  if (r >= 66) return 'border-amber-500/40 text-amber-200 bg-amber-500/10';
+  return 'border-[var(--rule)] text-[var(--ink-dim)] bg-black/20';
 }
 
 export function OvrBadge({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' | 'lg' }) {
@@ -15,7 +16,7 @@ export function OvrBadge({ rating, size = 'md' }: { rating: number; size?: 'sm' 
     size === 'sm' ? 'h-7 w-7 text-[11px]' : size === 'lg' ? 'h-14 w-14 text-xl' : 'h-10 w-10 text-[15px]';
   return (
     <span
-      className={`inline-flex ${s} items-center justify-center rounded-xl border font-bold data-num ${ovrTone(rating)}`}
+      className={`inline-flex ${s} items-center justify-center border font-bold data-num ${ovrTone(rating)}`}
     >
       {rating}
     </span>
@@ -25,18 +26,121 @@ export function OvrBadge({ rating, size = 'md' }: { rating: number; size?: 'sm' 
 export function PosChip({ pos }: { pos: string }) {
   const map: Record<string, string> = {
     GK: 'bg-amber-500/15 text-amber-200',
-    DF: 'bg-sky-500/15 text-sky-200',
-    MF: 'bg-emerald-500/15 text-emerald-200',
-    FW: 'bg-rose-500/15 text-rose-200',
+    DF: 'bg-[var(--brass)]/15 text-[var(--brass)]',
+    MF: 'bg-[var(--ok)]/15 text-[var(--ok)]',
+    FW: 'bg-[var(--signal)]/15 text-rose-200',
   };
   return (
-    <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${map[pos] ?? 'bg-white/10 text-slate-300'}`}>
+    <span
+      className={`rounded-sm px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+        map[pos] ?? 'bg-white/10 text-slate-300'
+      }`}
+    >
       {pos}
     </span>
   );
 }
 
-/** Même identité visuelle partout — variantes de densité seulement */
+/** Dense management row — primary language for Squad / Market (FC Squad Hub inspired) */
+export function PlayerRow({
+  player,
+  selected,
+  onClick,
+  showValue = true,
+  showFitness = true,
+  showContract = true,
+  rightSlot,
+}: {
+  player: Player;
+  selected?: boolean;
+  onClick?: () => void;
+  showValue?: boolean;
+  showFitness?: boolean;
+  showContract?: boolean;
+  rightSlot?: ReactNode;
+}) {
+  const rating = player.rating ?? 65;
+  const value = (player.rating ?? 60) * 12000;
+  const fitness = player.physique ?? 80;
+  const contractYear = player.contractUntil ? String(player.contractUntil).slice(0, 4) : '2028';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`player-row group flex w-full items-center gap-3 border-b border-[var(--rule)] px-3 py-2.5 text-left transition hover:bg-[var(--panel-2)] ${
+        selected
+          ? 'bg-[var(--panel-2)] border-l-2 border-l-[var(--brass)]'
+          : 'border-l-2 border-l-transparent'
+      }`}
+    >
+      <span
+        className={`data-num inline-flex h-9 w-9 shrink-0 items-center justify-center border text-[14px] font-semibold ${ovrTone(
+          rating
+        )}`}
+      >
+        {rating}
+      </span>
+      <span className="w-8 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-dim)]">
+        {player.position}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-[14px] font-medium text-[var(--ink)]">{player.name}</span>
+          {player.isLegend && <span className="label-caps text-[var(--brass)]">Légende</span>}
+          {player.isYouth && <span className="label-caps text-[var(--ink-dim)]">Jeune</span>}
+          {player.onLoan && <span className="label-caps text-[var(--signal)]">Prêt</span>}
+        </div>
+        <div className="mt-0.5 text-[11px] text-[var(--ink-dim)]">
+          {player.nation ?? '—'} · pot. {player.potential ?? '—'}
+        </div>
+      </div>
+      {showValue && (
+        <span className="data-num hidden w-16 shrink-0 text-right text-[12px] text-[var(--ink-dim)] sm:block">
+          {money(value)}
+        </span>
+      )}
+      {showFitness && (
+        <span
+          className={`hidden w-12 shrink-0 text-right text-[12px] data-num sm:block ${
+            fitness >= 85 ? 'text-[var(--ok)]' : fitness >= 60 ? 'text-amber-200' : 'text-[var(--signal)]'
+          }`}
+        >
+          {fitness}%
+        </span>
+      )}
+      {showContract && (
+        <span className="hidden w-12 shrink-0 text-right text-[11px] text-[var(--ink-faint)] sm:block">
+          {contractYear}
+        </span>
+      )}
+      {rightSlot}
+    </button>
+  );
+}
+
+export function PlayerListHeader({
+  showValue = true,
+  showFitness = true,
+  showContract = true,
+}: {
+  showValue?: boolean;
+  showFitness?: boolean;
+  showContract?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3 border-b border-[var(--rule)] bg-[var(--paper-2)] px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-[var(--ink-faint)]">
+      <span className="w-9 shrink-0 text-center">OVR</span>
+      <span className="w-8 shrink-0">Pos</span>
+      <span className="flex-1">Joueur</span>
+      {showValue && <span className="hidden w-16 shrink-0 text-right sm:block">Valeur</span>}
+      {showFitness && <span className="hidden w-12 shrink-0 text-right sm:block">Forme</span>}
+      {showContract && <span className="hidden w-12 shrink-0 text-right sm:block">Contrat</span>}
+    </div>
+  );
+}
+
+/** Card variants kept for transfer / scout / match contexts */
 export function PlayerCard({
   player,
   variant = 'standard',
@@ -50,16 +154,16 @@ export function PlayerCard({
 }) {
   const rating = player.rating ?? 65;
   const base =
-    'w-full text-left transition border border-white/8 bg-[var(--surface)] hover:border-white/15 active:scale-[0.99]';
-  const sel = selected ? 'ring-1 ring-sky-400/50 border-sky-400/30' : '';
+    'w-full text-left transition border border-[var(--rule)] bg-[var(--panel)] hover:border-[var(--ink-faint)] active:scale-[0.99]';
+  const sel = selected ? 'ring-1 ring-[var(--brass)]/50 border-[var(--brass)]/40' : '';
 
   if (variant === 'compact') {
     return (
-      <button type="button" onClick={onClick} className={`${base} ${sel} flex items-center gap-3 rounded-xl px-3 py-2`}>
+      <button type="button" onClick={onClick} className={`${base} ${sel} flex items-center gap-3 px-3 py-2`}>
         <OvrBadge rating={rating} size="sm" />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[14px] font-semibold text-white">{player.name}</div>
-          <div className="flex items-center gap-2 text-[11px] text-[var(--muted)]">
+          <div className="truncate text-[14px] font-semibold text-[var(--ink)]">{player.name}</div>
+          <div className="flex items-center gap-2 text-[11px] text-[var(--ink-dim)]">
             <PosChip pos={player.position} />
             <span>{player.nation ?? '—'}</span>
           </div>
@@ -70,11 +174,11 @@ export function PlayerCard({
 
   if (variant === 'transfer' || variant === 'scout') {
     return (
-      <button type="button" onClick={onClick} className={`${base} ${sel} rounded-xl p-3`}>
+      <button type="button" onClick={onClick} className={`${base} ${sel} p-3`}>
         <div className="flex items-start justify-between gap-2">
           <div>
-            <div className="text-[15px] font-semibold text-white">{player.name}</div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-[var(--muted)]">
+            <div className="text-[15px] font-semibold text-[var(--ink)]">{player.name}</div>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-[var(--ink-dim)]">
               <PosChip pos={player.position} />
               <span>Pot. {player.potential ?? '—'}</span>
               {player.nation && <span>{player.nation}</span>}
@@ -82,26 +186,26 @@ export function PlayerCard({
           </div>
           <OvrBadge rating={rating} />
         </div>
-        <div className="mt-2 flex justify-between text-[12px] text-[var(--muted)]">
+        <div className="mt-2 flex justify-between text-[12px] text-[var(--ink-dim)]">
           <span>Salaire {money(player.salary)}</span>
-          <span className="data-num text-amber-200/90">{money((player.rating ?? 60) * 12000)}</span>
+          <span className="data-num text-[var(--brass)]">{money((player.rating ?? 60) * 12000)}</span>
         </div>
       </button>
     );
   }
 
   return (
-    <button type="button" onClick={onClick} className={`${base} ${sel} rounded-xl p-3`}>
+    <button type="button" onClick={onClick} className={`${base} ${sel} p-3`}>
       <div className="flex items-center gap-3">
         <OvrBadge rating={rating} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-[15px] font-semibold text-white">{player.name}</span>
-            {player.isLegend && <span className="text-[10px] text-amber-300">LÉGENDE</span>}
-            {player.isYouth && <span className="text-[10px] text-sky-300">JEUNE</span>}
-            {player.onLoan && <span className="text-[10px] text-orange-300">PRÊT</span>}
+            <span className="truncate text-[15px] font-semibold text-[var(--ink)]">{player.name}</span>
+            {player.isLegend && <span className="text-[10px] text-[var(--brass)]">LÉGENDE</span>}
+            {player.isYouth && <span className="text-[10px] text-[var(--ink-dim)]">JEUNE</span>}
+            {player.onLoan && <span className="text-[10px] text-[var(--signal)]">PRÊT</span>}
           </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] text-[var(--muted)]">
+          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] text-[var(--ink-dim)]">
             <PosChip pos={player.position} />
             <span>{player.nation ?? '—'}</span>
             <span className="data-num">{money(player.salary)}/sem</span>
@@ -109,7 +213,7 @@ export function PlayerCard({
         </div>
       </div>
       {variant === 'detailed' && (
-        <div className="mt-3 grid grid-cols-3 gap-2 border-t border-white/5 pt-2 text-center text-[11px]">
+        <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[var(--rule)] pt-2 text-center text-[11px]">
           {[
             ['VIT', player.speed],
             ['DRI', player.dribble],
@@ -118,9 +222,9 @@ export function PlayerCard({
             ['DEF', player.defense],
             ['PHY', player.physique],
           ].map(([k, v]) => (
-            <div key={String(k)} className="rounded-lg bg-black/30 py-1">
-              <div className="text-[9px] uppercase text-[var(--muted)]">{k}</div>
-              <div className="data-num font-semibold text-white">{v ?? '—'}</div>
+            <div key={String(k)} className="bg-black/25 py-1">
+              <div className="text-[9px] uppercase text-[var(--ink-dim)]">{k}</div>
+              <div className="data-num font-semibold text-[var(--ink)]">{v ?? '—'}</div>
             </div>
           ))}
         </div>
