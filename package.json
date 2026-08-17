@@ -7,7 +7,7 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "concurrently -n web,api -c yellow,cyan \"yarn workspace @alym/web dev\" \"yarn workspace @alym/api dev\"",
+    "dev": "echo \"Run dev:web and dev:api separately\"",
     "dev:web": "yarn workspace @alym/web dev",
     "dev:api": "yarn workspace @alym/api dev",
     "build:web": "yarn workspace @alym/web build",
@@ -18,9 +18,6 @@
     "db:migrate": "yarn workspace @alym/api db:migrate",
     "db:push": "yarn workspace @alym/api db:push",
     "setup": "yarn install && yarn db:generate && yarn db:migrate"
-  },
-  "devDependencies": {
-    "concurrently": "^9.1.0"
   },
   "engines": {
     "node": ">=20"
