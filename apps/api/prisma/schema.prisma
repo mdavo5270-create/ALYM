@@ -19,19 +19,22 @@ model User {
 }
 
 model Team {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  name         String   @unique
-  nation       String?
-  stadiumName  String?
-  badgeDesign  Int?
-  budget       Float    @default(200000)
-  reputation   Int      @default(50)
-  wins         Int      @default(0)
-  draws        Int      @default(0)
-  losses       Int      @default(0)
-  goldBalance  Int      @default(0)
-  createdAt    DateTime @default(now())
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  name            String   @unique
+  nation          String?
+  stadiumName     String?
+  badgeDesign     Int?
+  budget          Float    @default(200000)
+  reputation      Int      @default(50)
+  wins            Int      @default(0)
+  draws           Int      @default(0)
+  losses          Int      @default(0)
+  goldBalance     Int      @default(0)
+  tacticalVision  String   @default("standard")
+  jobSecurity     Int      @default(70)
+  youthPromoted   Int      @default(0)
+  createdAt       DateTime @default(now())
 
   user         User           @relation(fields: [userId], references: [id])
   players      Player[]
@@ -52,6 +55,8 @@ model Player {
   pass          Int
   defense       Int
   physique      Int
+  potential     Int       @default(70)
+  isYouth       Boolean   @default(false)
   contractUntil DateTime?
   teamId        Int?
   createdAt     DateTime  @default(now())
