@@ -3,12 +3,17 @@ import { AppShell } from '../components/layout/AppShell';
 import { PlayerCard, OvrBadge, PosChip, PlayerRow, PlayerListHeader } from '../components/PlayerCard';
 import {
   ArenaPanel,
+  AttrBar,
   BigStat,
+  ClubCrest,
   ConditionRow,
   HonourGrid,
+  LevelTile,
   MetricTile,
   StartCta,
+  StatBlock,
   StripCard,
+  TaskRow,
 } from '../components/patterns';
 import {
   Badge,
@@ -91,61 +96,89 @@ function PlayerDrawer() {
   const p = players.find((x) => x.id === selectedPlayerId);
   if (drawer !== 'player' || !p) return null;
 
-  const attrs: [string, number | undefined][] = [
-    ['Vitesse', p.speed],
-    ['Dribble', p.dribble],
-    ['Tir', p.shot],
-    ['Passe', p.pass],
-    ['Défense', p.defense],
-    ['Physique', p.physique],
-  ];
+  const technical = [
+    ['Dribble', p.dribble ?? 50],
+    ['Tir', p.shot ?? 50],
+    ['Passe', p.pass ?? 50],
+  ] as const;
+  const physical = [
+    ['Vitesse', p.speed ?? 50],
+    ['Physique', p.physique ?? 50],
+    ['Défense', p.defense ?? 50],
+  ] as const;
+  const ovr = p.rating ?? 65;
+  const pot = p.potential ?? ovr;
 
   return (
-    <div className="fixed inset-0 z-[55] flex justify-end bg-black/50 backdrop-blur-sm" onClick={() => setDrawer(null)}>
+    <div className="fixed inset-0 z-[55] flex justify-end bg-black/60 backdrop-blur-sm" onClick={() => setDrawer(null)}>
       <div
-        className="flex h-full w-full max-w-md flex-col border-l border-white/10 bg-[var(--elevated)] shadow-2xl"
+        className="flex h-full w-full max-w-lg flex-col border-l border-[var(--rule)] bg-[var(--paper)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start gap-4 border-b border-white/8 bg-gradient-to-br from-[var(--brass)]/5 to-transparent p-4">
-          <div className="text-center">
-            <div className="data-num text-4xl font-bold text-white">{p.rating ?? 65}</div>
-            <div className="text-[10px] uppercase tracking-wide text-white/45">OVR</div>
+        {/* Header profile — FC player card language */}
+        <div className="border-b border-[var(--rule)] bg-[var(--panel)] p-5">
+          <div className="mb-4 flex items-start justify-between">
+            <div className="label-caps text-[var(--brass)]">Fiche joueur</div>
+            <button type="button" className="text-[12px] text-[var(--ink-dim)] hover:text-[var(--ink)]" onClick={() => setDrawer(null)}>
+              Fermer ✕
+            </button>
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-[20px] font-bold tracking-tight text-white">{p.name}</div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-[var(--muted)]">
-              <PosChip pos={p.position} />
-              <span>{p.nation ?? '—'}</span>
-              <span className="data-num">POT {p.potential ?? '—'}</span>
+          <div className="flex items-center gap-4">
+            <div className="flex h-20 w-20 flex-col items-center justify-center border border-[var(--brass)]/50 bg-black/30">
+              <div className="data-num text-3xl font-bold text-[var(--ink)]">{ovr}</div>
+              <div className="text-[9px] uppercase tracking-wider text-[var(--ink-faint)]">OVR</div>
             </div>
-            <div className="mt-2 text-[12px] text-amber-200/90">{money(p.salary)}/sem</div>
+            <div className="min-w-0 flex-1">
+              <div className="type-display text-2xl tracking-tight text-[var(--ink)]">{p.name}</div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                <PosChip pos={p.position} />
+                <span className="text-[12px] text-[var(--ink-dim)]">{p.nation ?? '—'}</span>
+                {p.isYouth && <span className="rounded-sm bg-[var(--brass)]/15 px-1.5 py-0.5 text-[10px] text-[var(--brass)]">JEUNE</span>}
+              </div>
+              <div className="mt-2 flex gap-4 text-[12px]">
+                <span className="text-[var(--ink-dim)]">POT <strong className="data-num text-[var(--ink)]">{pot}</strong></span>
+                <span className="text-[var(--ink-dim)]">Âge <strong className="data-num text-[var(--ink)]">{(p as { age?: number }).age ?? '—'}</strong></span>
+              </div>
+            </div>
           </div>
-          <button type="button" className="text-[var(--brass)]" onClick={() => setDrawer(null)}>
-            Fermer
-          </button>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="panel-soft px-2 py-2 text-center">
+              <div className="data-num text-lg text-[var(--ink)]">{money((p.rating ?? 60) * 12000)}</div>
+              <div className="label-caps">Valeur</div>
+            </div>
+            <div className="panel-soft px-2 py-2 text-center">
+              <div className="data-num text-lg text-[var(--brass)]">{money(p.salary)}</div>
+              <div className="label-caps">Salaire/sem</div>
+            </div>
+            <div className="panel-soft px-2 py-2 text-center">
+              <div className="data-num text-lg text-[var(--ink)]">{p.contractUntil ? String(p.contractUntil).slice(0, 4) : '2028'}</div>
+              <div className="label-caps">Contrat</div>
+            </div>
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <Card className="p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Contrat</div>
-            <div className="mt-1 flex justify-between text-[14px]">
-              <span>{money(p.salary)}/sem</span>
-              <span className="text-[var(--muted)]">{p.contractUntil ? p.contractUntil.slice(0, 10) : '—'}</span>
-            </div>
-          </Card>
+
+        <div className="flex-1 space-y-5 overflow-y-auto p-5">
           <div>
-            <div className="mb-2 text-[13px] font-semibold text-white">Attributs</div>
-            <div className="space-y-2">
-              {attrs.map(([label, v]) => (
-                <div key={label}>
-                  <div className="mb-0.5 flex justify-between text-[12px]">
-                    <span className="text-[var(--muted)]">{label}</span>
-                    <span className="data-num text-white">{v ?? '—'}</span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full rounded-full bg-[var(--brass)]/80" style={{ width: `${v ?? 50}%` }} />
-                  </div>
-                </div>
+            <div className="mb-3 label-caps text-[var(--brass)]">Technique</div>
+            <div className="space-y-2.5">
+              {technical.map(([l, v]) => (
+                <AttrBar key={l} label={l} value={v} />
               ))}
+            </div>
+          </div>
+          <div>
+            <div className="mb-3 label-caps text-[var(--brass)]">Physique / Défense</div>
+            <div className="space-y-2.5">
+              {physical.map(([l, v]) => (
+                <AttrBar key={l} label={l} value={v} />
+              ))}
+            </div>
+          </div>
+          <div className="panel p-3">
+            <div className="label-caps text-[var(--ink-dim)]">Forme · Moral · Fitness</div>
+            <div className="mt-2 flex gap-4">
+              <div className="data-num text-xl text-[var(--ok)]">{p.physique ?? 80}%</div>
+              <div className="text-[12px] text-[var(--ink-dim)] self-end">Condition physique estimée</div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -162,7 +195,7 @@ function PlayerDrawer() {
               </Button>
             )}
             <Button className="col-span-2" disabled={loading || !!p.isLegend} onClick={() => sellPlayer(p.id)}>
-              Vendre
+              Mettre sur le marché
             </Button>
           </div>
         </div>
@@ -170,6 +203,8 @@ function PlayerDrawer() {
     </div>
   );
 }
+
+/* ─── CENTRAL ─── */
 
 /* ─── CENTRAL ─── */
 
@@ -261,23 +296,26 @@ function CentralHub() {
   };
 
   return (
-    <div className="animate-enter space-y-5">
-      <div className="mb-1">
-        <h1 className="type-display text-[26px] tracking-tight text-[var(--ink)] sm:text-[30px]">
-          Bureau
-        </h1>
-        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">
-          Command Center · priorités · prochain match · confiance
-        </p>
+    <div className="animate-enter space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="type-display text-[26px] tracking-tight text-[var(--ink)] sm:text-[30px]">
+            Bureau
+          </h1>
+          <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">
+            Command Center · priorités · prochain match · confiance
+          </p>
+        </div>
+        <div className="label-caps text-[var(--brass)]">Saison 1 · J{Math.max(1, played + 1)}</div>
       </div>
 
       {activeEvent && (
-        <Card className="border-amber-500/30 bg-amber-500/10 p-4">
+        <div className="border border-amber-500/35 bg-amber-500/10 p-4">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-300">
             {activeEvent.priority ?? activeEvent.category} · décision requise
           </div>
-          <div className="mt-1 text-[16px] font-bold text-white">{activeEvent.title}</div>
-          <p className="mt-1 text-[13px] text-[var(--muted)]">{activeEvent.body}</p>
+          <div className="mt-1 type-display text-xl text-[var(--ink)]">{activeEvent.title}</div>
+          <p className="mt-1 text-[13px] text-[var(--ink-dim)]">{activeEvent.body}</p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {activeEvent.choices.map((c) => (
               <Button key={c.id} disabled={loading} onClick={() => resolveEvent(c)}>
@@ -285,34 +323,42 @@ function CentralHub() {
               </Button>
             ))}
           </div>
-        </Card>
+        </div>
       )}
 
-      {/* Club identity strip — FC26 club-select density */}
-      <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr_0.9fr]">
-        <ArenaPanel className="p-4">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--brass)]">
+      {/* FC26 club identity + next match */}
+      <div className="grid gap-3 lg:grid-cols-[0.9fr_1.4fr_0.9fr]">
+        <div className="panel flex flex-col items-center justify-center p-5">
+          <ClubCrest name={team?.name ?? 'Club'} nation={team?.nation} stars={3} size="md" />
+          <div className="mt-3 w-full border-t border-[var(--rule)] pt-3 text-center">
+            <div className="data-num text-lg text-[var(--brass)]">{team ? money(team.budget) : '—'}</div>
+            <div className="label-caps">Budget</div>
+          </div>
+        </div>
+
+        <ArenaPanel className="p-5">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--brass)]">
             {matchPreview?.competition ?? 'Super Ligue'} · {matchPreview?.kickoffLabel ?? 'Prochain match'}
           </div>
-          <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             <div className="text-right">
-              <div className="text-xl font-bold tracking-tight text-white sm:text-2xl">{team?.name ?? 'Vous'}</div>
-              <div className="text-[11px] text-white/45">Domicile</div>
+              <div className="text-xl font-bold tracking-tight text-[var(--ink)] sm:text-2xl">{team?.name ?? 'Vous'}</div>
+              <div className="text-[11px] text-[var(--ink-faint)]">Domicile</div>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--brass)]/40 bg-[var(--brass)]/10 text-[12px] font-bold text-[var(--brass)]">
               VS
             </div>
             <div>
-              <div className="text-xl font-bold tracking-tight text-white sm:text-2xl">
+              <div className="text-xl font-bold tracking-tight text-[var(--ink)] sm:text-2xl">
                 {matchPreview?.opponent ?? 'Adversaire'}
               </div>
-              <div className="text-[11px] text-white/45">{matchPreview?.venue ?? 'Extérieur'}</div>
+              <div className="text-[11px] text-[var(--ink-faint)]">{matchPreview?.venue ?? 'Extérieur'}</div>
             </div>
           </div>
           {lastMatch && (
-            <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-3 text-[13px]">
-              <span className="text-white/45">Dernier</span>
-              <span className="data-num font-semibold text-white">
+            <div className="mt-4 flex items-center justify-between border-t border-[var(--rule)] pt-3 text-[13px]">
+              <span className="text-[var(--ink-dim)]">Dernier résultat</span>
+              <span className="data-num font-semibold text-[var(--ink)]">
                 {lastMatch.homeScore}–{lastMatch.awayScore}{' '}
                 <Badge tone={lastMatch.result === 'W' ? 'good' : lastMatch.result === 'D' ? 'warn' : 'bad'}>
                   {lastMatch.result}
@@ -325,126 +371,109 @@ function CentralHub() {
           </div>
         </ArenaPanel>
 
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-1 sm:gap-2">
-          <HonourGrid
-            items={[
-              { label: 'Victoires', value: team?.wins ?? 0, icon: '🏆' },
-              { label: 'Nuls', value: team?.draws ?? 0 },
-              { label: 'Défaites', value: team?.losses ?? 0 },
-            ]}
-          />
-          <div className="hidden rounded-xl border border-white/8 bg-black/30 p-3 sm:block">
-            <div className="text-[10px] uppercase text-white/45">Matchs</div>
-            <div className="data-num text-2xl font-bold text-white">{played}</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-1">
-          <MetricTile label="Fanbase" value="En construction" tone="orange" />
-          <MetricTile
-            label="Conseil"
-            value={sec >= 70 ? 'STABLE' : sec >= 45 ? 'SOUS PRESSION' : 'CRITIQUE'}
-            tone={sec >= 70 ? 'green' : sec >= 45 ? 'orange' : 'red'}
-          />
-          <MetricTile label="Budget" value={money(team?.budget ?? 0)} tone="blue" />
-        </div>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="p-4 lg:col-span-2">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-[15px] font-semibold text-white">Tâches manager</div>
-            <button
-              type="button"
-              className="text-[12px] text-[var(--brass)]"
-              onClick={() => setSpaceSub(spaceSub === 'tasks' ? 'home' : 'tasks')}
-            >
-              Voir tout
+        <div className="space-y-3">
+          <div className="panel p-4">
+            <div className="label-caps text-[var(--ink-dim)]">Confiance conseil</div>
+            <BigStat value={`${sec}%`} label="Job security" size="lg" tone={sec >= 55 ? 'good' : 'bad'} />
+            <ProgressBar value={sec} className="mt-3" />
+            <button type="button" className="mt-3 text-[12px] text-[var(--brass)]" onClick={() => goMore('board')}>
+              Objectifs ›
             </button>
           </div>
-          <ul className="divide-y divide-white/6">
-            {tasks.map((t) => (
-              <li key={t.id}>
-                <button
-                  type="button"
-                  onClick={() => runTask(t)}
-                  className="flex w-full items-center gap-3 py-3 text-left hover:bg-white/[0.03]"
-                >
-                  <span className={`text-[10px] font-bold uppercase ${priorityColor[t.priority]}`}>
-                    {t.priority === 'urgent'
-                      ? 'URG'
-                      : t.priority === 'action'
-                        ? 'ACT'
-                        : t.priority === 'important'
-                          ? 'IMP'
-                          : 'FYI'}
-                  </span>
-                  <span className={`flex-1 text-[14px] ${t.done ? 'text-[var(--muted)] line-through' : 'text-white'}`}>
-                    {t.label}
-                  </span>
-                  <span className="text-[var(--muted)]">›</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </Card>
-
-        <Card className="p-4">
-          <div className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Confiance conseil</div>
-          <BigStat value={`${sec}%`} label="Job security" size="lg" tone={sec >= 55 ? 'good' : 'bad'} />
-          <ProgressBar value={sec} className="mt-3" />
-          <button type="button" className="mt-3 text-[12px] text-[var(--brass)]" onClick={() => goMore('board')}>
-            Objectifs ›
-          </button>
-        </Card>
+          <div className="grid grid-cols-1 gap-2">
+            <LevelTile label="Forme équipe" level={sec >= 60 ? 'Bonne' : 'Fragile'} tone={sec >= 60 ? 'high' : 'low'} />
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="p-4">
-          <div className="mb-2 flex justify-between">
-            <span className="text-[15px] font-semibold text-white">Courrier</span>
+      {/* Level tiles row */}
+      <div className="grid grid-cols-3 gap-2">
+        <LevelTile
+          label="Base fans"
+          level={(team?.wins ?? 0) >= 3 ? 'Élevée' : 'Moyenne'}
+          tone={(team?.wins ?? 0) >= 3 ? 'high' : 'mid'}
+        />
+        <LevelTile label="Centre formation" level="Standard" tone="mid" />
+        <LevelTile
+          label="Stabilité financière"
+          level={(team?.budget ?? 0) > 2_000_000 ? 'Élevée' : 'Sous pression'}
+          tone={(team?.budget ?? 0) > 2_000_000 ? 'high' : 'low'}
+        />
+      </div>
+
+      {/* Task list — primary FC Manager Live language */}
+      <div className="panel overflow-hidden">
+        <div className="flex items-center justify-between border-b border-[var(--rule)] px-3 py-2.5">
+          <span className="label-caps text-[var(--brass)]">Priorités manager</span>
+          <span className="text-[11px] text-[var(--ink-faint)]">{tasks.filter((t) => !t.done).length} ouvertes</span>
+        </div>
+        {tasks.map((t) => (
+          <TaskRow
+            key={t.id}
+            label={t.label}
+            priority={t.priority}
+            done={t.done}
+            onClick={() => runTask(t)}
+          />
+        ))}
+      </div>
+
+      <StatBlock
+        items={[
+          { label: 'Victoires', value: team?.wins ?? 0 },
+          { label: 'Nuls', value: team?.draws ?? 0 },
+          { label: 'Défaites', value: team?.losses ?? 0 },
+          { label: 'Budget', value: team ? money(team.budget) : '—', accent: true },
+        ]}
+      />
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="panel overflow-hidden">
+          <div className="flex items-center justify-between border-b border-[var(--rule)] px-3 py-2.5">
+            <span className="text-[14px] font-semibold text-[var(--ink)]">Courrier</span>
             <button type="button" className="text-[12px] text-[var(--brass)]" onClick={() => goMore('news')}>
               Inbox ›
             </button>
           </div>
-          {unread.slice(0, 3).map((m) => (
+          {unread.slice(0, 4).map((m) => (
             <button
               key={m.id}
               type="button"
-              className="mb-2 block w-full rounded-xl bg-white/5 px-3 py-2 text-left hover:bg-white/8"
+              className="flex w-full flex-col border-b border-[var(--rule)] px-3 py-2.5 text-left hover:bg-[var(--panel-2)]"
               onClick={() => {
                 markRead(m.id);
                 goMore('news');
               }}
             >
-              <div className="text-[13px] font-medium text-white">{m.title}</div>
-              <div className="truncate text-[11px] text-[var(--muted)]">{m.sender}</div>
+              <div className="text-[13px] font-medium text-[var(--ink)]">{m.title}</div>
+              <div className="truncate text-[11px] text-[var(--ink-dim)]">{m.sender}</div>
             </button>
           ))}
-          {!unread.length && <p className="text-[13px] text-[var(--muted)]">Aucun message non lu</p>}
-        </Card>
-        <Card className="p-4">
-          <div className="mb-2 flex justify-between">
-            <span className="text-[15px] font-semibold text-white">Monde</span>
+          {!unread.length && <p className="px-3 py-4 text-[13px] text-[var(--ink-dim)]">Aucun message non lu</p>}
+        </div>
+        <div className="panel overflow-hidden">
+          <div className="flex items-center justify-between border-b border-[var(--rule)] px-3 py-2.5">
+            <span className="text-[14px] font-semibold text-[var(--ink)]">Monde</span>
             <button type="button" className="text-[12px] text-[var(--brass)]" onClick={() => goMore('manager')}>
               Market ›
             </button>
           </div>
           {(marketHeadlines ?? []).slice(0, 4).map((h, i) => (
-            <div key={i} className="border-b border-white/5 py-2 text-[13px] text-[var(--muted)] last:border-0">
+            <div key={i} className="border-b border-[var(--rule)] px-3 py-2.5 text-[13px] text-[var(--ink-dim)] last:border-0">
               {h}
             </div>
           ))}
           {!(marketHeadlines ?? []).length && (
-            <p className="text-[13px] text-[var(--muted)]">Jouez un match pour faire bouger le Manager Market</p>
+            <p className="px-3 py-4 text-[13px] text-[var(--ink-dim)]">Jouez un match pour faire bouger le Manager Market</p>
           )}
-        </Card>
+        </div>
       </div>
 
       <ChronicleFeed preview />
     </div>
   );
 }
+
 
 function toneClass(tone: string) {
   if (tone === 'triumph') return 'border-l-emerald-400';
@@ -664,7 +693,10 @@ function MatchHub() {
 
   return (
     <div className="animate-enter space-y-4">
-      <SectionTitle title="Match Center" sub="Événement immersif · preview · live · post" />
+      <div className="mb-1">
+        <h1 className="type-display text-[26px] tracking-tight text-[var(--ink)] sm:text-[30px]">Match Center</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">Expérience immersive · preview · live · post-match</p>
+      </div>
       <SubNav items={MATCH_SUBS} active={sub} onChange={setSpaceSub} />
 
       {(sub === 'preview' || sub === 'live' || sub === 'post') && (
@@ -806,7 +838,7 @@ function MarketHub() {
 
   return (
     <div className="animate-enter">
-      <SectionTitle title="Mercato" sub="Parcours continu · recherche → offre → confirmation" />
+      <SectionTitle title="Transfer Market" sub="Parcours continu · recherche → offre → confirmation" />
       <SubNav items={MARKET_SUBS} active={sub} onChange={setSpaceSub} />
 
       {(sub === 'overview' || sub === 'search' || sub === 'targets') && (
@@ -996,59 +1028,77 @@ function MoreBoard() {
   const sec = team?.jobSecurity ?? board?.jobSecurity ?? 70;
   return (
     <div className="animate-enter space-y-4">
-      <SectionTitle title="Conseil" sub="Objectifs · confiance · sécurité d’emploi" />
-      <Card className="p-4">
-        <div className="text-[11px] uppercase text-[var(--muted)]">Job security</div>
-        <div className="data-num text-3xl font-bold text-white">{sec}%</div>
-        <ProgressBar value={sec} className="mt-2" />
-      </Card>
-      <div className="space-y-2">
-        {(board?.objectives ?? []).map((o) => (
-          <Card key={o.code} className="p-3">
-            <div className="flex justify-between text-[14px]">
-              <span className="text-white">{o.label}</span>
-              <span className="data-num text-[var(--muted)]">
-                {o.current}/{o.target}
-              </span>
-            </div>
-            <ProgressBar value={Math.min(100, (o.current / Math.max(1, o.target)) * 100)} className="mt-2" />
-          </Card>
-        ))}
+      <div>
+        <h1 className="type-display text-[26px] text-[var(--ink)]">Conseil d\'administration</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">Attentes · confiance · objectifs saison</p>
       </div>
-      <div className="pt-2">
-        <div className="mb-2 text-[14px] font-semibold text-white">Vision tactique</div>
-        <TacticsInline />
+      <div className="grid gap-3 sm:grid-cols-[1fr_1fr]">
+        <div className="panel p-5">
+          <div className="label-caps text-[var(--ink-dim)]">Confiance</div>
+          <BigStat value={`${sec}%`} label="Job security" size="xl" tone={sec >= 55 ? 'good' : 'bad'} />
+          <ProgressBar value={sec} className="mt-4" />
+        </div>
+        <div className="panel p-5">
+          <div className="label-caps text-[var(--ink-dim)]">Attentes du conseil</div>
+          <div className="mt-3 text-[15px] font-semibold uppercase tracking-wide text-[var(--ink)]">
+            {(board?.objectives?.[0] as { title?: string } | undefined)?.title
+              ?? 'Stabiliser le club et viser le milieu de tableau'}
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <LevelTile label="Pression" level={sec < 40 ? 'Très haute' : sec < 60 ? 'Modérée' : 'Faible'} tone={sec < 40 ? 'high' : 'mid'} />
+        <LevelTile label="Ambition" level="Promotion" tone="high" />
+        <LevelTile label="Patience" level={sec >= 60 ? 'Élevée' : 'Limitée'} tone={sec >= 60 ? 'high' : 'low'} />
+      </div>
+      <div className="panel overflow-hidden">
+        <div className="border-b border-[var(--rule)] px-3 py-2.5 label-caps text-[var(--brass)]">Objectifs</div>
+        {(board?.objectives ?? []).map((o, i) => (
+          <div key={i} className="border-b border-[var(--rule)] px-3 py-3 last:border-0">
+            <div className="text-[14px] font-medium text-[var(--ink)]">{(o as { title?: string }).title ?? String(o)}</div>
+            <div className="mt-1 text-[12px] text-[var(--ink-dim)]">{(o as { description?: string }).description ?? ''}</div>
+          </div>
+        ))}
+        {!(board?.objectives ?? []).length && (
+          <p className="px-3 py-4 text-[13px] text-[var(--ink-dim)]">Objectifs en cours de définition</p>
+        )}
       </div>
     </div>
   );
 }
 
 function MoreFinance() {
-  const { budgetInfo, team } = useGame();
+  const { team, budget } = useGame() as ReturnType<typeof useGame> & { budget?: { income?: number; wages?: number; transferIn?: number; transferOut?: number } };
   return (
     <div className="animate-enter space-y-4">
-      <SectionTitle title="Finances" sub="Budget · salaires · flux" />
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="p-4">
-          <div className="text-[11px] text-[var(--muted)]">Budget</div>
-          <div className="data-num text-xl font-bold text-amber-200">{money(budgetInfo?.budget ?? team?.budget ?? 0)}</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-[11px] text-[var(--muted)]">Salaires / sem</div>
-          <div className="data-num text-xl font-bold text-white">{money(budgetInfo?.weeklySalaries ?? 0)}</div>
-        </Card>
+      <div>
+        <h1 className="type-display text-[26px] text-[var(--ink)]">Finance</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">Budget · salaires · flux mercato</p>
       </div>
-      <Card className="p-4">
-        <div className="mb-2 text-[14px] font-semibold text-white">Transactions</div>
-        <ul className="max-h-64 space-y-2 overflow-y-auto text-[13px]">
-          {(budgetInfo?.transactions ?? []).slice(0, 20).map((t) => (
-            <li key={t.id} className="flex justify-between border-b border-white/5 py-1">
-              <span className="text-[var(--muted)]">{t.reason ?? t.type}</span>
-              <span className={`data-num ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{money(t.amount)}</span>
-            </li>
-          ))}
-        </ul>
-      </Card>
+      <StatBlock
+        items={[
+          { label: 'Budget dispo', value: team ? money(team.budget) : '—', accent: true },
+          { label: 'Masse salariale', value: budget?.wages != null ? money(budget.wages) : '—' },
+          { label: 'Recettes', value: budget?.income != null ? money(budget.income) : '—' },
+          { label: 'Or', value: team?.goldBalance ?? 0 },
+        ]}
+      />
+      <div className="grid grid-cols-3 gap-2">
+        <LevelTile
+          label="Santé financière"
+          level={(team?.budget ?? 0) > 3_000_000 ? 'Solide' : (team?.budget ?? 0) > 1_000_000 ? 'Stable' : 'Tendue'}
+          tone={(team?.budget ?? 0) > 3_000_000 ? 'high' : (team?.budget ?? 0) > 1_000_000 ? 'mid' : 'low'}
+        />
+        <LevelTile label="Fair-play" level="OK" tone="mid" />
+        <LevelTile label="Dette" level="Aucune" tone="high" />
+      </div>
+      <div className="panel p-4">
+        <div className="label-caps text-[var(--ink-dim)]">Vision trésorerie</div>
+        <p className="mt-2 text-[13px] leading-relaxed text-[var(--ink-dim)]">
+          Les flux de transfert et salaires impactent le budget en temps réel. Chaque recrutement
+          doit être justifié par le plan de jeu et les attentes du conseil.
+        </p>
+      </div>
     </div>
   );
 }
