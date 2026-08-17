@@ -1,0 +1,22 @@
+{
+  "name": "alym",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ALYM - Athletic League Youth Manager",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:generate": "npm run db:generate --workspace=apps/api",
+    "db:migrate": "npm run db:migrate --workspace=apps/api",
+    "db:studio": "npm run db:studio --workspace=apps/api"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
