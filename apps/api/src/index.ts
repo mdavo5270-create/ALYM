@@ -11,6 +11,7 @@ import matchRoutes from './routes/matches.js';
 import shopRoutes from './routes/shop.js';
 import achievementRoutes from './routes/achievements.js';
 import budgetRoutes from './routes/budget.js';
+import careerRoutes from './routes/career.js';
 import { rateLimit, securityHeaders, requireJwtSecret } from './middleware/security.js';
 
 requireJwtSecret();
@@ -31,10 +32,9 @@ app.use(express.json({ limit: '100kb' }));
 app.use(rateLimit(120, 60_000));
 
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'alym', version: '0.2.1' });
+  res.json({ status: 'ok', service: 'alym', version: '0.3.0' });
 });
 
-// Stricter rate limit on auth endpoints
 app.use('/api/auth', rateLimit(20, 60_000), authRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/teams/:teamId/messages', messageRoutes);
@@ -43,9 +43,10 @@ app.use('/api/teams/:teamId/matches', matchRoutes);
 app.use('/api/teams/:teamId/shop', shopRoutes);
 app.use('/api/teams/:teamId/achievements', achievementRoutes);
 app.use('/api/teams/:teamId/budget', budgetRoutes);
+app.use('/api/teams/:teamId/career', careerRoutes);
 
 app.get('/api', (_req, res) => {
-  res.json({ name: 'ALYM API', version: '0.2.1' });
+  res.json({ name: 'ALYM API', version: '0.3.0', studio: 'LA MYLA' });
 });
 
 const webDist = path.resolve(__dirname, '../../web/dist');
