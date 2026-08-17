@@ -35,7 +35,7 @@ app.use(express.json({ limit: '100kb' }));
 app.use(rateLimit(120, 60_000));
 
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'alym', version: '0.6.0', studio: 'LA MYLA' });
+  res.json({ status: 'ok', service: 'alym', version: '0.7.0', studio: 'LA MYLA' });
 });
 
 app.use('/api/auth', rateLimit(20, 60_000), authRoutes);
@@ -52,7 +52,7 @@ app.use('/api/teams/:teamId/legends', legendRoutes);
 app.use('/api/teams/:teamId/manager-market', managerMarketRoutes);
 
 app.get('/api', (_req, res) => {
-  res.json({ name: 'ALYM API', version: '0.6.0', studio: 'LA MYLA' });
+  res.json({ name: 'ALYM API', version: '0.7.0', studio: 'LA MYLA' });
 });
 
 const webDist = path.resolve(__dirname, '../../web/dist');
