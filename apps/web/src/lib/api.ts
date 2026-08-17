@@ -20,7 +20,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API}${path}`, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.error || data.message || `Erreur ${res.status}`);
+    const err = data.error;
+    throw new Error(typeof err === 'string' ? err : data.message || `Erreur ${res.status}`);
   }
   return data as T;
 }
@@ -44,6 +45,13 @@ export const api = {
   createTeam: (body: { name: string; nation?: string; stadiumName?: string; badgeDesign?: number }) =>
     request<{ team: Team }>('/teams', { method: 'POST', body: JSON.stringify(body) }),
   getTeam: (id: number) => request<{ team: TeamDetail }>(`/teams/${id}`),
+  messages: (teamId: number, filter?: 'unread' | 'read') =>
+    request<{ messages: GameMessage[] }>(
+      `/teams/${teamId}/messages${filter ? `?filter=${filter}` : ''}`
+    ),
+  markRead: (teamId: number, messageId: number) =>
+    request<{ ok: boolean }>(`/teams/${teamId}/messages/${messageId}/read`, { method: 'PATCH' }),
+  players: (teamId: number) => request<{ players: Player[] }>(`/teams/${teamId}/players`),
 };
 
 export type Team = {
@@ -59,6 +67,30 @@ export type Team = {
 };
 
 export type TeamDetail = Team & {
-  players: unknown[];
-  messages: { id: number; sender: string; title: string; content: string; read: boolean }[];
+  players: Player[];
+  messages: GameMessage[];
+};
+
+export type GameMessage = {
+  id: number;
+  sender: string;
+  title: string;
+  content: string;
+  read: boolean;
+  messageDate: string;
+};
+
+export type Player = {
+  id: number;
+  name: string;
+  position: string;
+  nation: string | null;
+  salary: number;
+  speed: number;
+  dribble: number;
+  shot: number;
+  pass: number;
+  defense: number;
+  physique: number;
+  rating: number;
 };
