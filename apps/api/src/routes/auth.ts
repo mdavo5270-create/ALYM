@@ -7,20 +7,26 @@ import { signToken, requireAuth } from '../middleware/auth.js';
 const router = Router();
 
 const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  email: z.string().email('Email invalide'),
+  password: z.string().min(6, 'Mot de passe : 6 caractères minimum'),
   username: z.string().min(2).max(30).optional(),
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().email('Email invalide'),
+  password: z.string().min(1, 'Mot de passe requis'),
 });
+
+function firstZodError(error: z.ZodError): string {
+  const field = error.flatten().fieldErrors;
+  const first = Object.values(field).flat()[0];
+  return first || 'Données invalides';
+}
 
 router.post('/register', async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error.flatten() });
+    return res.status(400).json({ error: firstZodError(parsed.error) });
   }
   const { email, password, username } = parsed.data;
 
@@ -44,7 +50,7 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: 'Identifiants invalides' });
+    return res.status(400).json({ error: firstZodError(parsed.error) });
   }
   const { email, password } = parsed.data;
 
