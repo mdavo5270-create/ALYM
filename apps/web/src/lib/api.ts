@@ -35,9 +35,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   const res = await fetch(`${API}${path}`, { ...options, headers });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(extractError(data, res.status));
-  }
+  if (!res.ok) throw new Error(extractError(data, res.status));
   return data as T;
 }
 
@@ -68,9 +66,9 @@ export const api = {
     request<{
       match: { opponent: string; homeScore: number; awayScore: number; result: string; prize: number };
       team: { wins: number; draws: number; losses: number; budget: number };
+      event: GameEvent | null;
     }>(`/teams/${teamId}/matches/play`, { method: 'POST' }),
-  shop: (teamId: number) =>
-    request<{ gold: number; items: ShopItem[] }>(`/teams/${teamId}/shop`),
+  shop: (teamId: number) => request<{ gold: number; items: ShopItem[] }>(`/teams/${teamId}/shop`),
   buy: (teamId: number, itemId: string) =>
     request<{ ok: boolean; gold: number; budget: number }>(`/teams/${teamId}/shop/buy`, {
       method: 'POST',
@@ -78,8 +76,36 @@ export const api = {
     }),
   achievements: (teamId: number) =>
     request<{ achievements: Achievement[] }>(`/teams/${teamId}/achievements`),
-  budget: (teamId: number) =>
-    request<BudgetInfo>(`/teams/${teamId}/budget`),
+  budget: (teamId: number) => request<BudgetInfo>(`/teams/${teamId}/budget`),
+  board: (teamId: number) => request<BoardInfo>(`/teams/${teamId}/career/board`),
+  setTactics: (teamId: number, vision: string) =>
+    request<{ ok: boolean; tacticalVision: string }>(`/teams/${teamId}/career/tactics`, {
+      method: 'POST',
+      body: JSON.stringify({ vision }),
+    }),
+  resolveEvent: (teamId: number, body: { eventId: string; choiceId: string; effect: string }) =>
+    request<{ ok: boolean; budget: number; jobSecurity: number; tacticalVision: string; note: string }>(
+      `/teams/${teamId}/career/event/resolve`,
+      { method: 'POST', body: JSON.stringify(body) }
+    ),
+  youth: (teamId: number) => request<{ youth: Player[]; count: number }>(`/teams/${teamId}/career/youth`),
+  scoutYouth: (teamId: number) =>
+    request<{ player: Player; potential: number }>(`/teams/${teamId}/career/youth/scout`, {
+      method: 'POST',
+    }),
+  promoteYouth: (teamId: number, playerId: number) =>
+    request<{ ok: boolean }>(`/teams/${teamId}/career/youth/promote/${playerId}`, { method: 'POST' }),
+  market: (teamId: number) =>
+    request<{ listings: MarketListing[]; budget: number }>(`/teams/${teamId}/career/market`),
+  marketBuy: (teamId: number, listing: MarketListing) =>
+    request<{ player: Player }>(`/teams/${teamId}/career/market/buy`, {
+      method: 'POST',
+      body: JSON.stringify(listing),
+    }),
+  marketSell: (teamId: number, playerId: number) =>
+    request<{ ok: boolean; fee: number }>(`/teams/${teamId}/career/market/sell/${playerId}`, {
+      method: 'POST',
+    }),
 };
 
 export type Team = {
@@ -91,13 +117,12 @@ export type Team = {
   wins: number;
   draws: number;
   losses: number;
+  jobSecurity?: number;
+  tacticalVision?: string;
   _count?: { players: number; messages: number };
 };
 
-export type TeamDetail = Team & {
-  players: Player[];
-  messages: GameMessage[];
-};
+export type TeamDetail = Team & { players: Player[]; messages: GameMessage[] };
 
 export type GameMessage = {
   id: number;
@@ -114,7 +139,9 @@ export type Player = {
   position: string;
   nation: string | null;
   salary: number;
-  rating: number;
+  rating?: number;
+  potential?: number;
+  isYouth?: boolean;
 };
 
 export type ShopItem = { id: string; name: string; price: number; effect: string };
@@ -134,4 +161,36 @@ export type BudgetInfo = {
   income: number;
   expenses: number;
   transactions: { id: number; type: string; amount: number; reason: string | null; transactionDate: string }[];
+};
+
+export type BoardInfo = {
+  jobSecurity: number;
+  tacticalVision: string;
+  objectives: { code: string; label: string; target: number; current: number; weight: number }[];
+  visions: { id: string; name: string; desc: string }[];
+};
+
+export type GameEvent = {
+  id: string;
+  category: string;
+  title: string;
+  body: string;
+  choices: { id: string; label: string; effect: string }[];
+};
+
+export type MarketListing = {
+  tempId?: string;
+  name: string;
+  position: string;
+  nation?: string;
+  salary: number;
+  speed: number;
+  dribble: number;
+  shot: number;
+  pass: number;
+  defense: number;
+  physique: number;
+  potential: number;
+  rating: number;
+  price: number;
 };
