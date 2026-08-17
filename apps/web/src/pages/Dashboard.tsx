@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { PlayerCard, OvrBadge, PosChip } from '../components/PlayerCard';
 import {
@@ -433,6 +433,86 @@ function CentralHub() {
           )}
         </Card>
       </div>
+
+      <ChronicleFeed preview />
+    </div>
+  );
+}
+
+function toneClass(tone: string) {
+  if (tone === 'triumph') return 'border-l-emerald-400';
+  if (tone === 'setback') return 'border-l-rose-400';
+  if (tone === 'tension') return 'border-l-amber-400';
+  if (tone === 'hope') return 'border-l-sky-400';
+  if (tone === 'turning') return 'border-l-violet-400';
+  return 'border-l-white/25';
+}
+
+function ChronicleFeed({ preview }: { preview?: boolean }) {
+  const { chronicle, goMore, loadChronicle, seasonReview } = useGame();
+  const entries = preview ? chronicle.slice(0, 5) : chronicle;
+
+  return (
+    <Card className="p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <div className="text-[15px] font-semibold text-white">Chronique</div>
+          <div className="text-[11px] text-[var(--muted)]">Le club comme récit · signature ALYM</div>
+        </div>
+        {preview ? (
+          <button type="button" className="text-[12px] text-sky-400" onClick={() => goMore('chronicle')}>
+            Toute la saison ›
+          </button>
+        ) : (
+          <button type="button" className="text-[12px] text-sky-400" onClick={() => loadChronicle()}>
+            Actualiser
+          </button>
+        )}
+      </div>
+      {!preview && seasonReview && (
+        <div className="mb-4 rounded-xl border border-white/8 bg-black/30 p-3">
+          <div className="text-[11px] uppercase tracking-wide text-sky-300/80">La saison dont on se souvient</div>
+          <p className="mt-1 text-[13px] leading-relaxed text-white/70">{seasonReview.narrative}</p>
+          <div className="mt-2 data-num text-[12px] text-white/45">
+            {seasonReview.record.wins}V · {seasonReview.record.draws}N · {seasonReview.record.losses}D ·{' '}
+            {seasonReview.totalEntries} faits
+          </div>
+        </div>
+      )}
+      <div className="space-y-3">
+        {entries.map((e) => (
+          <div key={e.id} className={`border-l-2 pl-3 ${toneClass(e.tone)}`}>
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-white/40">
+              <span>
+                S{e.season} · Sem. {e.week}
+              </span>
+              <span>·</span>
+              <span>{e.type}</span>
+            </div>
+            <div className="mt-0.5 text-[14px] font-semibold text-white">{e.headline}</div>
+            <p className="mt-0.5 text-[12px] leading-relaxed text-white/55">{e.body}</p>
+          </div>
+        ))}
+        {!entries.length && (
+          <p className="text-[13px] text-[var(--muted)]">
+            Le récit démarre à la création du club. Chaque match et chaque décision s’y ajoutent.
+          </p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function MoreChronicle() {
+  const { loadChronicle } = useGame();
+  useEffect(() => {
+    loadChronicle().catch(console.error);
+  }, [loadChronicle]);
+
+  return (
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Chronique" sub="Gère. Décide. Laisse une trace." />
+      <ChronicleFeed />
     </div>
   );
 }
@@ -1308,6 +1388,8 @@ function MoreRouter() {
       return <MoreCalendar />;
     case 'competitions':
       return <MoreCompetitions />;
+    case 'chronicle':
+      return <MoreChronicle />;
     case 'analytics':
       return <MoreGeneric title="Analytics" body="Tendances équipe / joueurs — mêmes stats match." />;
     case 'staff':

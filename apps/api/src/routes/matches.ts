@@ -248,11 +248,36 @@ router.post('/play', async (req, res) => {
     console.error('league update failed', e);
   }
 
+  // Chronicle — le match entre dans le récit
+  try {
+    const { matchChronicleText, writeChronicle } = await import('../lib/chronicle.js');
+    const ch = matchChronicleText(team.name, awayName, sim.homeScore, sim.awayScore, sim.result);
+    await writeChronicle(teamId, {
+      type: 'match',
+      tone: ch.tone,
+      headline: ch.headline,
+      body: ch.body,
+      meta: { result: sim.result, homeScore: sim.homeScore, awayScore: sim.awayScore, opponent: awayName },
+    });
+  } catch (e) {
+    console.error('chronicle match failed', e);
+  }
+
   // Manager Market AI world tick
   let marketHeadlines: string[] = [];
   try {
     const market = await tickManagerMarket(teamId);
     marketHeadlines = market.headlines;
+    if (marketHeadlines.length) {
+      const { writeChronicle } = await import('../lib/chronicle.js');
+      await writeChronicle(teamId, {
+        type: 'market',
+        tone: 'tension',
+        headline: marketHeadlines[0].slice(0, 120),
+        body: marketHeadlines.slice(0, 3).join(' · '),
+        meta: { headlines: marketHeadlines },
+      });
+    }
   } catch (e) {
     console.error('manager market tick failed', e);
   }

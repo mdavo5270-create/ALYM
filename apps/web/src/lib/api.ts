@@ -253,6 +253,33 @@ export const api = {
       `/teams/${teamId}/manager-market/jobs/${clubId}/apply`,
       { method: 'POST' }
     ),
+  chronicle: (teamId: number, limit = 30) =>
+    request<{ entries: ChronicleEntry[] }>(`/teams/${teamId}/chronicle?limit=${limit}`),
+  seasonReview: (teamId: number, season = 1) =>
+    request<SeasonReview>(`/teams/${teamId}/chronicle/season-review?season=${season}`),
+};
+
+export type ChronicleEntry = {
+  id: string;
+  season: number;
+  week: number;
+  type: string;
+  tone: string;
+  headline: string;
+  body: string;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+};
+
+export type SeasonReview = {
+  season: number;
+  teamName: string;
+  record: { wins: number; draws: number; losses: number; played: number };
+  jobSecurity: number;
+  tacticalVision: string;
+  narrative: string;
+  highlights: ChronicleEntry[];
+  totalEntries: number;
 };
 
 export type Team = {

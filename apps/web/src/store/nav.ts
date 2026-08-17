@@ -20,7 +20,8 @@ export type MoreSection =
   | 'training'
   | 'legends'
   | 'shop'
-  | 'achievements';
+  | 'achievements'
+  | 'chronicle';
 
 export type SquadSub = 'overview' | 'players' | 'depth' | 'tactics' | 'development' | 'contracts';
 export type MarketSub = 'overview' | 'search' | 'targets' | 'negotiations' | 'loans' | 'history' | 'mgr';
@@ -71,6 +72,7 @@ export const MORE_SECTIONS: { id: MoreSection; label: string; group: string }[] 
   { id: 'scouting', label: 'Scouting', group: 'Recrutement' },
   { id: 'legends', label: 'Légendes', group: 'Recrutement' },
   { id: 'news', label: 'Courrier', group: 'Monde' },
+  { id: 'chronicle', label: 'Chronique', group: 'Monde' },
   { id: 'calendar', label: 'Calendrier', group: 'Monde' },
   { id: 'competitions', label: 'Compétitions', group: 'Monde' },
   { id: 'world', label: 'Monde du foot', group: 'Monde' },

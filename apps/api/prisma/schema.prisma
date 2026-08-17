@@ -54,6 +54,7 @@ model Team {
   staff         StaffMember[]
   negotiations  TransferNegotiation[]
   standings     LeagueStanding[]
+  chronicle     ChronicleEntry[]
 
   @@schema("alym")
 }
@@ -283,5 +284,25 @@ model TransferNegotiation {
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@index([teamId, status])
+  @@schema("alym")
+}
+
+// Chronicle Mode — récit de carrière (signature ALYM)
+model ChronicleEntry {
+  id        String   @id @default(cuid())
+  teamId    Int
+  season    Int      @default(1)
+  week      Int      @default(1)
+  type      String
+  tone      String   @default("neutral")
+  headline  String
+  body      String
+  metaJson  String?
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId, season, week])
+  @@index([teamId, createdAt])
   @@schema("alym")
 }

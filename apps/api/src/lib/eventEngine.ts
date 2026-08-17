@@ -767,6 +767,25 @@ export async function resolveCareerEvent(
     },
   });
 
+  try {
+    const { writeChronicle } = await import('./chronicle.js');
+    const tone =
+      row.priority === 'urgent'
+        ? 'tension'
+        : choice.effects.some((e) => e.includes('boost') || e.includes('praise') || e.includes('sponsor'))
+          ? 'hope'
+          : 'turning';
+    await writeChronicle(teamId, {
+      type: 'event',
+      tone: tone as 'tension' | 'hope' | 'turning',
+      headline: `Décision — ${row.title}`,
+      body: `Tu as choisi « ${choice.label} ». ${result.note}`,
+      meta: { eventId: row.id, choiceId, type: row.type },
+    });
+  } catch (e) {
+    console.error('chronicle event failed', e);
+  }
+
   return { event: rowToPayload(updated), result };
 }
 

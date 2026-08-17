@@ -50,6 +50,21 @@ router.post('/', async (req, res) => {
     });
     await seedStarterPlayers(team.id, nation);
     await ensureLeagueForTeam(team.id, team.name);
+    try {
+        const { writeChronicle } = await import('../lib/chronicle.js');
+        await writeChronicle(team.id, {
+            type: 'kickoff',
+            tone: 'hope',
+            season: 1,
+            week: 1,
+            headline: `Chapitre 1 — ${team.name}`,
+            body: `La direction confie les clés. Budget serré, effectif à forger, Super Ligue en ligne de mire. Tout ce qui suivra s’écrira ici.`,
+            meta: { nation },
+        });
+    }
+    catch (e) {
+        console.error('chronicle kickoff failed', e);
+    }
     await prisma.message.create({
         data: {
             teamId: team.id,

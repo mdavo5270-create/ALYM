@@ -619,6 +619,24 @@ export async function resolveCareerEvent(teamId, eventId, choiceId) {
             content: `Choix « ${choice.label} ». ${result.note}`,
         },
     });
+    try {
+        const { writeChronicle } = await import('./chronicle.js');
+        const tone = row.priority === 'urgent'
+            ? 'tension'
+            : choice.effects.some((e) => e.includes('boost') || e.includes('praise') || e.includes('sponsor'))
+                ? 'hope'
+                : 'turning';
+        await writeChronicle(teamId, {
+            type: 'event',
+            tone: tone,
+            headline: `Décision — ${row.title}`,
+            body: `Tu as choisi « ${choice.label} ». ${result.note}`,
+            meta: { eventId: row.id, choiceId, type: row.type },
+        });
+    }
+    catch (e) {
+        console.error('chronicle event failed', e);
+    }
     return { event: rowToPayload(updated), result };
 }
 /** Compat UI ancienne (shape UnexpectedEvent) */

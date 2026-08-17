@@ -16,6 +16,8 @@ import {
   type ShopItem,
   type GameEvent,
   type TransferNego,
+  type ChronicleEntry,
+  type SeasonReview,
 } from '../lib/api';
 
 import type { DrawerKind, MainSpace, MoreSection } from './nav';
@@ -124,6 +126,8 @@ type State = {
   staffCatalog: { role: string; name: string; rating: number; salary: number; specialty: string; cost: number; hired: boolean }[];
   staffMembers: { id: number; role: string; name: string; rating: number; salary: number; specialty: string | null }[];
   negotiations: TransferNego[];
+  chronicle: ChronicleEntry[];
+  seasonReview: SeasonReview | null;
 
   setScreen: (s: Screen) => void;
   setTab: (t: Tab) => void;
@@ -167,6 +171,7 @@ type State = {
   openNego: (listing: MarketListing, offerAmount: number) => Promise<void>;
   respondNego: (id: string, action: string, raiseAmount?: number) => Promise<void>;
   completeNego: (id: string) => Promise<void>;
+  loadChronicle: () => Promise<void>;
 };
 
 function spaceToTab(space: MainSpace, more?: MoreSection | null): Tab {
@@ -192,6 +197,7 @@ function spaceToTab(space: MainSpace, more?: MoreSection | null): Tab {
       staff: 'board',
       calendar: 'home',
       competitions: 'board',
+      chronicle: 'home',
       world: 'mgrmarket',
       analytics: 'board',
       settings: 'home',
@@ -238,6 +244,8 @@ export const useGame = create<State>((set, get) => ({
   staffCatalog: [],
   staffMembers: [],
   negotiations: [],
+  chronicle: [],
+  seasonReview: null,
 
   setScreen: (screen) => set({ screen }),
   setTab: (tab) => set({ tab }),
@@ -288,12 +296,32 @@ export const useGame = create<State>((set, get) => ({
   },
 
   loadTeamData: async (teamId) => {
-    const [t, m, p] = await Promise.all([
+    const [t, m, p, ch] = await Promise.all([
       api.getTeam(teamId),
       api.messages(teamId),
       api.players(teamId),
+      api.chronicle(teamId, 25).catch(() => ({ entries: [] as ChronicleEntry[] })),
     ]);
-    set({ team: t.team, messages: m.messages, players: p.players });
+    set({
+      team: t.team,
+      messages: m.messages,
+      players: p.players,
+      chronicle: ch.entries,
+    });
+  },
+
+  loadChronicle: async () => {
+    const team = get().team;
+    if (!team) return;
+    try {
+      const [ch, rev] = await Promise.all([
+        api.chronicle(team.id, 40),
+        api.seasonReview(team.id, 1),
+      ]);
+      set({ chronicle: ch.entries, seasonReview: rev });
+    } catch (e) {
+      console.error(e);
+    }
   },
 
   loadTabData: async (tab) => {
@@ -481,6 +509,12 @@ export const useGame = create<State>((set, get) => ({
       } catch {
         /* ignore */
       }
+      try {
+        const ch = await api.chronicle(team.id, 25);
+        set({ chronicle: ch.entries });
+      } catch {
+        /* ignore */
+      }
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Erreur' });
     } finally {
@@ -507,6 +541,11 @@ export const useGame = create<State>((set, get) => ({
           messages: (await api.messages(team.id)).messages,
           players: (await api.players(team.id)).players,
         });
+        try {
+          set({ chronicle: (await api.chronicle(team.id, 25)).entries });
+        } catch {
+          /* ignore */
+        }
       } catch {
         const res = await api.resolveEvent(team.id, {
           eventId: activeEvent.id,
