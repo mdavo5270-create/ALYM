@@ -1,6 +1,6 @@
 {
   "name": "alym",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "ALYM - Athletic League Youth Manager",
   "workspaces": [
@@ -11,13 +11,12 @@
     "dev:web": "yarn workspace @alym/web dev",
     "dev:api": "yarn workspace @alym/api dev",
     "build:web": "yarn workspace @alym/web build",
-    "build:api": "yarn workspace @alym/api build",
+    "build:api": "yarn workspace @alym/api db:generate && yarn workspace @alym/api build",
     "build": "yarn build:web && yarn build:api",
     "start": "yarn workspace @alym/api start",
     "db:generate": "yarn workspace @alym/api db:generate",
     "db:migrate": "yarn workspace @alym/api db:migrate",
     "db:push": "yarn workspace @alym/api db:push",
-    "postinstall": "yarn db:generate",
     "setup": "yarn install && yarn db:generate && yarn db:migrate"
   },
   "devDependencies": {
