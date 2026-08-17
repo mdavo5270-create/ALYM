@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
+import { seedStarterPlayers } from '../lib/seedPlayers.js';
 
 const router = Router();
 
@@ -36,11 +37,12 @@ router.post('/', async (req, res) => {
     return res.status(409).json({ error: 'Ce nom d’équipe existe déjà' });
   }
 
+  const nation = parsed.data.nation ?? 'France';
   const team = await prisma.team.create({
     data: {
       userId: req.user!.userId,
       name: parsed.data.name,
-      nation: parsed.data.nation ?? 'France',
+      nation,
       stadiumName: parsed.data.stadiumName ?? `Stade ${parsed.data.name}`,
       badgeDesign: parsed.data.badgeDesign ?? 0,
       budget: 200000,
@@ -48,17 +50,32 @@ router.post('/', async (req, res) => {
     },
   });
 
-  // Message de bienvenue
+  await seedStarterPlayers(team.id, nation);
+
   await prisma.message.create({
     data: {
       teamId: team.id,
       sender: 'DIRECTION DU CLUB',
       title: 'Bienvenue',
-      content: `Bienvenue à ${team.name} ! Votre budget de saison est de £200,000. Bonne chance.`,
+      content: `Bienvenue à ${team.name} ! Budget £200,000. Un effectif de 14 joueurs vous attend.`,
     },
   });
 
-  res.status(201).json({ team });
+  await prisma.message.create({
+    data: {
+      teamId: team.id,
+      sender: 'SERVICE DES FINANCES',
+      title: 'Budget de saison',
+      content: 'Votre budget de saison a été crédité : £124,000 opérationnel + réserve. Bonne gestion.',
+    },
+  });
+
+  const full = await prisma.team.findUnique({
+    where: { id: team.id },
+    include: { _count: { select: { players: true, messages: true } } },
+  });
+
+  res.status(201).json({ team: full });
 });
 
 router.get('/:id', async (req, res) => {
@@ -68,7 +85,7 @@ router.get('/:id', async (req, res) => {
     include: {
       players: true,
       messages: { orderBy: { messageDate: 'desc' }, take: 20 },
-      _count: { select: { players: true } },
+      _count: { select: { players: true, messages: true } },
     },
   });
   if (!team) return res.status(404).json({ error: 'Équipe introuvable' });
