@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://alym-game.onrender.com/api/$1" },
+    { "source": "/health", "destination": "https://alym-game.onrender.com/health" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "name": "alym",
+  "buildCommand": "cd apps/web && npm install && npm run build",
+  "outputDirectory": "apps/web/dist",
+  "installCommand": "echo skip-root-install",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://alym-game.onrender.com/api/$1" },
+    { "source": "/health", "destination": "https://alym-game.onrender.com/health" },
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
+}
