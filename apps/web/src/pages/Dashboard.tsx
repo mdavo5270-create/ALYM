@@ -16,10 +16,16 @@ import {
 import { useGame } from '../store/gameStore';
 
 function Home() {
-  const { team, messages, lastMatch, switchTab, board } = useGame();
-  const unread = messages.filter((m) => !m.read).slice(0, 3);
+  const { team, messages, lastMatch, switchTab, board, challenges, marketHeadlines } = useGame();
+  const unread = messages.filter((m) => !m.read).slice(0, 4);
   const played = (team?.wins ?? 0) + (team?.draws ?? 0) + (team?.losses ?? 0);
   const sec = team?.jobSecurity ?? board?.jobSecurity ?? 70;
+  const tasks = [
+    { id: 'match', label: 'Préparer le prochain match', done: false },
+    { id: 'messages', label: unread.length ? `Lire ${unread.length} message(s)` : 'Courrier à jour', done: !unread.length },
+    { id: 'board', label: sec < 50 ? 'Stabiliser la confiance du conseil' : 'Objectifs conseil en ligne', done: sec >= 50 },
+    { id: 'live', label: challenges?.active ? `Défi actif : ${challenges.active.title}` : 'Choisir un défi Manager Live', done: !!challenges?.active },
+  ];
 
   return (
     <div className="animate-enter space-y-6">
@@ -27,26 +33,33 @@ function Home() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel className="p-5 lg:col-span-2">
-          <div className="label-caps">Prochain match</div>
-          <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="text-2xl font-semibold text-mist-50">Adversaire tiré au sort</div>
-              <p className="mt-1 text-sm text-mist-400">Simulation rapide · prime selon le résultat</p>
+              <div className="label-caps">Prochain match</div>
+              <div className="mt-2 text-2xl font-semibold text-mist-50">
+                {lastMatch ? `Rejouer — dernier adversaire ${lastMatch.opponent}` : 'Adversaire à venir'}
+              </div>
+              <p className="mt-1 text-sm text-mist-400">Championnat · Domicile · Simulation carrière</p>
             </div>
-            <Button onClick={() => switchTab('match')}>Préparer / jouer</Button>
+            <Button onClick={() => switchTab('match')}>Match Center</Button>
           </div>
           {lastMatch && (
-            <div className="mt-5 rounded-lg border border-ink-600 bg-ink-950/50 px-4 py-3">
-              <div className="label-caps">Dernier résultat</div>
-              <div className="mt-1 flex flex-wrap items-center gap-3">
-                <span className="text-lg font-semibold text-mist-50">
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-ink-600 bg-ink-950/50 px-3 py-2">
+                <div className="label-caps">Score</div>
+                <div className="data-num text-lg text-mist-50">
                   {lastMatch.homeScore} — {lastMatch.awayScore}
-                </span>
-                <span className="text-sm text-mist-400">vs {lastMatch.opponent}</span>
-                <Badge tone={lastMatch.result === 'W' ? 'good' : lastMatch.result === 'D' ? 'warn' : 'bad'}>
+                </div>
+              </div>
+              <div className="rounded-lg border border-ink-600 bg-ink-950/50 px-3 py-2">
+                <div className="label-caps">Résultat</div>
+                <div className="text-sm text-mist-100">
                   {lastMatch.result === 'W' ? 'Victoire' : lastMatch.result === 'D' ? 'Nul' : 'Défaite'}
-                </Badge>
-                <span className="data-num text-sm text-brass-300">+{money(lastMatch.prize)}</span>
+                </div>
+              </div>
+              <div className="rounded-lg border border-ink-600 bg-ink-950/50 px-3 py-2">
+                <div className="label-caps">Prime</div>
+                <div className="data-num text-brass-300">{money(lastMatch.prize)}</div>
               </div>
             </div>
           )}
@@ -58,9 +71,8 @@ function Home() {
           <div className="mt-3">
             <ProgressBar value={sec} tone={sec < 35 ? 'bad' : sec < 55 ? 'brass' : 'good'} />
           </div>
-          <p className="mt-3 text-xs text-mist-400">Les mauvais résultats et objectifs non tenus pèsent sur votre poste.</p>
           <Button variant="secondary" className="mt-4 w-full" onClick={() => switchTab('board')}>
-            Voir le conseil
+            Conseil
           </Button>
         </Panel>
       </div>
@@ -72,16 +84,34 @@ function Home() {
         <StatCard label="Effectif" value={team?._count?.players ?? '—'} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Panel className="p-5">
+          <div className="label-caps mb-3">Tâches manager</div>
+          <ul className="space-y-2">
+            {tasks.map((t) => (
+              <li key={t.id}>
+                <button
+                  type="button"
+                  onClick={() => switchTab(t.id as any)}
+                  className="flex w-full items-center justify-between rounded-lg border border-ink-700 px-3 py-2 text-left text-sm hover:border-mist-400/30"
+                >
+                  <span className={t.done ? 'text-mist-400' : 'text-mist-100'}>{t.label}</span>
+                  <Badge tone={t.done ? 'good' : 'brass'}>{t.done ? 'OK' : 'À faire'}</Badge>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+
         <Panel className="p-5">
           <div className="mb-3 flex items-center justify-between">
-            <div className="label-caps">Courrier récent</div>
-            <button type="button" className="text-xs text-brass-300 hover:text-brass-400" onClick={() => switchTab('messages')}>
-              Tout voir
+            <div className="label-caps">Courrier</div>
+            <button type="button" className="text-xs text-brass-300" onClick={() => switchTab('messages')}>
+              Ouvrir
             </button>
           </div>
           {unread.length === 0 ? (
-            <p className="text-sm text-mist-400">Aucun message non lu.</p>
+            <p className="text-sm text-mist-400">Aucun non lu.</p>
           ) : (
             <ul className="space-y-2">
               {unread.map((m) => (
@@ -95,67 +125,147 @@ function Home() {
         </Panel>
 
         <Panel className="p-5">
-          <div className="label-caps mb-3">Raccourcis</div>
-          <div className="grid grid-cols-2 gap-2">
-            {(
-              [
-                ['squad', 'Effectif'],
-                ['tactics', 'Tactique'],
-                ['market', 'Mercato'],
-                ['youth', 'Académie'],
-                ['live', 'Défis'],
-                ['budget', 'Finances'],
-              ] as const
-            ).map(([id, label]) => (
-              <Button key={id} variant="secondary" onClick={() => switchTab(id)}>
-                {label}
-              </Button>
-            ))}
-          </div>
+          <div className="label-caps mb-3">Monde / Market</div>
+          {(marketHeadlines ?? []).length === 0 ? (
+            <p className="text-sm text-mist-400">Jouez un match pour faire tourner le Manager Market.</p>
+          ) : (
+            <ul className="space-y-2 text-sm text-mist-300">
+              {marketHeadlines.slice(0, 4).map((h, i) => (
+                <li key={i} className="border-l-2 border-brass-500/40 pl-2">
+                  {h}
+                </li>
+              ))}
+            </ul>
+          )}
+          <Button variant="secondary" className="mt-4 w-full" onClick={() => switchTab('mgrmarket')}>
+            Manager Market
+          </Button>
         </Panel>
       </div>
     </div>
   );
 }
 
+
+
 function Match() {
-  const { playMatch, loading, lastMatch, error, activeEvent, resolveEvent, challengeNote } = useGame();
+  const { playMatch, loading, lastMatch, error, activeEvent, resolveEvent, challengeNote, matchPreview, loadMatchPreview } =
+    useGame();
+
   return (
     <div className="animate-enter space-y-6">
       <PageHeader
         title="Match Center"
-        subtitle="Simulation du prochain match"
+        subtitle="Preview · Simulation · Analyse"
         actions={
-          <Button disabled={loading} onClick={() => playMatch()}>
-            {loading ? 'Simulation…' : 'Simuler le match'}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" disabled={loading} onClick={() => loadMatchPreview()}>
+              Actualiser preview
+            </Button>
+            <Button disabled={loading} onClick={() => playMatch()}>
+              {loading ? 'Simulation…' : 'Simuler'}
+            </Button>
+          </div>
         }
       />
       {error && <p className="text-sm text-signal-bad">{error}</p>}
-      {challengeNote && (
-        <Panel className="border-brass-500/30 p-4 text-sm text-mist-200">{challengeNote}</Panel>
-      )}
-      {lastMatch ? (
-        <Panel className="p-8 text-center">
-          <div className="label-caps">Résultat</div>
-          <div className="mt-2 text-sm text-mist-400">vs {lastMatch.opponent}</div>
-          <div className="mt-4 text-5xl font-semibold tracking-tight data-num text-mist-50">
-            {lastMatch.homeScore}
-            <span className="mx-3 text-mist-500">—</span>
-            {lastMatch.awayScore}
-          </div>
-          <div className="mt-4 flex justify-center gap-2">
-            <Badge tone={lastMatch.result === 'W' ? 'good' : lastMatch.result === 'D' ? 'warn' : 'bad'}>
-              {lastMatch.result === 'W' ? 'Victoire' : lastMatch.result === 'D' ? 'Nul' : 'Défaite'}
-            </Badge>
-            <Badge tone="brass">{money(lastMatch.prize)}</Badge>
-          </div>
+      {challengeNote && <Panel className="border-brass-500/30 p-4 text-sm text-mist-200">{challengeNote}</Panel>}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel className="p-5">
+          <div className="label-caps">Avant-match</div>
+          {matchPreview ? (
+            <div className="mt-3 space-y-3">
+              <div className="text-xl font-semibold text-mist-50">
+                {matchPreview.homeName} <span className="text-mist-500">vs</span> {matchPreview.opponent}
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge>{matchPreview.competition}</Badge>
+                <Badge tone="brass">{matchPreview.venue}</Badge>
+                <Badge tone="neutral">{matchPreview.kickoffLabel}</Badge>
+              </div>
+              <p className="text-sm text-mist-400">
+                Effectif dispo {matchPreview.availablePlayers} · Forme {matchPreview.formHint} · Vision{' '}
+                {matchPreview.tacticalVision}
+              </p>
+              <div className="grid grid-cols-4 gap-2">
+                {(['attack', 'midfield', 'defense', 'gk'] as const).map((k) => (
+                  <div key={k} className="rounded-lg border border-ink-700 px-2 py-2 text-center">
+                    <div className="label-caps">{k}</div>
+                    <div className="data-num text-sm text-mist-100">{matchPreview.strength[k]}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-mist-400">Ouvrez cet onglet pour charger la preview.</p>
+          )}
         </Panel>
-      ) : (
-        <EmptyState title="Aucun match joué" body="Lancez une simulation pour obtenir un résultat et faire avancer la carrière." />
+
+        <Panel className="p-5">
+          <div className="label-caps">Après-match</div>
+          {lastMatch ? (
+            <div className="mt-3 space-y-4">
+              <div className="text-center">
+                <div className="text-sm text-mist-400">vs {lastMatch.opponent}</div>
+                <div className="mt-2 text-4xl font-semibold data-num text-mist-50">
+                  {lastMatch.homeScore}
+                  <span className="mx-2 text-mist-500">—</span>
+                  {lastMatch.awayScore}
+                </div>
+                <div className="mt-2 flex justify-center gap-2">
+                  <Badge tone={lastMatch.result === 'W' ? 'good' : lastMatch.result === 'D' ? 'warn' : 'bad'}>
+                    {lastMatch.result === 'W' ? 'Victoire' : lastMatch.result === 'D' ? 'Nul' : 'Défaite'}
+                  </Badge>
+                  <Badge tone="brass">{money(lastMatch.prize)}</Badge>
+                </div>
+              </div>
+              {lastMatch.stats && (
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div>
+                    <div className="label-caps">Possession</div>
+                    <div className="data-num text-mist-100">
+                      {lastMatch.stats.possessionHome}% — {lastMatch.stats.possessionAway}%
+                    </div>
+                  </div>
+                  <div>
+                    <div className="label-caps">Tirs</div>
+                    <div className="data-num text-mist-100">
+                      {lastMatch.stats.shotsHome} — {lastMatch.stats.shotsAway}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="label-caps">Cadrés</div>
+                    <div className="data-num text-mist-100">
+                      {lastMatch.stats.shotsOnHome} — {lastMatch.stats.shotsOnAway}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <EmptyState title="Aucun résultat" body="Simulez pour remplir l’analyse post-match." />
+          )}
+        </Panel>
+      </div>
+
+      {lastMatch?.timeline && lastMatch.timeline.length > 0 && (
+        <Panel className="p-5">
+          <div className="label-caps mb-3">Timeline</div>
+          <ul className="space-y-2">
+            {lastMatch.timeline.map((e, i) => (
+              <li key={i} className="flex items-center gap-3 border-b border-ink-700/60 py-1.5 text-sm last:border-0">
+                <span className="data-num w-10 text-mist-400">{e.minute}&apos;</span>
+                <Badge tone={e.type === 'goal' ? 'good' : e.type === 'yellow' ? 'warn' : 'neutral'}>{e.type}</Badge>
+                <span className="text-mist-200">{e.label}</span>
+                <span className="ml-auto text-xs text-mist-500">{e.side}</span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
       )}
 
-      <Modal open={!!activeEvent} title={activeEvent?.title ?? 'Événement'} onClose={() => {}}>
+      <Modal open={!!activeEvent} title={activeEvent?.title ?? 'Événement'}>
         {activeEvent && (
           <div className="space-y-4">
             <p className="text-sm text-mist-300">{activeEvent.body}</p>
@@ -174,6 +284,8 @@ function Match() {
   );
 }
 
+
+
 function Squad() {
   const { players, sellPlayer, loading, selectedPlayerId, setSelectedPlayerId } = useGame();
   const [filter, setFilter] = useState('ALL');
@@ -183,9 +295,20 @@ function Squad() {
   );
   const selected = players.find((p) => p.id === selectedPlayerId) ?? null;
 
+  const attrs = selected
+    ? [
+        ['Vitesse', selected.speed],
+        ['Dribble', selected.dribble],
+        ['Tir', selected.shot],
+        ['Passe', selected.pass],
+        ['Défense', selected.defense],
+        ['Physique', selected.physique],
+      ]
+    : [];
+
   return (
     <div className="animate-enter space-y-6">
-      <PageHeader title="Effectif" subtitle={`${players.length} joueurs`} />
+      <PageHeader title="Effectif" subtitle={`${players.length} joueurs — sélectionnez pour le profil`} />
       <div className="flex flex-wrap gap-2">
         {['ALL', 'GK', 'DF', 'MF', 'FW'].map((f) => (
           <Button key={f} variant={filter === f ? 'primary' : 'secondary'} onClick={() => setFilter(f)}>
@@ -193,17 +316,17 @@ function Squad() {
           </Button>
         ))}
       </div>
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Panel className="overflow-hidden lg:col-span-2">
+      <div className="grid gap-4 xl:grid-cols-5">
+        <Panel className="overflow-hidden xl:col-span-3">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>
                 <tr className="border-b border-ink-700 text-xs uppercase tracking-wider text-mist-400">
                   <th className="px-4 py-3 font-medium">Pos</th>
                   <th className="px-4 py-3 font-medium">Joueur</th>
-                  <th className="px-4 py-3 font-medium">Nat</th>
+                  <th className="px-4 py-3 font-medium">OVR</th>
+                  <th className="px-4 py-3 font-medium">Pot</th>
                   <th className="px-4 py-3 font-medium">Salaire</th>
-                  <th className="px-4 py-3 font-medium">Note</th>
                 </tr>
               </thead>
               <tbody>
@@ -219,13 +342,14 @@ function Squad() {
                     <td className="px-4 py-2.5 font-medium text-mist-100">
                       {p.name}
                       {p.isYouth && <span className="ml-2 text-[10px] text-brass-300">JEUNE</span>}
+                      {p.isLegend && <span className="ml-2 text-[10px] text-brass-300">LÉGENDE</span>}
                       {p.onLoan && <span className="ml-2 text-[10px] text-mist-400">PRÊT</span>}
                     </td>
-                    <td className="px-4 py-2.5 text-mist-400">{p.nation ?? '—'}</td>
-                    <td className="px-4 py-2.5 data-num text-mist-300">{money(p.salary)}</td>
                     <td className="px-4 py-2.5">
                       <Rating value={p.rating ?? 0} />
                     </td>
+                    <td className="px-4 py-2.5 data-num text-mist-300">{p.potential ?? '—'}</td>
+                    <td className="px-4 py-2.5 data-num text-mist-300">{money(p.salary)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -233,23 +357,40 @@ function Squad() {
           </div>
         </Panel>
 
-        <Panel className="p-5">
+        <Panel className="p-5 xl:col-span-2">
           {selected ? (
             <div className="space-y-4">
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <PosBadge pos={selected.position} />
-                  <h2 className="text-lg font-semibold text-mist-50">{selected.name}</h2>
+                  <h2 className="text-xl font-semibold text-mist-50">{selected.name}</h2>
                 </div>
                 <p className="mt-1 text-sm text-mist-400">{selected.nation ?? '—'}</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <StatCard label="Note" value={selected.rating ?? '—'} />
+              <div className="grid grid-cols-3 gap-2">
+                <StatCard label="OVR" value={selected.rating ?? '—'} />
                 <StatCard label="Potentiel" value={selected.potential ?? '—'} tone="brass" />
+                <StatCard label="Salaire" value={money(selected.salary)} />
               </div>
               <div>
-                <div className="label-caps">Salaire</div>
-                <div className="mt-1 data-num text-mist-100">{money(selected.salary)}</div>
+                <div className="label-caps mb-2">Attributs</div>
+                <div className="space-y-2">
+                  {attrs.map(([label, val]) => (
+                    <div key={String(label)}>
+                      <div className="mb-0.5 flex justify-between text-xs text-mist-400">
+                        <span>{label}</span>
+                        <span className="data-num text-mist-200">{val ?? '—'}</span>
+                      </div>
+                      <ProgressBar value={Number(val ?? 0)} max={99} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="text-xs text-mist-400">
+                Contrat :{' '}
+                {selected.contractUntil
+                  ? new Date(selected.contractUntil).toLocaleDateString('fr-FR')
+                  : 'Non renseigné'}
               </div>
               {!selected.isYouth && (
                 <Button variant="danger" disabled={loading} onClick={() => sellPlayer(selected.id)}>
@@ -258,13 +399,15 @@ function Squad() {
               )}
             </div>
           ) : (
-            <EmptyState title="Sélectionnez un joueur" body="Cliquez une ligne pour afficher le détail." />
+            <EmptyState title="Profil joueur" body="Sélectionnez une ligne pour ouvrir le profil détaillé." />
           )}
         </Panel>
       </div>
     </div>
   );
 }
+
+
 
 function Tactics() {
   const { board, team, setVision, loading } = useGame();
@@ -419,39 +562,113 @@ function Youth() {
 
 function Live() {
   const { challenges, startChallenge, abandonChallenge, loading } = useGame();
+  const [tab, setTab] = useState<'active' | 'catalog' | 'done'>('catalog');
+  const active = challenges?.active;
+
   return (
     <div className="animate-enter space-y-6">
-      <PageHeader title="Manager Live" subtitle="Défis à durée limitée" />
-      {challenges?.active && (
-        <Panel className="border-brass-500/30 p-5">
-          <div className="label-caps">Défi actif</div>
-          <div className="mt-1 text-lg font-semibold text-mist-50">{challenges.active.title}</div>
-          <p className="mt-1 text-sm text-mist-400">{challenges.active.description}</p>
-          <Button variant="danger" className="mt-4" disabled={loading} onClick={() => abandonChallenge()}>
-            Abandonner
+      <PageHeader title="Manager Live" subtitle="Hub de défis — paramètres visibles avant lancement" />
+
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            ['active', 'Actif'],
+            ['catalog', 'Catalogue'],
+            ['done', 'Terminés'],
+          ] as const
+        ).map(([id, label]) => (
+          <Button key={id} variant={tab === id ? 'primary' : 'secondary'} onClick={() => setTab(id)}>
+            {label}
           </Button>
-        </Panel>
-      )}
-      <div className="grid gap-3 md:grid-cols-2">
-        {(challenges?.catalog ?? []).map((c) => (
-          <Panel key={c.id} className="p-4">
-            <div className="flex items-start justify-between gap-2">
-              <div className="font-semibold text-mist-50">{c.title}</div>
-              <Badge>{c.difficulty}</Badge>
-            </div>
-            <p className="mt-2 text-sm text-mist-400">{c.description}</p>
-            <div className="mt-3 text-xs text-mist-400">
-              Récompense · {c.rewardGold} Or · {money(c.rewardBudget)}
-            </div>
-            <Button className="mt-3" disabled={loading || !!challenges?.active} onClick={() => startChallenge(c.id)}>
-              Lancer
-            </Button>
-          </Panel>
         ))}
       </div>
+
+      {tab === 'active' && (
+        <div>
+          {active ? (
+            <Panel className="border-brass-500/30 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="label-caps">Défi en cours</div>
+                  <div className="mt-1 text-xl font-semibold text-mist-50">{active.title}</div>
+                  <p className="mt-1 text-sm text-mist-400">{active.description}</p>
+                </div>
+                <Badge tone="brass">{active.difficulty}</Badge>
+              </div>
+              {active.progress && (
+                <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                  <StatCard label="Victoires" value={active.progress.wins} />
+                  <StatCard label="Matchs" value={`${active.progress.matches}/${active.matchesLimit}`} />
+                  <StatCard label="Série" value={active.progress.streak} />
+                  <StatCard label="Jeunes" value={active.progress.youth} />
+                </div>
+              )}
+              {active.parameters && (
+                <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                  {Object.entries(active.parameters).map(([k, v]) =>
+                    v ? (
+                      <Badge key={k} tone="neutral">
+                        {k}: {v}
+                      </Badge>
+                    ) : null
+                  )}
+                </div>
+              )}
+              <Button variant="danger" className="mt-4" disabled={loading} onClick={() => abandonChallenge()}>
+                Abandonner
+              </Button>
+            </Panel>
+          ) : (
+            <EmptyState title="Aucun défi actif" body="Choisissez un scénario dans le catalogue." />
+          )}
+        </div>
+      )}
+
+      {tab === 'catalog' && (
+        <div className="grid gap-3 md:grid-cols-2">
+          {(challenges?.catalog ?? []).map((c) => (
+            <Panel key={c.id} className="p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="font-semibold text-mist-50">{c.title}</div>
+                <Badge>{c.difficulty}</Badge>
+              </div>
+              <p className="mt-2 text-sm text-mist-400">{c.description}</p>
+              <div className="mt-3 text-xs text-mist-400">
+                Objectif {c.goalTarget} · {c.matchesLimit} matchs max · {c.rewardGold} Or · {money(c.rewardBudget)}
+              </div>
+              {c.parameters && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {Object.entries(c.parameters).map(([k, v]) =>
+                    v ? (
+                      <Badge key={k} tone="neutral">
+                        {v}
+                      </Badge>
+                    ) : null
+                  )}
+                </div>
+              )}
+              {c.restriction && (
+                <p className="mt-2 text-xs text-signal-warn">Restriction : {c.restriction}</p>
+              )}
+              <Button className="mt-3" disabled={loading || !!active} onClick={() => startChallenge(c.id)}>
+                Lancer
+              </Button>
+            </Panel>
+          ))}
+        </div>
+      )}
+
+      {tab === 'done' && (
+        <EmptyState
+          title="Historique local"
+          body="Les défis réussis apparaissent aussi dans le courrier MANAGER LIVE et les succès."
+        />
+      )}
     </div>
   );
 }
+
+
 
 function Training() {
   const { training, setTraining, loanPlayer, recallLoan, loading } = useGame();
@@ -640,16 +857,67 @@ function Legends() {
 }
 
 function MgrMarket() {
-  const { mgrMarket } = useGame();
+  const { mgrMarket, managerJobs, applyJob, loading, challengeNote } = useGame();
+  const [sub, setSub] = useState<'clubs' | 'jobs' | 'feed'>('jobs');
+
   return (
     <div className="animate-enter space-y-6">
-      <PageHeader title="Marché des coaches" subtitle="Mouvements IA entre clubs" />
-      <div className="grid gap-4 xl:grid-cols-3">
-        <Panel className="p-4 xl:col-span-2">
-          <div className="label-caps mb-3">Clubs</div>
+      <PageHeader title="Manager Market" subtitle="Mouvements IA · postes · candidatures" />
+      {challengeNote && <Panel className="border-brass-500/30 p-3 text-sm text-mist-200">{challengeNote}</Panel>}
+
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            ['jobs', 'Postes / Suggestions'],
+            ['clubs', 'Clubs'],
+            ['feed', 'Fil d’actu'],
+          ] as const
+        ).map(([id, label]) => (
+          <Button key={id} variant={sub === id ? 'primary' : 'secondary'} onClick={() => setSub(id)}>
+            {label}
+          </Button>
+        ))}
+      </div>
+
+      {sub === 'jobs' && (
+        <div className="grid gap-3 md:grid-cols-2">
+          {(managerJobs ?? []).map((j) => (
+            <Panel key={j.clubId} className="p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-semibold text-mist-50">{j.clubName}</div>
+                  <div className="text-xs text-mist-400">
+                    {j.nation ?? '—'} · Vision {j.tacticalVision} · Rep {j.reputation}
+                  </div>
+                </div>
+                <Badge tone={j.status === 'vacant' ? 'good' : 'warn'}>
+                  {j.status === 'vacant' ? 'Vacant' : 'Sous pression'}
+                </Badge>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                <span className="data-num text-brass-300">{j.compatibility}% compat.</span>
+                <Badge tone="brass">Chance {j.likelihood}</Badge>
+                {j.managerName && <span className="text-xs text-mist-500">Coach : {j.managerName}</span>}
+              </div>
+              <Button className="mt-3" disabled={loading} onClick={() => applyJob(j.clubId)}>
+                Candidater
+              </Button>
+            </Panel>
+          ))}
+          {!(managerJobs ?? []).length && (
+            <EmptyState title="Aucun poste ouvert" body="Jouez des matchs pour faire bouger le marché." />
+          )}
+        </div>
+      )}
+
+      {sub === 'clubs' && (
+        <Panel className="p-4">
           <div className="space-y-2">
             {(mgrMarket?.clubs ?? []).map((c) => (
-              <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ink-700 px-3 py-2">
+              <div
+                key={c.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ink-700 px-3 py-2"
+              >
                 <div>
                   <div className="font-medium text-mist-50">{c.name}</div>
                   <div className="text-xs text-mist-400">
@@ -664,7 +932,10 @@ function MgrMarket() {
             ))}
           </div>
         </Panel>
-        <div className="space-y-4">
+      )}
+
+      {sub === 'feed' && (
+        <div className="grid gap-4 lg:grid-cols-2">
           <Panel className="p-4">
             <div className="label-caps mb-2">Agents libres</div>
             <ul className="space-y-1 text-sm">
@@ -676,9 +947,9 @@ function MgrMarket() {
             </ul>
           </Panel>
           <Panel className="p-4">
-            <div className="label-caps mb-2">Fil d’actu</div>
+            <div className="label-caps mb-2">Événements</div>
             <ul className="space-y-2 text-xs text-mist-300">
-              {(mgrMarket?.events ?? []).slice(0, 12).map((e) => (
+              {(mgrMarket?.events ?? []).slice(0, 15).map((e) => (
                 <li key={e.id}>
                   <span className="text-brass-300">{e.type}</span> · {e.clubName}
                   {e.managerName ? ` · ${e.managerName}` : ''}
@@ -688,10 +959,12 @@ function MgrMarket() {
             </ul>
           </Panel>
         </div>
-      </div>
+      )}
     </div>
   );
 }
+
+
 
 function Achievements() {
   const { achievements } = useGame();

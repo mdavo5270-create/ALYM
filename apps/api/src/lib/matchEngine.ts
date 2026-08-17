@@ -43,11 +43,57 @@ export function strengthFromPlayers(
   };
 }
 
-export function simulateMatch(
-  home: TeamStrength,
-  away: TeamStrength,
-  homeBonus = 1.08
-) {
+export type MatchEvent = {
+  minute: number;
+  type: 'goal' | 'yellow' | 'sub' | 'chance';
+  side: 'home' | 'away';
+  label: string;
+};
+
+function buildTimeline(
+  homeScore: number,
+  awayScore: number,
+  homeName: string,
+  awayName: string
+): MatchEvent[] {
+  const events: MatchEvent[] = [];
+  for (let i = 0; i < homeScore; i++) {
+    events.push({
+      minute: 8 + Math.floor(Math.random() * 80),
+      type: 'goal',
+      side: 'home',
+      label: `But — ${homeName}`,
+    });
+  }
+  for (let i = 0; i < awayScore; i++) {
+    events.push({
+      minute: 8 + Math.floor(Math.random() * 80),
+      type: 'goal',
+      side: 'away',
+      label: `But — ${awayName}`,
+    });
+  }
+  const extras = 2 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < extras; i++) {
+    const types: MatchEvent['type'][] = ['yellow', 'sub', 'chance'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const side = Math.random() > 0.5 ? 'home' : 'away';
+    const labels = {
+      yellow: 'Carton jaune',
+      sub: 'Remplacement',
+      chance: 'Occasion nette',
+    };
+    events.push({
+      minute: 10 + Math.floor(Math.random() * 75),
+      type,
+      side,
+      label: labels[type],
+    });
+  }
+  return events.sort((a, b) => a.minute - b.minute);
+}
+
+export function simulateMatch(home: TeamStrength, away: TeamStrength, homeBonus = 1.08) {
   const homeAtt = ((home.attack + home.midfield) / 2) * homeBonus;
   const awayAtt = (away.attack + away.midfield) / 2;
   const homeDef = (home.defense + home.gk) / 2;
@@ -65,7 +111,39 @@ export function simulateMatch(
 
   const prize = result === 'W' ? 25000 : result === 'D' ? 10000 : 4000;
 
-  return { homeScore, awayScore, result, prize, homeLambda, awayLambda };
+  const possessionHome = clamp(
+    Math.round(48 + (home.midfield - away.midfield) * 0.6 + (Math.random() * 8 - 4)),
+    35,
+    68
+  );
+
+  return {
+    homeScore,
+    awayScore,
+    result,
+    prize,
+    homeLambda,
+    awayLambda,
+    stats: {
+      possessionHome,
+      possessionAway: 100 - possessionHome,
+      shotsHome: homeScore + 2 + Math.floor(Math.random() * 6),
+      shotsAway: awayScore + 1 + Math.floor(Math.random() * 5),
+      shotsOnHome: homeScore + Math.floor(Math.random() * 3),
+      shotsOnAway: awayScore + Math.floor(Math.random() * 2),
+    },
+  };
+}
+
+export function withTimeline(
+  sim: ReturnType<typeof simulateMatch>,
+  homeName: string,
+  awayName: string
+) {
+  return {
+    ...sim,
+    timeline: buildTimeline(sim.homeScore, sim.awayScore, homeName, awayName),
+  };
 }
 
 export function randomOpponentName() {

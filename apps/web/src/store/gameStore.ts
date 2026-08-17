@@ -37,11 +37,49 @@ export type Tab =
 
 type LastMatch = {
   opponent: string;
+  homeName?: string;
   homeScore: number;
   awayScore: number;
   result: string;
   prize: number;
+  stats?: {
+    possessionHome: number;
+    possessionAway: number;
+    shotsHome: number;
+    shotsAway: number;
+    shotsOnHome: number;
+    shotsOnAway: number;
+  };
+  timeline?: { minute: number; type: string; side: string; label: string }[];
+  venue?: string;
+  competition?: string;
 };
+
+type MatchPreview = {
+  homeName: string;
+  opponent: string;
+  competition: string;
+  venue: string;
+  kickoffLabel: string;
+  availablePlayers: number;
+  formHint: string;
+  tacticalVision: string;
+  strength: { attack: number; midfield: number; defense: number; gk: number };
+};
+
+type ManagerJob = {
+  clubId: number;
+  clubName: string;
+  nation: string | null;
+  reputation: number;
+  tacticalVision: string;
+  jobSecurity: number;
+  status: string;
+  managerName: string | null;
+  compatibility: number;
+  likelihood: string;
+};
+
 
 type State = {
   screen: Screen;
@@ -64,9 +102,12 @@ type State = {
   achievements: Achievement[];
   shopItems: ShopItem[];
   lastMatch: LastMatch | null;
+  matchPreview: MatchPreview | null;
   activeEvent: GameEvent | null;
   challengeNote: string | null;
   selectedPlayerId: number | null;
+  managerJobs: ManagerJob[];
+  marketHeadlines: string[];
 
   setScreen: (s: Screen) => void;
   setTab: (t: Tab) => void;
@@ -96,6 +137,9 @@ type State = {
   recruitLegend: (code: string) => Promise<void>;
   buyShop: (itemId: string) => Promise<void>;
   markRead: (messageId: number) => Promise<void>;
+  loadMatchPreview: () => Promise<void>;
+  loadManagerJobs: () => Promise<void>;
+  applyJob: (clubId: number) => Promise<void>;
 };
 
 export const useGame = create<State>((set, get) => ({
@@ -119,9 +163,12 @@ export const useGame = create<State>((set, get) => ({
   achievements: [],
   shopItems: [],
   lastMatch: null,
+  matchPreview: null,
   activeEvent: null,
   challengeNote: null,
   selectedPlayerId: null,
+  managerJobs: [],
+  marketHeadlines: [],
 
   setScreen: (screen) => set({ screen }),
   setTab: (tab) => set({ tab }),
@@ -173,7 +220,24 @@ export const useGame = create<State>((set, get) => ({
       if (tab === 'live') set({ challenges: await api.challenges(team.id) });
       if (tab === 'training') set({ training: await api.training(team.id) });
       if (tab === 'legends') set({ legends: (await api.legends(team.id)).legends });
-      if (tab === 'mgrmarket') set({ mgrMarket: await api.managerMarket(team.id) });
+      if (tab === 'mgrmarket') {
+        const [mm, jobs] = await Promise.all([api.managerMarket(team.id), api.managerJobs(team.id)]);
+        set({ mgrMarket: mm, managerJobs: jobs.jobs });
+      }
+      if (tab === 'match') {
+        try {
+          set({ matchPreview: await api.matchPreview(team.id) });
+        } catch {
+          /* preview optionnel */
+        }
+      }
+      if (tab === 'home') {
+        try {
+          set({ challenges: await api.challenges(team.id) });
+        } catch {
+          /* ignore */
+        }
+      }
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Erreur chargement' });
     }
@@ -252,7 +316,13 @@ export const useGame = create<State>((set, get) => ({
         messages: (await api.messages(team.id)).messages,
         activeEvent: res.event,
         challengeNote: res.challenge ? `${res.challenge.title}: ${res.challenge.note}` : null,
+        marketHeadlines: res.marketHeadlines ?? [],
       });
+      try {
+        set({ matchPreview: await api.matchPreview(team.id) });
+      } catch {
+        /* ignore */
+      }
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Erreur' });
     } finally {

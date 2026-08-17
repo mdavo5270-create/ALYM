@@ -62,12 +62,43 @@ export const api = {
   markRead: (teamId: number, messageId: number) =>
     request<{ ok: boolean }>(`/teams/${teamId}/messages/${messageId}/read`, { method: 'PATCH' }),
   players: (teamId: number) => request<{ players: Player[] }>(`/teams/${teamId}/players`),
+  matchPreview: (teamId: number) =>
+    request<{
+      homeName: string;
+      opponent: string;
+      competition: string;
+      venue: string;
+      kickoffLabel: string;
+      availablePlayers: number;
+      formHint: string;
+      tacticalVision: string;
+      strength: { attack: number; midfield: number; defense: number; gk: number };
+    }>(`/teams/${teamId}/matches/preview`),
   playMatch: (teamId: number) =>
     request<{
-      match: { opponent: string; homeScore: number; awayScore: number; result: string; prize: number };
+      match: {
+        opponent: string;
+        homeName?: string;
+        homeScore: number;
+        awayScore: number;
+        result: string;
+        prize: number;
+        stats?: {
+          possessionHome: number;
+          possessionAway: number;
+          shotsHome: number;
+          shotsAway: number;
+          shotsOnHome: number;
+          shotsOnAway: number;
+        };
+        timeline?: { minute: number; type: string; side: string; label: string }[];
+        venue?: string;
+        competition?: string;
+      };
       team: { wins: number; draws: number; losses: number; budget: number; goldBalance?: number };
       event: GameEvent | null;
       challenge: { status: string; title: string; note: string } | null;
+      marketHeadlines?: string[];
     }>(`/teams/${teamId}/matches/play`, { method: 'POST' }),
   shop: (teamId: number) => request<{ gold: number; items: ShopItem[] }>(`/teams/${teamId}/shop`),
   buy: (teamId: number, itemId: string) =>
@@ -130,6 +161,17 @@ export const api = {
     request<{ player: Player }>(`/teams/${teamId}/legends/recruit/${code}`, { method: 'POST' }),
   managerMarket: (teamId: number) =>
     request<ManagerMarketData>(`/teams/${teamId}/manager-market`),
+  managerJobs: (teamId: number) =>
+    request<{
+      playerReputation: number;
+      tacticalVision: string;
+      jobs: ManagerJob[];
+    }>(`/teams/${teamId}/manager-market/jobs`),
+  applyJob: (teamId: number, clubId: number) =>
+    request<{ ok: boolean; accepted: boolean; clubName: string; score: number; note: string }>(
+      `/teams/${teamId}/manager-market/jobs/${clubId}/apply`,
+      { method: 'POST' }
+    ),
 };
 
 export type Team = {
@@ -168,6 +210,14 @@ export type Player = {
   isYouth?: boolean;
   onLoan?: boolean;
   trainingPlan?: string;
+  speed?: number;
+  dribble?: number;
+  shot?: number;
+  pass?: number;
+  defense?: number;
+  physique?: number;
+  contractUntil?: string | null;
+  isLegend?: boolean;
 };
 
 export type ShopItem = { id: string; name: string; price: number; effect: string };
@@ -232,6 +282,7 @@ export type ChallengeDef = {
   rewardGold: number;
   rewardBudget: number;
   restriction?: string;
+  parameters?: { transfers?: string; youth?: string; tactics?: string; focus?: string };
   progress?: { wins: number; matches: number; streak: number; youth: number };
 };
 
@@ -258,6 +309,26 @@ export type Legend = {
   owned: boolean;
 };
 
+
+export type ManagerJob = {
+  clubId: number;
+  clubName: string;
+  nation: string | null;
+  reputation: number;
+  tacticalVision: string;
+  jobSecurity: number;
+  status: string;
+  managerName: string | null;
+  compatibility: number;
+  likelihood: string;
+};
+
+export type MatchTimelineEvent = {
+  minute: number;
+  type: string;
+  side: string;
+  label: string;
+};
 
 export type ManagerMarketData = {
   clubs: {

@@ -1,4 +1,4 @@
-/** Manager Live — défis dynamiques inspirés FC 26 */
+/** Manager Live — défis dynamiques inspirés FC 26 (paramètres affichés dans le hub) */
 
 export type ChallengeDef = {
   id: string;
@@ -11,6 +11,12 @@ export type ChallengeDef = {
   rewardGold: number;
   rewardBudget: number;
   restriction?: string;
+  parameters?: {
+    transfers?: string;
+    youth?: string;
+    tactics?: string;
+    focus?: string;
+  };
 };
 
 export const CHALLENGES: ChallengeDef[] = [
@@ -24,6 +30,7 @@ export const CHALLENGES: ChallengeDef[] = [
     matchesLimit: 5,
     rewardGold: 50,
     rewardBudget: 25000,
+    parameters: { focus: 'Résultats immédiats', transfers: 'Libres' },
   },
   {
     id: 'iron_defense',
@@ -35,6 +42,7 @@ export const CHALLENGES: ChallengeDef[] = [
     matchesLimit: 6,
     rewardGold: 80,
     rewardBudget: 35000,
+    parameters: { tactics: 'Bloc solide recommandé', focus: 'Solidité' },
   },
   {
     id: 'academy_first',
@@ -47,6 +55,7 @@ export const CHALLENGES: ChallengeDef[] = [
     rewardGold: 100,
     rewardBudget: 20000,
     restriction: 'Focus académie',
+    parameters: { youth: 'Obligatoire', transfers: 'Secondaire', focus: 'Formation' },
   },
   {
     id: 'cash_flow',
@@ -58,6 +67,7 @@ export const CHALLENGES: ChallengeDef[] = [
     matchesLimit: 7,
     rewardGold: 120,
     rewardBudget: 50000,
+    parameters: { transfers: 'Maîtrise salariale', focus: 'Finance' },
   },
   {
     id: 'title_push',
@@ -69,6 +79,7 @@ export const CHALLENGES: ChallengeDef[] = [
     matchesLimit: 10,
     rewardGold: 150,
     rewardBudget: 60000,
+    parameters: { focus: 'Course au titre', tactics: 'Haut rythme' },
   },
 ];
 

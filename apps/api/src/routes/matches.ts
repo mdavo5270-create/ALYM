@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 import {
   strengthFromPlayers,
   simulateMatch,
+  withTimeline,
   randomOpponentName,
   randomOpponentStrength,
 } from '../lib/matchEngine.js';
@@ -14,6 +15,35 @@ import { tickManagerMarket } from '../lib/managerMarket.js';
 
 const router = Router({ mergeParams: true });
 router.use(requireAuth);
+
+
+router.get('/preview', async (req, res) => {
+  const teamId = Number((req.params as Record<string, string>).teamId);
+  const team = await prisma.team.findFirst({
+    where: { id: teamId, userId: req.user!.userId },
+    include: { players: true },
+  });
+  if (!team) return res.status(404).json({ error: 'Équipe introuvable' });
+  const available = team.players.filter((p) => !p.onLoan);
+  const opponent = randomOpponentName();
+  const home = strengthFromPlayers(available);
+  res.json({
+    homeName: team.name,
+    opponent,
+    competition: 'Championnat',
+    venue: 'Domicile',
+    kickoffLabel: 'Prochaine journée',
+    availablePlayers: available.length,
+    formHint: `${team.wins}V · ${team.draws}N · ${team.losses}D`,
+    tacticalVision: team.tacticalVision,
+    strength: {
+      attack: Math.round(home.attack),
+      midfield: Math.round(home.midfield),
+      defense: Math.round(home.defense),
+      gk: Math.round(home.gk),
+    },
+  });
+});
 
 router.post('/play', async (req, res) => {
   const teamId = Number((req.params as Record<string, string>).teamId);
@@ -31,7 +61,8 @@ router.post('/play', async (req, res) => {
   const home = strengthFromPlayers(available);
   const awayName = randomOpponentName();
   const away = randomOpponentStrength();
-  const sim = simulateMatch(home, away);
+  const raw = simulateMatch(home, away);
+  const sim = withTimeline(raw, team.name, awayName);
 
   const wins = team.wins + (sim.result === 'W' ? 1 : 0);
   const draws = team.draws + (sim.result === 'D' ? 1 : 0);
@@ -212,10 +243,21 @@ router.post('/play', async (req, res) => {
   res.json({
     match: {
       opponent: awayName,
+      homeName: team.name,
       homeScore: sim.homeScore,
       awayScore: sim.awayScore,
       result: sim.result,
       prize: sim.prize,
+      stats: sim.stats,
+      timeline: sim.timeline,
+      venue: 'Domicile',
+      competition: 'Championnat',
+    },
+    preview: {
+      opponent: awayName,
+      competition: 'Championnat',
+      venue: 'Domicile',
+      importance: sim.result === 'W' ? 'élevée' : 'normale',
     },
     team: { wins, draws, losses, budget: newBudget, goldBalance },
     event,
