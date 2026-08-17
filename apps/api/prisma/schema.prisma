@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String?  @map("password_hash")
+  username     String?  @unique
+  githubId     String?  @unique @map("github_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  teams        Team[]
+
+  @@map("users")
+}
+
+model Team {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  name         String   @unique
+  nation       String?
+  stadiumName  String?  @map("stadium_name")
+  badgeDesign  Int?     @map("badge_design")
+  budget       Decimal  @default(200000) @db.Decimal(12, 2)
+  reputation   Int      @default(50)
+  wins         Int      @default(0)
+  draws        Int      @default(0)
+  losses       Int      @default(0)
+  goldBalance  Int      @default(0) @map("gold_balance")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user         User           @relation(fields: [userId], references: [id])
+  players      Player[]
+  messages     Message[]
+  transactions Transaction[]
+  achievements Achievement[]
+
+  @@index([userId])
+  @@map("teams")
+}
+
+model Player {
+  id            Int       @id @default(autoincrement())
+  name          String
+  position      String
+  nation        String?
+  salary        Decimal   @db.Decimal(10, 2)
+  speed         Int
+  dribble       Int
+  shot          Int
+  pass          Int
+  defense       Int
+  physique      Int
+  contractUntil DateTime? @map("contract_until")
+  teamId        Int?      @map("team_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  team Team? @relation(fields: [teamId], references: [id])
+
+  @@index([teamId])
+  @@index([position])
+  @@map("players")
+}
+
+model League {
+  id         Int       @id @default(autoincrement())
+  name       String
+  season     Int
+  tier       Int
+  teamsCount Int       @map("teams_count")
+  startDate  DateTime? @map("start_date")
+  endDate    DateTime? @map("end_date")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  matches    Match[]
+
+  @@map("leagues")
+}
+
+model Match {
+  id         Int       @id @default(autoincrement())
+  leagueId   Int       @map("league_id")
+  homeTeamId Int       @map("home_team_id")
+  awayTeamId Int       @map("away_team_id")
+  homeScore  Int?      @map("home_score")
+  awayScore  Int?      @map("away_score")
+  matchDate  DateTime? @map("match_date")
+  status     String    @default("scheduled")
+  events     Json?
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  league League @relation(fields: [leagueId], references: [id])
+
+  @@index([leagueId])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@map("matches")
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  teamId      Int      @map("team_id")
+  sender      String
+  title       String
+  content     String
+  messageDate DateTime @default(now()) @map("message_date")
+  read        Boolean  @default(false)
+
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@index([teamId])
+  @@map("messages")
+}
+
+model Transaction {
+  id              Int      @id @default(autoincrement())
+  teamId          Int      @map("team_id")
+  type            String
+  amount          Decimal  @db.Decimal(12, 2)
+  reason          String?
+  transactionDate DateTime @default(now()) @map("transaction_date")
+
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@index([teamId])
+  @@map("transactions")
+}
+
+model Achievement {
+  id              Int      @id @default(autoincrement())
+  teamId          Int      @map("team_id")
+  achievementCode String   @map("achievement_code")
+  unlockedAt      DateTime @default(now()) @map("unlocked_at")
+
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@index([teamId])
+  @@map("achievements")
+}
