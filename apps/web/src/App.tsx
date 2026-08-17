@@ -630,7 +630,7 @@ export default function App() {
                     key={v.id}
                     disabled={loading}
                     onClick={() => setVision(v.id)}
-                    className={`text-left p-3 rounded-xl border text-sm ${\n                      board.tacticalVision === v.id
+                    className={`text-left p-3 rounded-xl border text-sm ${                      board.tacticalVision === v.id
                         ? 'border-alym-gold bg-alym-gold/10'
                         : 'border-gray-800 hover:border-gray-600'
                     }`}
@@ -744,7 +744,7 @@ export default function App() {
               <button
                 key={m.id}
                 onClick={() => openMessage(m)}
-                className={`w-full text-left bg-alym-surface border rounded-xl p-4 ${\n                  m.read ? 'border-gray-800 opacity-70' : 'border-alym-gold/50'
+                className={`w-full text-left bg-alym-surface border rounded-xl p-4 ${                  m.read ? 'border-gray-800 opacity-70' : 'border-alym-gold/50'
                 }`}
               >
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
@@ -848,7 +848,7 @@ export default function App() {
             {achievements.map((a) => (
               <div
                 key={a.code}
-                className={`bg-alym-surface border rounded-xl p-4 flex justify-between items-center ${\n                  a.unlocked ? 'border-alym-gold/40' : 'border-gray-800 opacity-60'
+                className={`bg-alym-surface border rounded-xl p-4 flex justify-between items-center ${                  a.unlocked ? 'border-alym-gold/40' : 'border-gray-800 opacity-60'
                 }`}
               >
                 <div>
