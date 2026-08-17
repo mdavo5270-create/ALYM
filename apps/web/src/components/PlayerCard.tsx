@@ -4,11 +4,12 @@ import { money } from './ui';
 
 export type PlayerCardVariant = 'compact' | 'standard' | 'detailed' | 'match' | 'transfer' | 'scout';
 
+/** Rareté OVR — classes skill cartes-joueurs-rarete (forme + couleur) */
 function ovrTone(r: number) {
-  if (r >= 82) return 'border-[var(--ok)]/50 text-[var(--ok)] bg-[var(--ok)]/10';
-  if (r >= 74) return 'border-[var(--brass)]/55 text-[var(--brass)] bg-[var(--brass)]/10';
-  if (r >= 66) return 'border-amber-500/40 text-amber-200 bg-amber-500/10';
-  return 'border-[var(--rule)] text-[var(--ink-dim)] bg-black/20';
+  if (r >= 86) return 'ovr-legend';
+  if (r >= 78) return 'ovr-elite';
+  if (r >= 68) return 'ovr-pro';
+  return 'ovr-common';
 }
 
 export function OvrBadge({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' | 'lg' }) {

@@ -78,10 +78,10 @@ export function LevelTile({
 }) {
   const bg =
     tone === 'high'
-      ? 'bg-gradient-to-br from-amber-600/85 to-orange-900/95'
+      ? 'bg-[var(--alym-flare)]/90'
       : tone === 'mid'
-        ? 'bg-gradient-to-br from-slate-600/75 to-slate-900/95'
-        : 'bg-gradient-to-br from-sky-700/75 to-blue-950/95';
+        ? 'bg-slate-700/80'
+        : 'bg-[var(--alym-signal)]/25 border border-[var(--alym-signal)]/40';
   return (
     <div className={`flex min-h-[76px] flex-col justify-between rounded-sm p-3 ${bg}`}>
       <div className="text-[10px] font-semibold uppercase tracking-wider text-white/65">{label}</div>
