@@ -75,12 +75,22 @@ export function Badge({
   );
 }
 
-export function ProgressBar({ value, max = 100, tone = 'brass' }: { value: number; max?: number; tone?: 'brass' | 'good' | 'bad' }) {
+export function ProgressBar({
+  value,
+  max = 100,
+  tone = 'brass',
+  className = '',
+}: {
+  value: number;
+  max?: number;
+  tone?: 'brass' | 'good' | 'bad';
+  className?: string;
+}) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   const bar =
-    tone === 'good' ? 'bg-emerald-500' : tone === 'bad' ? 'bg-rose-500' : 'bg-amber-400';
+    tone === 'good' ? 'bg-emerald-500' : tone === 'bad' ? 'bg-rose-500' : 'bg-sky-400';
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+    <div className={`h-1.5 w-full overflow-hidden rounded-full bg-white/10 ${className}`}>
       <div className={`h-full rounded-full transition-all duration-500 ${bar}`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -122,7 +132,7 @@ export function Modal({
   onClose,
 }: {
   open: boolean;
-  title: string;
+  title?: string;
   children: ReactNode;
   onClose?: () => void;
 }) {
@@ -131,14 +141,16 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]" onClick={onClose} />
       <div className="panel relative z-10 w-full max-w-md animate-enter p-5 shadow-lift">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
-          {onClose && (
-            <button type="button" className="btn-ghost px-2 py-1 text-slate-400" onClick={onClose} aria-label="Fermer">
-              ✕
-            </button>
-          )}
-        </div>
+        {(title || onClose) && (
+          <div className="mb-4 flex items-start justify-between gap-3">
+            {title ? <h2 className="text-lg font-semibold text-white">{title}</h2> : <span />}
+            {onClose && (
+              <button type="button" className="btn-ghost px-2 py-1 text-slate-400" onClick={onClose} aria-label="Fermer">
+                ✕
+              </button>
+            )}
+          </div>
+        )}
         {children}
       </div>
     </div>

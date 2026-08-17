@@ -1,573 +1,886 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { AppShell } from '../components/layout/AppShell';
+import { PlayerCard, OvrBadge, PosChip } from '../components/PlayerCard';
 import {
   Badge,
   Button,
   EmptyState,
   Modal,
-  PageHeader,
-  Panel,
-  PosBadge,
   ProgressBar,
-  Rating,
-  StatCard,
   money,
 } from '../components/ui';
 import { useGame } from '../store/gameStore';
+import {
+  SQUAD_SUBS,
+  MARKET_SUBS,
+  MATCH_SUBS,
+  LIVE_SUBS,
+  type ManagerTask,
+} from '../store/nav';
+import type { Player } from '../lib/api';
 
-function Home() {
-  const { team, messages, lastMatch, switchTab, board, challenges, marketHeadlines } = useGame();
-  const unread = messages.filter((m) => !m.read).slice(0, 4);
-  const played = (team?.wins ?? 0) + (team?.draws ?? 0) + (team?.losses ?? 0);
-  const sec = team?.jobSecurity ?? board?.jobSecurity ?? 70;
-  const tasks = [
-    { id: 'match', label: 'Préparer le prochain match', done: false },
-    { id: 'messages', label: unread.length ? `Lire ${unread.length} message(s)` : 'Courrier à jour', done: !unread.length },
-    { id: 'board', label: sec < 50 ? 'Stabiliser la confiance du conseil' : 'Objectifs conseil en ligne', done: sec >= 50 },
-    { id: 'live', label: challenges?.active ? `Défi actif : ${challenges.active.title}` : 'Choisir un défi Manager Live', done: !!challenges?.active },
+/* ─── Shared chrome ─── */
+
+function SubNav({
+  items,
+  active,
+  onChange,
+}: {
+  items: { id: string; label: string }[];
+  active: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div className="mb-4 flex gap-1 overflow-x-auto border-b border-white/8 pb-px">
+      {items.map((it) => (
+        <button
+          key={it.id}
+          type="button"
+          className={`shrink-0 border-b-2 px-3 py-2 text-[13px] font-medium transition ${
+            active === it.id
+              ? 'border-sky-400 text-sky-300'
+              : 'border-transparent text-[var(--muted)] hover:text-white'
+          }`}
+          onClick={() => onChange(it.id)}
+        >
+          {it.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SectionTitle({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <div className="mb-3">
+      <h1 className="text-[28px] font-bold tracking-tight text-white sm:text-[32px]">{title}</h1>
+      {sub && <p className="mt-0.5 text-[13px] text-[var(--muted)]">{sub}</p>}
+    </div>
+  );
+}
+
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-2xl border border-white/8 bg-[var(--surface)] ${className}`}>{children}</div>
+  );
+}
+
+/* ─── Player drawer (shared object) ─── */
+
+function PlayerDrawer() {
+  const {
+    drawer,
+    setDrawer,
+    selectedPlayerId,
+    players,
+    sellPlayer,
+    setTraining,
+    loanPlayer,
+    recallLoan,
+    loading,
+  } = useGame();
+  const p = players.find((x) => x.id === selectedPlayerId);
+  if (drawer !== 'player' || !p) return null;
+
+  const attrs: [string, number | undefined][] = [
+    ['Vitesse', p.speed],
+    ['Dribble', p.dribble],
+    ['Tir', p.shot],
+    ['Passe', p.pass],
+    ['Défense', p.defense],
+    ['Physique', p.physique],
   ];
 
   return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Central" subtitle="Hub quotidien · Objectifs · Prochain match" />
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="panel-hero p-6 lg:col-span-2">
-          <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-brass-500/10 blur-3xl" />
-          <div className="relative">
-            <div className="label-caps text-sky-300">Prochain match · Championnat</div>
-            <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-              <div className="text-right">
-                <div className="text-lg font-semibold text-[var(--ios-label)] sm:text-2xl">{team?.name ?? 'Vous'}</div>
-                <div className="text-xs text-slate-400">Domicile</div>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/40 data-num text-sm font-bold text-sky-300">
-                VS
-              </div>
-              <div className="text-left">
-                <div className="text-lg font-semibold text-[var(--ios-label)] sm:text-2xl">
-                  {lastMatch?.opponent ?? 'Adversaire'}
-                </div>
-                <div className="text-xs text-slate-400">Extérieur</div>
-              </div>
-            </div>
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-slate-400">Enjeu carrière · Préparation requise</p>
-              <Button onClick={() => switchTab('match')}>Entrer Match Center</Button>
+    <div className="fixed inset-0 z-[55] flex justify-end bg-black/50 backdrop-blur-sm" onClick={() => setDrawer(null)}>
+      <div
+        className="flex h-full w-full max-w-md flex-col border-l border-white/10 bg-[var(--elevated)] shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start gap-3 border-b border-white/8 p-4">
+          <OvrBadge rating={p.rating ?? 65} />
+          <div className="min-w-0 flex-1">
+            <div className="text-[18px] font-bold text-white">{p.name}</div>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-[var(--muted)]">
+              <PosChip pos={p.position} />
+              <span>{p.nation ?? '—'}</span>
+              <span>Pot. {p.potential ?? '—'}</span>
             </div>
           </div>
-          {lastMatch && (
-            <div className="relative mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-md border border-white/[0.06] bg-black/30 px-3 py-3">
-                <div className="label-caps">Score</div>
-                <div className="data-num mt-1 text-xl font-semibold text-[var(--ios-label)]">
-                  {lastMatch.homeScore} — {lastMatch.awayScore}
-                </div>
-              </div>
-              <div className="rounded-md border border-white/[0.06] bg-black/30 px-3 py-3">
-                <div className="label-caps">Résultat</div>
-                <div className="mt-1 text-sm font-medium text-slate-100">
-                  {lastMatch.result === 'W' ? 'Victoire' : lastMatch.result === 'D' ? 'Nul' : 'Défaite'}
-                </div>
-              </div>
-              <div className="rounded-md border border-white/[0.06] bg-black/30 px-3 py-3">
-                <div className="label-caps">Prime</div>
-                <div className="data-num mt-1 text-lg font-semibold text-amber-300">{money(lastMatch.prize)}</div>
-              </div>
-            </div>
-          )}
+          <button type="button" className="text-sky-400" onClick={() => setDrawer(null)}>
+            Fermer
+          </button>
         </div>
-
-        <Panel className="p-5">
-          <div className="label-caps">Confiance du conseil</div>
-          <div className="mt-3 text-3xl font-semibold data-num text-[var(--ios-label)]">{sec}%</div>
-          <div className="mt-3">
-            <ProgressBar value={sec} tone={sec < 35 ? 'bad' : sec < 55 ? 'brass' : 'good'} />
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <Card className="p-3">
+            <div className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Contrat</div>
+            <div className="mt-1 flex justify-between text-[14px]">
+              <span>{money(p.salary)}/sem</span>
+              <span className="text-[var(--muted)]">{p.contractUntil ? p.contractUntil.slice(0, 10) : '—'}</span>
+            </div>
+          </Card>
+          <div>
+            <div className="mb-2 text-[13px] font-semibold text-white">Attributs</div>
+            <div className="space-y-2">
+              {attrs.map(([label, v]) => (
+                <div key={label}>
+                  <div className="mb-0.5 flex justify-between text-[12px]">
+                    <span className="text-[var(--muted)]">{label}</span>
+                    <span className="data-num text-white">{v ?? '—'}</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-full rounded-full bg-sky-500/80" style={{ width: `${v ?? 50}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <Button variant="secondary" className="mt-4 w-full" onClick={() => switchTab('board')}>
-            Conseil
-          </Button>
-        </Panel>
+          <div className="grid grid-cols-2 gap-2">
+            <Button disabled={loading} onClick={() => setTraining(p.id, 'balanced')}>
+              Entraîner
+            </Button>
+            {p.onLoan ? (
+              <Button disabled={loading} onClick={() => recallLoan(p.id)}>
+                Rappeler
+              </Button>
+            ) : (
+              <Button disabled={loading} onClick={() => loanPlayer(p.id)}>
+                Prêter
+              </Button>
+            )}
+            <Button className="col-span-2" disabled={loading || !!p.isLegend} onClick={() => sellPlayer(p.id)}>
+              Vendre
+            </Button>
+          </div>
+        </div>
       </div>
+    </div>
+  );
+}
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Matchs" value={played} />
-        <StatCard label="Victoires" value={team?.wins ?? 0} tone="good" />
-        <StatCard label="Budget" value={money(team?.budget ?? 0)} tone="brass" />
-        <StatCard label="Effectif" value={team?._count?.players ?? '—'} />
-      </div>
+/* ─── CENTRAL ─── */
+
+function CentralHub() {
+  const {
+    team,
+    messages,
+    lastMatch,
+    board,
+    challenges,
+    marketHeadlines,
+    matchPreview,
+    goSpace,
+    goMore,
+    markRead,
+    spaceSub,
+    setSpaceSub,
+  } = useGame();
+  const unread = messages.filter((m) => !m.read);
+  const sec = team?.jobSecurity ?? board?.jobSecurity ?? 70;
+  const played = (team?.wins ?? 0) + (team?.draws ?? 0) + (team?.losses ?? 0);
+
+  const tasks: ManagerTask[] = useMemo(
+    () => [
+      {
+        id: 'match',
+        label: 'Préparer le prochain match',
+        priority: 'urgent',
+        done: false,
+        space: 'match',
+        sub: 'preview',
+      },
+      {
+        id: 'mail',
+        label: unread.length ? `Traiter ${unread.length} message(s)` : 'Courrier à jour',
+        priority: unread.length ? 'action' : 'fyi',
+        done: !unread.length,
+        space: 'more',
+        more: 'news',
+      },
+      {
+        id: 'board',
+        label: sec < 50 ? 'Stabiliser la confiance du conseil' : 'Objectifs conseil',
+        priority: sec < 50 ? 'urgent' : 'important',
+        done: sec >= 55,
+        space: 'more',
+        more: 'board',
+      },
+      {
+        id: 'live',
+        label: challenges?.active ? `Défi : ${challenges.active.title}` : 'Choisir un défi Manager Live',
+        priority: 'important',
+        done: !!challenges?.active,
+        space: 'live',
+      },
+      {
+        id: 'squad',
+        label: 'Revue d’effectif',
+        priority: 'fyi',
+        done: false,
+        space: 'squad',
+        sub: 'overview',
+      },
+    ],
+    [unread.length, sec, challenges]
+  );
+
+  const runTask = (t: ManagerTask) => {
+    if (t.space === 'more' && t.more) goMore(t.more);
+    else goSpace(t.space, t.sub);
+  };
+
+  const priorityColor: Record<string, string> = {
+    urgent: 'text-red-400',
+    action: 'text-amber-300',
+    important: 'text-sky-300',
+    fyi: 'text-[var(--muted)]',
+  };
+
+  return (
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Central" sub="Cockpit manager · même club · même saison" />
+
+      {/* Hero next match */}
+      <Card className="relative overflow-hidden p-5">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-sky-500/10 blur-3xl" />
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-sky-300/90">
+          {matchPreview?.competition ?? 'Championnat'} · {matchPreview?.kickoffLabel ?? 'Prochain match'}
+        </div>
+        <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="text-right">
+            <div className="text-lg font-bold text-white sm:text-xl">{team?.name ?? 'Vous'}</div>
+            <div className="text-[11px] text-[var(--muted)]">Domicile</div>
+          </div>
+          <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/40 text-xs font-bold text-sky-300">
+            VS
+          </div>
+          <div>
+            <div className="text-lg font-bold text-white sm:text-xl">{matchPreview?.opponent ?? 'Adversaire'}</div>
+            <div className="text-[11px] text-[var(--muted)]">{matchPreview?.venue ?? 'Extérieur'}</div>
+          </div>
+        </div>
+        {lastMatch && (
+          <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-3 text-[13px]">
+            <span className="text-[var(--muted)]">Dernier résultat</span>
+            <span className="data-num font-semibold text-white">
+              {lastMatch.homeScore}–{lastMatch.awayScore}{' '}
+              <Badge tone={lastMatch.result === 'W' ? 'good' : lastMatch.result === 'D' ? 'warn' : 'bad'}>
+                {lastMatch.result}
+              </Badge>
+            </span>
+          </div>
+        )}
+        <Button className="mt-4 w-full sm:w-auto" onClick={() => goSpace('match', 'preview')}>
+          Préparer le match
+        </Button>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel className="p-5">
-          <div className="label-caps mb-3">Tâches manager</div>
-          <ul className="space-y-2">
+        {/* Tasks */}
+        <Card className="p-4 lg:col-span-2">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="text-[15px] font-semibold text-white">Tâches manager</div>
+            <button type="button" className="text-[12px] text-sky-400" onClick={() => setSpaceSub(spaceSub === 'tasks' ? 'home' : 'tasks')}>
+              Voir tout
+            </button>
+          </div>
+          <ul className="divide-y divide-white/6">
             {tasks.map((t) => (
               <li key={t.id}>
                 <button
                   type="button"
-                  onClick={() => switchTab(t.id as any)}
-                  className="flex w-full items-center justify-between rounded-lg border border-white/10 px-3 py-2 text-left text-sm hover:border-sky-400/30"
+                  onClick={() => runTask(t)}
+                  className="flex w-full items-center gap-3 py-3 text-left hover:bg-white/[0.03]"
                 >
-                  <span className={t.done ? 'text-slate-400' : 'text-slate-100'}>{t.label}</span>
-                  <Badge tone={t.done ? 'good' : 'brass'}>{t.done ? 'OK' : 'À faire'}</Badge>
+                  <span className={`text-[10px] font-bold uppercase ${priorityColor[t.priority]}`}>
+                    {t.priority === 'urgent' ? 'URG' : t.priority === 'action' ? 'ACT' : t.priority === 'important' ? 'IMP' : 'FYI'}
+                  </span>
+                  <span className={`flex-1 text-[14px] ${t.done ? 'text-[var(--muted)] line-through' : 'text-white'}`}>
+                    {t.label}
+                  </span>
+                  <span className="text-[var(--muted)]">›</span>
                 </button>
               </li>
             ))}
           </ul>
-        </Panel>
+        </Card>
 
-        <Panel className="p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="label-caps">Courrier</div>
-            <button type="button" className="text-xs text-amber-300" onClick={() => switchTab('messages')}>
-              Ouvrir
+        {/* Board + form */}
+        <div className="space-y-4">
+          <Card className="p-4">
+            <div className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Confiance conseil</div>
+            <div className="mt-1 data-num text-2xl font-bold text-white">{sec}%</div>
+            <ProgressBar value={sec} className="mt-2" />
+            <button type="button" className="mt-3 text-[12px] text-sky-400" onClick={() => goMore('board')}>
+              Objectifs ›
+            </button>
+          </Card>
+          <Card className="p-4">
+            <div className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Bilan</div>
+            <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+              <div>
+                <div className="data-num text-lg font-bold text-emerald-400">{team?.wins ?? 0}</div>
+                <div className="text-[10px] text-[var(--muted)]">V</div>
+              </div>
+              <div>
+                <div className="data-num text-lg font-bold text-amber-300">{team?.draws ?? 0}</div>
+                <div className="text-[10px] text-[var(--muted)]">N</div>
+              </div>
+              <div>
+                <div className="data-num text-lg font-bold text-red-400">{team?.losses ?? 0}</div>
+                <div className="text-[10px] text-[var(--muted)]">D</div>
+              </div>
+            </div>
+            <div className="mt-2 text-center text-[12px] text-[var(--muted)]">{played} matchs joués</div>
+          </Card>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="p-4">
+          <div className="mb-2 flex justify-between">
+            <span className="text-[15px] font-semibold text-white">Courrier</span>
+            <button type="button" className="text-[12px] text-sky-400" onClick={() => goMore('news')}>
+              Inbox ›
             </button>
           </div>
-          {unread.length === 0 ? (
-            <p className="text-sm text-slate-400">Aucun non lu.</p>
-          ) : (
-            <ul className="space-y-2">
-              {unread.map((m) => (
-                <li key={m.id} className="rounded-lg border border-white/10 bg-black/30 px-3 py-2">
-                  <div className="text-sm font-medium text-slate-100">{m.title}</div>
-                  <div className="text-xs text-slate-400">{m.sender}</div>
-                </li>
-              ))}
-            </ul>
+          {unread.slice(0, 3).map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className="mb-2 block w-full rounded-xl bg-white/5 px-3 py-2 text-left hover:bg-white/8"
+              onClick={() => {
+                markRead(m.id);
+                goMore('news');
+              }}
+            >
+              <div className="text-[13px] font-medium text-white">{m.title}</div>
+              <div className="truncate text-[11px] text-[var(--muted)]">{m.sender}</div>
+            </button>
+          ))}
+          {!unread.length && <p className="text-[13px] text-[var(--muted)]">Aucun message non lu</p>}
+        </Card>
+        <Card className="p-4">
+          <div className="mb-2 flex justify-between">
+            <span className="text-[15px] font-semibold text-white">Monde</span>
+            <button type="button" className="text-[12px] text-sky-400" onClick={() => goMore('manager')}>
+              Market ›
+            </button>
+          </div>
+          {(marketHeadlines ?? []).slice(0, 4).map((h, i) => (
+            <div key={i} className="border-b border-white/5 py-2 text-[13px] text-[var(--muted)] last:border-0">
+              {h}
+            </div>
+          ))}
+          {!(marketHeadlines ?? []).length && (
+            <p className="text-[13px] text-[var(--muted)]">Jouez un match pour faire bouger le Manager Market</p>
           )}
-        </Panel>
-
-        <Panel className="p-5">
-          <div className="label-caps mb-3">Monde / Market</div>
-          {(marketHeadlines ?? []).length === 0 ? (
-            <p className="text-sm text-slate-400">Jouez un match pour faire tourner le Manager Market.</p>
-          ) : (
-            <ul className="space-y-2 text-sm text-slate-300">
-              {marketHeadlines.slice(0, 4).map((h, i) => (
-                <li key={i} className="border-l-2 border-brass-500/40 pl-2">
-                  {h}
-                </li>
-              ))}
-            </ul>
-          )}
-          <Button variant="secondary" className="mt-4 w-full" onClick={() => switchTab('mgrmarket')}>
-            Manager Market
-          </Button>
-        </Panel>
+        </Card>
       </div>
     </div>
   );
 }
 
+/* ─── SQUAD ─── */
 
+function SquadHub() {
+  const {
+    players,
+    spaceSub,
+    setSpaceSub,
+    setSelectedPlayerId,
+    setDrawer,
+    team,
+  } = useGame();
+  const sub = (SQUAD_SUBS.find((s) => s.id === spaceSub) ? spaceSub : 'players') as string;
 
-function Match() {
-  const { playMatch, loading, lastMatch, error, activeEvent, resolveEvent, challengeNote, matchPreview, loadMatchPreview } =
-    useGame();
+  const byPos = useMemo(() => {
+    const order = ['GK', 'DF', 'MF', 'FW'];
+    const g: Record<string, Player[]> = { GK: [], DF: [], MF: [], FW: [] };
+    for (const p of players) {
+      (g[p.position] ?? (g[p.position] = [])).push(p);
+    }
+    return order.map((pos) => ({ pos, list: g[pos] ?? [] }));
+  }, [players]);
+
+  const openPlayer = (id: number) => {
+    setSelectedPlayerId(id);
+    setDrawer('player');
+  };
 
   return (
-    <div className="animate-enter space-y-6">
-      <PageHeader
-        title="Match Center"
-        subtitle="Preview · Simulation · Analyse"
-        actions={
-          <div className="flex gap-2">
-            <Button variant="secondary" disabled={loading} onClick={() => loadMatchPreview()}>
-              Actualiser preview
-            </Button>
-            <Button disabled={loading} onClick={() => playMatch()}>
-              {loading ? 'Simulation…' : 'Simuler'}
-            </Button>
-          </div>
-        }
-      />
-      {error && <p className="text-sm text-rose-400">{error}</p>}
-      {challengeNote && <Panel className="border-sky-500/30 p-4 text-sm text-slate-200">{challengeNote}</Panel>}
+    <div className="animate-enter">
+      <SectionTitle title="Effectif" sub={`${players.length} joueurs · ${team?.name ?? ''}`} />
+      <SubNav items={SQUAD_SUBS} active={sub} onChange={setSpaceSub} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel className="p-5">
-          <div className="label-caps">Avant-match</div>
-          {matchPreview ? (
-            <div className="mt-3 space-y-3">
-              <div className="text-xl font-semibold text-[var(--ios-label)]">
-                {matchPreview.homeName} <span className="text-[var(--ios-label)]0">vs</span> {matchPreview.opponent}
+      {(sub === 'overview' || sub === 'depth') && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {byPos.map(({ pos, list }) => (
+            <Card key={pos} className="p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <PosChip pos={pos} />
+                <span className="text-[12px] text-[var(--muted)]">{list.length}</span>
               </div>
-              <div className="flex flex-wrap gap-2 text-xs">
-                <Badge>{matchPreview.competition}</Badge>
-                <Badge tone="brass">{matchPreview.venue}</Badge>
-                <Badge tone="neutral">{matchPreview.kickoffLabel}</Badge>
-              </div>
-              <p className="text-sm text-slate-400">
-                Effectif dispo {matchPreview.availablePlayers} · Forme {matchPreview.formHint} · Vision{' '}
-                {matchPreview.tacticalVision}
-              </p>
-              <div className="grid grid-cols-4 gap-2">
-                {(['attack', 'midfield', 'defense', 'gk'] as const).map((k) => (
-                  <div key={k} className="rounded-lg border border-white/10 px-2 py-2 text-center">
-                    <div className="label-caps">{k}</div>
-                    <div className="data-num text-sm text-slate-100">{matchPreview.strength[k]}</div>
-                  </div>
+              <div className="space-y-1">
+                {list.slice(0, 5).map((p) => (
+                  <PlayerCard key={p.id} player={p} variant="compact" onClick={() => openPlayer(p.id)} />
                 ))}
               </div>
-            </div>
-          ) : (
-            <p className="mt-3 text-sm text-slate-400">Ouvrez cet onglet pour charger la preview.</p>
-          )}
-        </Panel>
-
-        <Panel className="p-5">
-          <div className="label-caps">Après-match</div>
-          {lastMatch ? (
-            <div className="mt-3 space-y-4">
-              <div className="text-center">
-                <div className="text-sm text-slate-400">vs {lastMatch.opponent}</div>
-                <div className="mt-2 text-4xl font-semibold data-num text-[var(--ios-label)]">
-                  {lastMatch.homeScore}
-                  <span className="mx-2 text-[var(--ios-label)]0">—</span>
-                  {lastMatch.awayScore}
-                </div>
-                <div className="mt-2 flex justify-center gap-2">
-                  <Badge tone={lastMatch.result === 'W' ? 'good' : lastMatch.result === 'D' ? 'warn' : 'bad'}>
-                    {lastMatch.result === 'W' ? 'Victoire' : lastMatch.result === 'D' ? 'Nul' : 'Défaite'}
-                  </Badge>
-                  <Badge tone="brass">{money(lastMatch.prize)}</Badge>
-                </div>
-              </div>
-              {lastMatch.stats && (
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div>
-                    <div className="label-caps">Possession</div>
-                    <div className="data-num text-slate-100">
-                      {lastMatch.stats.possessionHome}% — {lastMatch.stats.possessionAway}%
-                    </div>
-                  </div>
-                  <div>
-                    <div className="label-caps">Tirs</div>
-                    <div className="data-num text-slate-100">
-                      {lastMatch.stats.shotsHome} — {lastMatch.stats.shotsAway}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="label-caps">Cadrés</div>
-                    <div className="data-num text-slate-100">
-                      {lastMatch.stats.shotsOnHome} — {lastMatch.stats.shotsOnAway}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <EmptyState title="Aucun résultat" body="Simulez pour remplir l’analyse post-match." />
-          )}
-        </Panel>
-      </div>
-
-      {lastMatch?.timeline && lastMatch.timeline.length > 0 && (
-        <Panel className="p-5">
-          <div className="label-caps mb-3">Timeline</div>
-          <ul className="space-y-2">
-            {lastMatch.timeline.map((e, i) => (
-              <li key={i} className="flex items-center gap-3 border-b border-white/10/60 py-1.5 text-sm last:border-0">
-                <span className="data-num w-10 text-slate-400">{e.minute}&apos;</span>
-                <Badge tone={e.type === 'goal' ? 'good' : e.type === 'yellow' ? 'warn' : 'neutral'}>{e.type}</Badge>
-                <span className="text-slate-200">{e.label}</span>
-                <span className="ml-auto text-xs text-[var(--ios-label)]0">{e.side}</span>
-              </li>
-            ))}
-          </ul>
-        </Panel>
+            </Card>
+          ))}
+        </div>
       )}
 
-      <Modal open={!!activeEvent} title={activeEvent?.title ?? 'Événement'}>
-        {activeEvent && (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-300">{activeEvent.body}</p>
-            <div className="label-caps">{activeEvent.category}</div>
-            <div className="flex flex-col gap-2">
-              {activeEvent.choices.map((c) => (
-                <Button key={c.id} variant="secondary" disabled={loading} onClick={() => resolveEvent(c)}>
-                  {c.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-      </Modal>
+      {(sub === 'players' || sub === 'development' || sub === 'contracts') && (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {players.map((p) => (
+            <PlayerCard
+              key={p.id}
+              player={p}
+              variant={sub === 'development' ? 'detailed' : 'standard'}
+              onClick={() => openPlayer(p.id)}
+            />
+          ))}
+          {!players.length && <EmptyState title="Aucun joueur" body="Créez une équipe pour commencer." />}
+        </div>
+      )}
     </div>
   );
 }
 
+/* ─── MATCH ─── */
 
-
-function Squad() {
-  const { players, sellPlayer, loading, selectedPlayerId, setSelectedPlayerId } = useGame();
-  const [filter, setFilter] = useState('ALL');
-  const filtered = useMemo(
-    () => players.filter((p) => (filter === 'ALL' ? true : p.position === filter)),
-    [players, filter]
-  );
-  const selected = players.find((p) => p.id === selectedPlayerId) ?? null;
-
-  const attrs = selected
-    ? [
-        ['Vitesse', selected.speed],
-        ['Dribble', selected.dribble],
-        ['Tir', selected.shot],
-        ['Passe', selected.pass],
-        ['Défense', selected.defense],
-        ['Physique', selected.physique],
-      ]
-    : [];
+function MatchHub() {
+  const {
+    spaceSub,
+    setSpaceSub,
+    matchPreview,
+    lastMatch,
+    playMatch,
+    loading,
+    activeEvent,
+    resolveEvent,
+    team,
+    challengeNote,
+  } = useGame();
+  const sub = (MATCH_SUBS.find((s) => s.id === spaceSub) ? spaceSub : 'preview') as string;
 
   return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Effectif" subtitle={`${players.length} joueurs — sélectionnez pour le profil`} />
-      <div className="flex flex-wrap gap-2">
-        {['ALL', 'GK', 'DF', 'MF', 'FW'].map((f) => (
-          <Button key={f} variant={filter === f ? 'primary' : 'secondary'} onClick={() => setFilter(f)}>
-            {f === 'ALL' ? 'Tous' : f}
-          </Button>
-        ))}
-      </div>
-      <div className="grid gap-4 xl:grid-cols-5">
-        <Panel className="overflow-hidden xl:col-span-3">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-400">
-                  <th className="px-4 py-3 font-medium">Pos</th>
-                  <th className="px-4 py-3 font-medium">Joueur</th>
-                  <th className="px-4 py-3 font-medium">OVR</th>
-                  <th className="px-4 py-3 font-medium">Pot</th>
-                  <th className="px-4 py-3 font-medium">Salaire</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((p) => (
-                  <tr
-                    key={p.id}
-                    className={`table-row cursor-pointer ${selectedPlayerId === p.id ? 'table-row-active' : ''}`}
-                    onClick={() => setSelectedPlayerId(p.id)}
-                  >
-                    <td className="px-4 py-2.5">
-                      <PosBadge pos={p.position} />
-                    </td>
-                    <td className="px-4 py-2.5 font-medium text-slate-100">
-                      {p.name}
-                      {p.isYouth && <span className="ml-2 text-[10px] text-sky-300">JEUNE</span>}
-                      {p.isLegend && <span className="ml-2 text-[10px] text-amber-300">LÉGENDE</span>}
-                      {p.onLoan && <span className="ml-2 text-[10px] text-slate-400">PRÊT</span>}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span className={(p.rating ?? 0) >= 80 ? 'ovr-elite' : (p.rating ?? 0) >= 72 ? 'ovr-high' : (p.rating ?? 0) >= 64 ? 'ovr-mid' : 'ovr-low'}>
-                        {p.rating ?? '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 data-num text-slate-300">{p.potential ?? '—'}</td>
-                    <td className="px-4 py-2.5 data-num text-slate-300">{money(p.salary)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Panel>
+    <div className="animate-enter">
+      <SectionTitle title="Match Center" sub="Événement · pas un simple dashboard" />
+      <SubNav items={MATCH_SUBS} active={sub} onChange={setSpaceSub} />
 
-        <Panel className="p-5 xl:col-span-2">
-          {selected ? (
-            <div className="space-y-4">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <PosBadge pos={selected.position} />
-                  <h2 className="text-xl font-semibold text-[var(--ios-label)]">{selected.name}</h2>
+      {(sub === 'preview' || sub === 'live') && (
+        <div className="space-y-4">
+          <Card className="overflow-hidden">
+            <div className="bg-gradient-to-b from-sky-950/40 to-transparent p-6">
+              <div className="text-center text-[11px] uppercase tracking-wider text-sky-300/80">
+                {matchPreview?.competition ?? 'Championnat'} · {matchPreview?.venue ?? 'Domicile'}
+              </div>
+              <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+                <div className="text-right">
+                  <div className="text-xl font-bold text-white">{team?.name ?? 'Vous'}</div>
                 </div>
-                <p className="mt-1 text-sm text-slate-400">{selected.nation ?? '—'}</p>
+                <div className="text-center">
+                  {lastMatch && sub === 'live' ? (
+                    <div className="data-num text-3xl font-bold text-white">
+                      {lastMatch.homeScore}–{lastMatch.awayScore}
+                    </div>
+                  ) : (
+                    <div className="text-sm font-bold text-sky-300">VS</div>
+                  )}
+                </div>
+                <div>
+                  <div className="text-xl font-bold text-white">{matchPreview?.opponent ?? lastMatch?.opponent ?? 'Adversaire'}</div>
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <StatCard label="OVR" value={selected.rating ?? '—'} />
-                <StatCard label="Potentiel" value={selected.potential ?? '—'} tone="brass" />
-                <StatCard label="Salaire" value={money(selected.salary)} />
-              </div>
-              <div>
-                <div className="label-caps mb-2">Attributs</div>
-                <div className="space-y-2">
-                  {attrs.map(([label, val]) => (
-                    <div key={String(label)}>
-                      <div className="mb-0.5 flex justify-between text-xs text-slate-400">
-                        <span>{label}</span>
-                        <span className="data-num text-slate-200">{val ?? '—'}</span>
-                      </div>
-                      <ProgressBar value={Number(val ?? 0)} max={99} />
+              {matchPreview && (
+                <div className="mt-6 grid grid-cols-4 gap-2 text-center text-[12px]">
+                  {(['attack', 'midfield', 'defense', 'gk'] as const).map((k) => (
+                    <div key={k} className="rounded-lg bg-black/30 py-2">
+                      <div className="text-[10px] uppercase text-[var(--muted)]">{k}</div>
+                      <div className="data-num font-semibold text-white">{matchPreview.strength[k]}</div>
                     </div>
                   ))}
                 </div>
-              </div>
-              <div className="text-xs text-slate-400">
-                Contrat :{' '}
-                {selected.contractUntil
-                  ? new Date(selected.contractUntil).toLocaleDateString('fr-FR')
-                  : 'Non renseigné'}
-              </div>
-              {!selected.isYouth && (
-                <Button variant="danger" disabled={loading} onClick={() => sellPlayer(selected.id)}>
-                  Vendre
-                </Button>
               )}
             </div>
-          ) : (
-            <EmptyState title="Profil joueur" body="Sélectionnez une ligne pour ouvrir le profil détaillé." />
+            <div className="border-t border-white/8 p-4">
+              <Button className="w-full" disabled={loading} onClick={() => playMatch()}>
+                {loading ? 'Simulation…' : 'Simuler le match'}
+              </Button>
+              {challengeNote && <p className="mt-2 text-center text-[12px] text-amber-200">{challengeNote}</p>}
+            </div>
+          </Card>
+
+          {lastMatch?.stats && (
+            <Card className="p-4">
+              <div className="text-[14px] font-semibold text-white">Statistiques</div>
+              <div className="mt-3 space-y-2 text-[13px]">
+                {[
+                  ['Possession', `${lastMatch.stats.possessionHome}%`, `${lastMatch.stats.possessionAway}%`],
+                  ['Tirs', String(lastMatch.stats.shotsHome), String(lastMatch.stats.shotsAway)],
+                  ['Cadrés', String(lastMatch.stats.shotsOnHome), String(lastMatch.stats.shotsOnAway)],
+                ].map(([label, a, b]) => (
+                  <div key={String(label)} className="grid grid-cols-3 gap-2">
+                    <span className="data-num text-right text-white">{a}</span>
+                    <span className="text-center text-[var(--muted)]">{label}</span>
+                    <span className="data-num text-white">{b}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
           )}
-        </Panel>
-      </div>
+
+          {lastMatch?.timeline && lastMatch.timeline.length > 0 && (
+            <Card className="p-4">
+              <div className="text-[14px] font-semibold text-white">Timeline</div>
+              <ul className="mt-2 space-y-2">
+                {lastMatch.timeline.map((e, i) => (
+                  <li key={i} className="flex gap-3 text-[13px]">
+                    <span className="data-num w-8 text-[var(--muted)]">{e.minute}'</span>
+                    <span className="text-white">{e.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {sub === 'post' && (
+        <Card className="p-6 text-center">
+          {lastMatch ? (
+            <>
+              <div className="text-[11px] uppercase text-[var(--muted)]">Résultat final</div>
+              <div className="mt-2 data-num text-4xl font-bold text-white">
+                {lastMatch.homeScore}–{lastMatch.awayScore}
+              </div>
+              <div className="mt-2 text-[14px] text-[var(--muted)]">
+                vs {lastMatch.opponent} · Prime {money(lastMatch.prize)}
+              </div>
+            </>
+          ) : (
+            <EmptyState title="Pas encore de match" body="Simulez depuis l’onglet Avant-match." />
+          )}
+        </Card>
+      )}
+
+      {sub === 'tactics' && <TacticsInline />}
+
+      {activeEvent && (
+        <Modal open onClose={() => {}}>
+          <div className="text-[11px] uppercase text-amber-300">{activeEvent.category}</div>
+          <div className="mt-1 text-lg font-bold text-white">{activeEvent.title}</div>
+          <p className="mt-2 text-[14px] text-[var(--muted)]">{activeEvent.body}</p>
+          <div className="mt-4 space-y-2">
+            {activeEvent.choices.map((c) => (
+              <Button key={c.id} className="w-full" onClick={() => resolveEvent(c)}>
+                {c.label}
+              </Button>
+            ))}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
 
-
-
-function Tactics() {
-  const { board, team, setVision, loading } = useGame();
-  const visions = board?.visions ?? [];
+function TacticsInline() {
+  const { board, setVision, loading, team } = useGame();
+  const visions = board?.visions ?? [
+    { id: 'standard', name: 'Équilibré', desc: 'Approche polyvalente' },
+    { id: 'possession', name: 'Possession', desc: 'Contrôle du ballon' },
+    { id: 'high_press', name: 'Pressing', desc: 'Intensité haute' },
+    { id: 'counter', name: 'Contre', desc: 'Transitions rapides' },
+    { id: 'wing_play', name: 'Ailes', desc: 'Largeur offensive' },
+    { id: 'park_bus', name: 'Bloc bas', desc: 'Solidité défensive' },
+  ];
   const current = team?.tacticalVision ?? board?.tacticalVision ?? 'standard';
 
   return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Tactique" subtitle="Vision de jeu du club" />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel className="relative flex min-h-[280px] items-center justify-center overflow-hidden p-6">
-          <div className="absolute inset-4 rounded-panel border border-white/10 bg-gradient-to-b from-ink-800 to-ink-950" />
-          <div className="absolute inset-x-10 top-1/2 h-px bg-ink-600" />
-          <div className="absolute left-1/2 top-8 bottom-8 w-px bg-ink-600" />
-          <div className="relative text-center">
-            <div className="label-caps">Vision active</div>
-            <div className="mt-2 text-2xl font-semibold capitalize text-[var(--ios-label)]">{current.replace('_', ' ')}</div>
+    <div className="grid gap-2 sm:grid-cols-2">
+      {visions.map((v) => (
+        <button
+          key={v.id}
+          type="button"
+          disabled={loading}
+          onClick={() => setVision(v.id)}
+          className={`rounded-2xl border p-4 text-left transition ${
+            current === v.id ? 'border-sky-400/50 bg-sky-500/10' : 'border-white/8 bg-[var(--surface)] hover:border-white/15'
+          }`}
+        >
+          <div className="font-semibold text-white">{v.name}</div>
+          <div className="mt-1 text-[12px] text-[var(--muted)]">{v.desc}</div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ─── MARKET ─── */
+
+function MarketHub() {
+  const {
+    spaceSub,
+    setSpaceSub,
+    listings,
+    buyListing,
+    loading,
+    players,
+    sellPlayer,
+    managerJobs,
+    applyJob,
+    mgrMarket,
+    goMore,
+  } = useGame();
+  const sub = (MARKET_SUBS.find((s) => s.id === spaceSub) ? spaceSub : 'overview') as string;
+
+  return (
+    <div className="animate-enter">
+      <SectionTitle title="Mercato" sub="Parcours continu · recherche → offre → confirmation" />
+      <SubNav items={MARKET_SUBS} active={sub} onChange={setSpaceSub} />
+
+      {(sub === 'overview' || sub === 'search' || sub === 'targets') && (
+        <div className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {listings.map((l, idx) => (
+              <Card key={l.tempId ?? `${l.name}-${idx}`} className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="font-semibold text-white">{l.name}</div>
+                    <div className="mt-1 text-[12px] text-[var(--muted)]">
+                      {l.position} · OVR {l.rating} · Pot. {l.potential}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="data-num text-amber-200">{money(l.price)}</div>
+                    <Button className="mt-2" disabled={loading} onClick={() => buyListing(l)}>
+                      Offre
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
-        </Panel>
+          {!listings.length && <EmptyState title="Aucun listing" body="Revenez après un match ou un refresh marché." />}
+        </div>
+      )}
+
+      {sub === 'loans' && (
         <div className="grid gap-2 sm:grid-cols-2">
-          {visions.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              disabled={loading}
-              onClick={() => setVision(v.id)}
-              className={`rounded-panel border p-4 text-left transition ${
-                current === v.id
-                  ? 'border-brass-500/50 bg-brass-500/10'
-                  : 'border-white/10 bg-[#0d1420] hover:border-sky-400/30'
-              }`}
-            >
-              <div className="text-sm font-semibold text-[var(--ios-label)]">{v.name}</div>
-              <div className="mt-1 text-xs text-slate-400">{v.desc}</div>
-            </button>
+          {players
+            .filter((p) => !p.isLegend)
+            .map((p) => (
+              <PlayerCard key={p.id} player={p} variant="transfer" onClick={() => (p.onLoan ? null : sellPlayer(p.id))} />
+            ))}
+        </div>
+      )}
+
+      {sub === 'history' && (
+        <EmptyState title="Historique mercato" body="Les transferts de la saison apparaîtront ici." />
+      )}
+
+      {sub === 'negotiations' && (
+        <EmptyState title="Négociations" body="Lancez une offre depuis Recherche pour ouvrir une négo." />
+      )}
+
+      {sub === 'mgr' && (
+        <div className="space-y-3">
+          <button type="button" className="text-[13px] text-sky-400" onClick={() => goMore('manager')}>
+            Ouvrir Manager Market complet ›
+          </button>
+          {(managerJobs ?? []).slice(0, 6).map((j) => (
+            <Card key={j.clubId} className="flex items-center justify-between p-3">
+              <div>
+                <div className="font-medium text-white">{j.clubName}</div>
+                <div className="text-[12px] text-[var(--muted)]">
+                  {j.compatibility}% compat · {j.status}
+                </div>
+              </div>
+              <Button disabled={loading} onClick={() => applyJob(j.clubId)}>
+                Candidater
+              </Button>
+            </Card>
           ))}
-          {visions.length === 0 && (
-            <EmptyState title="Chargez le conseil" body="Ouvrez d’abord l’onglet Conseil ou rechargez." />
+          {mgrMarket && (
+            <p className="text-[12px] text-[var(--muted)]">
+              {mgrMarket.clubs?.length ?? 0} clubs IA · {mgrMarket.freeAgents?.length ?? 0} agents libres
+            </p>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
-function Board() {
+/* ─── LIVE ─── */
+
+function LiveHub() {
+  const { spaceSub, setSpaceSub, challenges, startChallenge, abandonChallenge, loading } = useGame();
+  const sub = (LIVE_SUBS.find((s) => s.id === spaceSub) ? spaceSub : 'for_you') as string;
+  const catalog = challenges?.catalog ?? [];
+  const active = challenges?.active;
+
+  return (
+    <div className="animate-enter">
+      <SectionTitle title="Manager Live" sub="Défis paramétrés · sessions courtes" />
+      <SubNav items={LIVE_SUBS} active={sub} onChange={setSpaceSub} />
+
+      {sub === 'active' && active && (
+        <Card className="p-5">
+          <Badge tone="brass">En cours</Badge>
+          <div className="mt-2 text-xl font-bold text-white">{active.title}</div>
+          <p className="mt-1 text-[13px] text-[var(--muted)]">{active.description}</p>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-[13px]">
+            <div className="rounded-xl bg-black/30 p-3">
+              <div className="text-[var(--muted)]">Objectif</div>
+              <div className="data-num text-lg font-bold text-white">
+                {active.progress?.wins ?? 0}/{active.goalTarget ?? '—'}
+              </div>
+            </div>
+            <div className="rounded-xl bg-black/30 p-3">
+              <div className="text-[var(--muted)]">Matchs</div>
+              <div className="data-num text-lg font-bold text-white">
+                {active.progress?.matches ?? 0}/{active.matchesLimit ?? '—'}
+              </div>
+            </div>
+          </div>
+          <Button className="mt-4" disabled={loading} onClick={() => abandonChallenge()}>
+            Abandonner
+          </Button>
+        </Card>
+      )}
+      {sub === 'active' && !active && <EmptyState title="Aucun défi actif" body="Choisissez-en un dans Catalogue." />}
+
+      {(sub === 'for_you' || sub === 'catalog') && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {catalog.map((c) => (
+            <Card key={c.id} className="flex flex-col p-4">
+              <div className="text-[15px] font-semibold text-white">{c.title}</div>
+              <p className="mt-1 flex-1 text-[12px] text-[var(--muted)]">{c.description}</p>
+              <Button className="mt-3" disabled={loading || !!active} onClick={() => startChallenge(c.id)}>
+                Lancer
+              </Button>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {sub === 'completed' && <EmptyState title="Historique" body="Les défis terminés s’afficheront ici." />}
+    </div>
+  );
+}
+
+/* ─── MORE sections ─── */
+
+function MoreBoard() {
   const { board, team } = useGame();
-  const sec = board?.jobSecurity ?? team?.jobSecurity ?? 0;
+  const sec = team?.jobSecurity ?? board?.jobSecurity ?? 70;
   return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Conseil d’administration" subtitle="Objectifs et sécurité d’emploi" />
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Panel className="p-5">
-          <div className="label-caps">Sécurité du poste</div>
-          <div className="mt-2 text-4xl font-semibold data-num text-[var(--ios-label)]">{sec}%</div>
-          <div className="mt-4">
-            <ProgressBar value={sec} tone={sec < 35 ? 'bad' : 'good'} />
-          </div>
-        </Panel>
-        <Panel className="p-5 lg:col-span-2">
-          <div className="label-caps mb-3">Objectifs</div>
-          <div className="space-y-3">
-            {(board?.objectives ?? []).map((o) => (
-              <div key={o.code}>
-                <div className="mb-1 flex justify-between text-sm">
-                  <span className="text-slate-200">{o.label}</span>
-                  <span className="data-num text-slate-400">
-                    {o.current}/{o.target}
-                  </span>
-                </div>
-                <ProgressBar value={o.current} max={Math.max(o.target, 1)} />
-              </div>
-            ))}
-            {!board?.objectives?.length && <p className="text-sm text-slate-400">Aucun objectif chargé.</p>}
-          </div>
-        </Panel>
-      </div>
-    </div>
-  );
-}
-
-function Market() {
-  const { listings, buyListing, loading, team, error } = useGame();
-  return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Mercato" subtitle={`Budget disponible ${money(team?.budget ?? 0)}`} />
-      {error && <p className="text-sm text-rose-400">{error}</p>}
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {listings.map((l, i) => (
-          <Panel key={l.tempId ?? `${l.name}-${i}`} className="p-4">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="flex items-center gap-2">
-                  <PosBadge pos={l.position} />
-                  <span className="font-semibold text-[var(--ios-label)]">{l.name}</span>
-                </div>
-                <div className="mt-1 text-xs text-slate-400">{l.nation ?? '—'}</div>
-              </div>
-              <Rating value={l.rating} />
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Conseil" sub="Objectifs · confiance · sécurité d’emploi" />
+      <Card className="p-4">
+        <div className="text-[11px] uppercase text-[var(--muted)]">Job security</div>
+        <div className="data-num text-3xl font-bold text-white">{sec}%</div>
+        <ProgressBar value={sec} className="mt-2" />
+      </Card>
+      <div className="space-y-2">
+        {(board?.objectives ?? []).map((o) => (
+          <Card key={o.code} className="p-3">
+            <div className="flex justify-between text-[14px]">
+              <span className="text-white">{o.label}</span>
+              <span className="data-num text-[var(--muted)]">
+                {o.current}/{o.target}
+              </span>
             </div>
-            <div className="mt-3 flex items-center justify-between text-sm">
-              <span className="data-num text-amber-300">{money(l.price)}</span>
-              <span className="text-xs text-slate-400">Pot. {l.potential}</span>
-            </div>
-            <Button className="mt-3 w-full" disabled={loading} onClick={() => buyListing(l)}>
-              Recruter
-            </Button>
-          </Panel>
+            <ProgressBar value={Math.min(100, (o.current / Math.max(1, o.target)) * 100)} className="mt-2" />
+          </Card>
         ))}
       </div>
-      {!listings.length && <EmptyState title="Aucun listing" body="Revenez plus tard ou rechargez l’onglet." />}
+      <div className="pt-2">
+        <div className="mb-2 text-[14px] font-semibold text-white">Vision tactique</div>
+        <TacticsInline />
+      </div>
     </div>
   );
 }
 
-function Youth() {
-  const { youth, scoutYouth, promote, loading, error } = useGame();
+function MoreFinance() {
+  const { budgetInfo, team } = useGame();
   return (
-    <div className="animate-enter space-y-6">
-      <PageHeader
-        title="Académie"
-        subtitle="Détection et promotion de jeunes"
-        actions={
-          <Button disabled={loading} onClick={() => scoutYouth()}>
-            Scout (£8k)
-          </Button>
-        }
-      />
-      {error && <p className="text-sm text-rose-400">{error}</p>}
-      <div className="grid gap-3 md:grid-cols-2">
-        {youth.map((p) => (
-          <Panel key={p.id} className="flex items-center justify-between gap-3 p-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <PosBadge pos={p.position} />
-                <span className="font-medium text-[var(--ios-label)]">{p.name}</span>
-              </div>
-              <div className="mt-1 text-xs text-slate-400">
-                Note {p.rating ?? '—'} · Pot. {p.potential ?? '—'}
-              </div>
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Finances" sub="Budget · salaires · flux" />
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="p-4">
+          <div className="text-[11px] text-[var(--muted)]">Budget</div>
+          <div className="data-num text-xl font-bold text-amber-200">{money(budgetInfo?.budget ?? team?.budget ?? 0)}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-[11px] text-[var(--muted)]">Salaires / sem</div>
+          <div className="data-num text-xl font-bold text-white">{money(budgetInfo?.weeklySalaries ?? 0)}</div>
+        </Card>
+      </div>
+      <Card className="p-4">
+        <div className="mb-2 text-[14px] font-semibold text-white">Transactions</div>
+        <ul className="max-h-64 space-y-2 overflow-y-auto text-[13px]">
+          {(budgetInfo?.transactions ?? []).slice(0, 20).map((t) => (
+            <li key={t.id} className="flex justify-between border-b border-white/5 py-1">
+              <span className="text-[var(--muted)]">{t.reason ?? t.type}</span>
+              <span className={`data-num ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{money(t.amount)}</span>
+            </li>
+          ))}
+        </ul>
+      </Card>
+    </div>
+  );
+}
+
+function MoreNews() {
+  const { messages, markRead } = useGame();
+  return (
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Courrier" sub="Inbox · décisions · actus club" />
+      <div className="space-y-2">
+        {messages.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => markRead(m.id)}
+            className={`w-full rounded-2xl border p-4 text-left ${
+              m.read ? 'border-white/5 bg-white/[0.02]' : 'border-sky-500/20 bg-sky-500/5'
+            }`}
+          >
+            <div className="flex justify-between gap-2">
+              <span className="font-semibold text-white">{m.title}</span>
+              {!m.read && <Badge tone="brass">Nouveau</Badge>}
             </div>
-            <Button variant="secondary" disabled={loading} onClick={() => promote(p.id)}>
+            <div className="mt-1 text-[12px] text-[var(--muted)]">{m.sender}</div>
+            <p className="mt-2 text-[13px] text-[var(--muted)]">{m.content}</p>
+          </button>
+        ))}
+        {!messages.length && <EmptyState title="Boîte vide" body="Les événements et le market alimentent l’inbox." />}
+      </div>
+    </div>
+  );
+}
+
+function MoreAcademy() {
+  const { youth, scoutYouth, promote, loading } = useGame();
+  return (
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Académie" sub="Jeunes · scout · promotion" />
+      <Button disabled={loading} onClick={() => scoutYouth()}>
+        Scout (£8k)
+      </Button>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {youth.map((p) => (
+          <Card key={p.id} className="p-3">
+            <PlayerCard player={p} variant="standard" />
+            <Button className="mt-2 w-full" disabled={loading} onClick={() => promote(p.id)}>
               Promouvoir
             </Button>
-          </Panel>
+          </Card>
         ))}
       </div>
       {!youth.length && <EmptyState title="Aucun prospect" body="Lancez un scout pour détecter un jeune." />}
@@ -575,466 +888,88 @@ function Youth() {
   );
 }
 
-function Live() {
-  const { challenges, startChallenge, abandonChallenge, loading } = useGame();
-  const [tab, setTab] = useState<'active' | 'catalog' | 'done'>('catalog');
-  const active = challenges?.active;
-
+function MoreGeneric({ title, body }: { title: string; body: string }) {
   return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Manager Live Hub" subtitle="Défis saisonniers · Objectifs · Récompenses" />
+    <div className="animate-enter">
+      <SectionTitle title={title} />
+      <Card className="p-6">
+        <p className="text-[14px] text-[var(--muted)]">{body}</p>
+        <p className="mt-3 text-[12px] text-[var(--muted)]">
+          Même shell · mêmes données carrière · module relié au registre 625 (sous-vues / drawers).
+        </p>
+      </Card>
+    </div>
+  );
+}
 
-      <div className="subtabs">
-        {(
-          [
-            ['active', 'Actif'],
-            ['catalog', 'Pour vous'],
-            ['done', 'Terminés'],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            className={`subtab ${tab === id ? 'subtab-active' : ''}`}
-            onClick={() => setTab(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'active' && (
-        <div>
-          {active ? (
-            <Panel className="border-sky-500/30 p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="label-caps">Défi en cours</div>
-                  <div className="mt-1 text-xl font-semibold text-[var(--ios-label)]">{active.title}</div>
-                  <p className="mt-1 text-sm text-slate-400">{active.description}</p>
-                </div>
-                <Badge tone="brass">{active.difficulty}</Badge>
-              </div>
-              {active.progress && (
-                <div className="mt-4 grid gap-3 sm:grid-cols-4">
-                  <StatCard label="Victoires" value={active.progress.wins} />
-                  <StatCard label="Matchs" value={`${active.progress.matches}/${active.matchesLimit}`} />
-                  <StatCard label="Série" value={active.progress.streak} />
-                  <StatCard label="Jeunes" value={active.progress.youth} />
-                </div>
-              )}
-              {active.parameters && (
-                <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                  {Object.entries(active.parameters).map(([k, v]) =>
-                    v ? (
-                      <Badge key={k} tone="neutral">
-                        {k}: {v}
-                      </Badge>
-                    ) : null
-                  )}
-                </div>
-              )}
-              <Button variant="danger" className="mt-4" disabled={loading} onClick={() => abandonChallenge()}>
-                Abandonner
-              </Button>
-            </Panel>
-          ) : (
-            <EmptyState title="Aucun défi actif" body="Choisissez un scénario dans le catalogue." />
-          )}
+function MoreRouter() {
+  const more = useGame((s) => s.moreSection);
+  switch (more) {
+    case 'board':
+    case 'club':
+      return <MoreBoard />;
+    case 'finance':
+      return <MoreFinance />;
+    case 'news':
+      return <MoreNews />;
+    case 'academy':
+    case 'scouting':
+      return <MoreAcademy />;
+    case 'tactics':
+      return (
+        <div className="animate-enter">
+          <SectionTitle title="Tactique" sub="Workspace · vision d’équipe" />
+          <TacticsInline />
         </div>
-      )}
-
-      {tab === 'catalog' && (
-        <div>
-          <div className="label-caps mb-3 text-sky-300">Catalogue de défis</div>
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {(challenges?.catalog ?? []).map((c) => (
-              <div key={c.id} className="hub-tile w-[220px] p-4">
-                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500/80 to-indigo-500/40" />
-                <div className="mt-1 flex items-start justify-between gap-2">
-                  <div className="text-sm font-semibold leading-snug text-[var(--ios-label)]">{c.title}</div>
-                  <span className="chip-sky">{c.difficulty}</span>
-                </div>
-                <p className="mt-2 line-clamp-3 text-xs text-slate-400">{c.description}</p>
-                <div className="mt-3 space-y-1 text-[11px] text-slate-400">
-                  <div>Objectif {c.goalTarget} · {c.matchesLimit} matchs</div>
-                  <div className="text-amber-300">{c.rewardGold} Or · {money(c.rewardBudget)}</div>
-                </div>
-                {c.parameters && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {Object.entries(c.parameters).map(([k, v]) =>
-                      v ? (
-                        <span key={k} className="chip-muted">{String(v)}</span>
-                      ) : null
-                    )}
-                  </div>
-                )}
-                <Button className="mt-3 w-full" disabled={loading || !!active} onClick={() => startChallenge(c.id)}>
-                  Start Job
-                </Button>
-              </div>
-            ))}
-          </div>
+      );
+    case 'training':
+      return <MoreGeneric title="Entraînement" body="Plans par joueur — ouvrez un joueur depuis l’Effectif." />;
+    case 'manager':
+    case 'world':
+      return (
+        <div className="animate-enter">
+          <SectionTitle title="Manager Market" sub="Mouvements · postes · fil d’actu" />
+          <MarketHub />
         </div>
-      )}
-
-      {tab === 'done' && (
-        <EmptyState
-          title="Historique local"
-          body="Les défis réussis apparaissent aussi dans le courrier MANAGER LIVE et les succès."
-        />
-      )}
-    </div>
-  );
+      );
+    case 'legends':
+      return <MoreGeneric title="Légendes" body="ICONs & Heroes — déblocage par objectifs de carrière." />;
+    case 'shop':
+      return <MoreGeneric title="Boutique" body="Améliorations Or — branché API shop." />;
+    case 'achievements':
+      return <MoreGeneric title="Succès" body="Succès de carrière partagés sur le même compte." />;
+    case 'calendar':
+      return <MoreGeneric title="Calendrier" body="Journée · saison · fenêtres mercato (structure prête)." />;
+    case 'competitions':
+      return <MoreGeneric title="Compétitions" body="Classement · fixtures — données ligue à peupler." />;
+    case 'analytics':
+      return <MoreGeneric title="Analytics" body="Tendances équipe / joueurs — mêmes stats match." />;
+    case 'staff':
+      return <MoreGeneric title="Staff" body="Entraîneurs · scouts · médical (extension staff hub)." />;
+    case 'settings':
+      return <MoreGeneric title="Réglages" body="Compte · notifications · accessibilité." />;
+    default:
+      return <MoreGeneric title="Plus" body="Choisissez une section dans le menu Plus." />;
+  }
 }
 
-
-
-function Training() {
-  const { training, setTraining, loanPlayer, recallLoan, loading } = useGame();
-  return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Entraînement & prêts" subtitle="Plans individuels" />
-      <div className="flex flex-wrap gap-2">
-        {(training?.plans ?? []).map((p) => (
-          <Badge key={p.id} tone="brass">
-            {p.name}
-          </Badge>
-        ))}
-      </div>
-      <Panel className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-400">
-                <th className="px-4 py-3">Joueur</th>
-                <th className="px-4 py-3">Plan</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(training?.players ?? []).map((p) => (
-                <tr key={p.id} className="table-row">
-                  <td className="px-4 py-2.5">
-                    <PosBadge pos={p.position} /> <span className="ml-2 text-slate-100">{p.name}</span>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <select
-                      className="field max-w-[160px] py-1.5"
-                      value={p.trainingPlan}
-                      disabled={loading || p.onLoan}
-                      onChange={(e) => setTraining(p.id, e.target.value)}
-                    >
-                      {(training?.plans ?? []).map((plan) => (
-                        <option key={plan.id} value={plan.id}>
-                          {plan.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    {p.onLoan ? (
-                      <Button variant="secondary" disabled={loading} onClick={() => recallLoan(p.id)}>
-                        Rappeler
-                      </Button>
-                    ) : (
-                      <Button variant="ghost" disabled={loading || p.isYouth} onClick={() => loanPlayer(p.id)}>
-                        Prêter
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
-    </div>
-  );
-}
-
-function Messages() {
-  const { messages, markRead } = useGame();
-  return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Courrier" subtitle="Messages du club et du marché" />
-      <div className="space-y-2">
-        {messages.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            onClick={() => !m.read && markRead(m.id)}
-            className={`panel w-full p-4 text-left transition hover:border-mist-400/20 ${!m.read ? 'border-sky-500/30' : ''}`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="font-medium text-[var(--ios-label)]">{m.title}</div>
-              {!m.read && <Badge tone="brass">Nouveau</Badge>}
-            </div>
-            <div className="mt-1 text-xs text-slate-400">
-              {m.sender} · {new Date(m.messageDate).toLocaleString('fr-FR')}
-            </div>
-            <p className="mt-2 text-sm text-slate-300">{m.content}</p>
-          </button>
-        ))}
-        {!messages.length && <EmptyState title="Boîte vide" />}
-      </div>
-    </div>
-  );
-}
-
-function Budget() {
-  const { budgetInfo } = useGame();
-  return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Finances" subtitle="Trésorerie et mouvements" />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Solde" value={money(budgetInfo?.budget ?? 0)} tone="brass" />
-        <StatCard label="Or" value={budgetInfo?.gold ?? 0} />
-        <StatCard label="Salaires / sem." value={money(budgetInfo?.weeklySalaries ?? 0)} />
-        <StatCard label="Dépenses listées" value={money(budgetInfo?.expenses ?? 0)} tone="bad" />
-      </div>
-      <Panel className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-400">
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Motif</th>
-                <th className="px-4 py-3">Montant</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(budgetInfo?.transactions ?? []).map((t) => (
-                <tr key={t.id} className="table-row">
-                  <td className="px-4 py-2.5 text-slate-400">{new Date(t.transactionDate).toLocaleDateString('fr-FR')}</td>
-                  <td className="px-4 py-2.5">{t.type}</td>
-                  <td className="px-4 py-2.5 text-slate-300">{t.reason ?? '—'}</td>
-                  <td className={`px-4 py-2.5 data-num ${t.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {money(t.amount)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
-    </div>
-  );
-}
-
-function Shop() {
-  const { shopItems, buyShop, loading, team } = useGame();
-  return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Boutique" subtitle={`Solde Or · ${team?.goldBalance ?? 0}`} />
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {shopItems.map((item) => (
-          <Panel key={item.id} className="p-4">
-            <div className="font-semibold text-[var(--ios-label)]">{item.name}</div>
-            <p className="mt-1 text-sm text-slate-400">{item.effect}</p>
-            <div className="mt-3 flex items-center justify-between">
-              <span className="data-num text-amber-300">{item.price} Or</span>
-              <Button disabled={loading} onClick={() => buyShop(item.id)}>
-                Acheter
-              </Button>
-            </div>
-          </Panel>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Legends() {
-  const { legends, recruitLegend, loading } = useGame();
-  return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Légendes" subtitle="ICONs & Heroes" />
-      <div className="grid gap-3 md:grid-cols-3">
-        {legends.map((l) => (
-          <Panel key={l.code} className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="font-semibold text-[var(--ios-label)]">{l.name}</div>
-              <PosBadge pos={l.position} />
-            </div>
-            <p className="mt-1 text-xs text-slate-400">{l.nation} · {l.unlock}</p>
-            <div className="mt-3 flex flex-wrap gap-1">
-              {l.owned && <Badge tone="good">Dans l’effectif</Badge>}
-              {!l.unlocked && <Badge tone="warn">Verrouillé</Badge>}
-              {l.unlocked && !l.owned && <Badge tone="brass">Disponible</Badge>}
-            </div>
-            {l.unlocked && !l.owned && (
-              <Button className="mt-3 w-full" disabled={loading} onClick={() => recruitLegend(l.code)}>
-                Recruter · {money(l.salary)}
-              </Button>
-            )}
-          </Panel>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function MgrMarket() {
-  const { mgrMarket, managerJobs, applyJob, loading, challengeNote } = useGame();
-  const [sub, setSub] = useState<'clubs' | 'jobs' | 'feed'>('jobs');
-
-  return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Manager Market" subtitle="Mouvements IA · postes · candidatures" />
-      {challengeNote && <Panel className="border-sky-500/30 p-3 text-sm text-slate-200">{challengeNote}</Panel>}
-
-      <div className="subtabs">
-        {(
-          [
-            ['jobs', 'Postes'],
-            ['clubs', 'Clubs'],
-            ['feed', 'Fil d’actu'],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            className={`subtab ${sub === id ? 'subtab-active' : ''}`}
-            onClick={() => setSub(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {sub === 'jobs' && (
-        <div className="grid gap-3 md:grid-cols-2">
-          {(managerJobs ?? []).map((j) => (
-            <Panel key={j.clubId} className="p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="font-semibold text-[var(--ios-label)]">{j.clubName}</div>
-                  <div className="text-xs text-slate-400">
-                    {j.nation ?? '—'} · Vision {j.tacticalVision} · Rep {j.reputation}
-                  </div>
-                </div>
-                <Badge tone={j.status === 'vacant' ? 'good' : 'warn'}>
-                  {j.status === 'vacant' ? 'Vacant' : 'Sous pression'}
-                </Badge>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                <span className="data-num text-amber-300">{j.compatibility}% compat.</span>
-                <Badge tone="brass">Chance {j.likelihood}</Badge>
-                {j.managerName && <span className="text-xs text-[var(--ios-label)]0">Coach : {j.managerName}</span>}
-              </div>
-              <Button className="mt-3" disabled={loading} onClick={() => applyJob(j.clubId)}>
-                Candidater
-              </Button>
-            </Panel>
-          ))}
-          {!(managerJobs ?? []).length && (
-            <EmptyState title="Aucun poste ouvert" body="Jouez des matchs pour faire bouger le marché." />
-          )}
-        </div>
-      )}
-
-      {sub === 'clubs' && (
-        <Panel className="p-4">
-          <div className="space-y-2">
-            {(mgrMarket?.clubs ?? []).map((c) => (
-              <div
-                key={c.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2"
-              >
-                <div>
-                  <div className="font-medium text-[var(--ios-label)]">{c.name}</div>
-                  <div className="text-xs text-slate-400">
-                    {c.manager ? `${c.manager.name} · ${c.manager.status}` : 'Poste vacant'} · {c.tacticalVision}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="data-num text-sm text-slate-200">{c.jobSecurity}%</div>
-                  <div className="text-[10px] text-[var(--ios-label)]0">{c.record}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Panel>
-      )}
-
-      {sub === 'feed' && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Panel className="p-4">
-            <div className="label-caps mb-2">Agents libres</div>
-            <ul className="space-y-1 text-sm">
-              {(mgrMarket?.freeAgents ?? []).map((m) => (
-                <li key={m.id} className="text-slate-200">
-                  {m.name} <span className="text-[var(--ios-label)]0">· rep {m.reputation}</span>
-                </li>
-              ))}
-            </ul>
-          </Panel>
-          <Panel className="p-4">
-            <div className="label-caps mb-2">Événements</div>
-            <ul className="space-y-2 text-xs text-slate-300">
-              {(mgrMarket?.events ?? []).slice(0, 15).map((e) => (
-                <li key={e.id}>
-                  <span className="text-amber-300">{e.type}</span> · {e.clubName}
-                  {e.managerName ? ` · ${e.managerName}` : ''}
-                  {e.detail ? ` · ${e.detail}` : ''}
-                </li>
-              ))}
-            </ul>
-          </Panel>
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-
-function Achievements() {
-  const { achievements } = useGame();
-  return (
-    <div className="animate-enter space-y-6">
-      <PageHeader title="Succès" />
-      <div className="grid gap-3 md:grid-cols-2">
-        {achievements.map((a) => (
-          <Panel key={a.code} className={`p-4 ${a.unlocked ? 'border-sky-500/30' : 'opacity-70'}`}>
-            <div className="flex items-center justify-between">
-              <div className="font-semibold text-[var(--ios-label)]">{a.name}</div>
-              <Badge tone={a.unlocked ? 'brass' : 'neutral'}>{a.unlocked ? 'Débloqué' : 'Verrouillé'}</Badge>
-            </div>
-            <p className="mt-1 text-sm text-slate-400">{a.description}</p>
-          </Panel>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-const VIEWS: Record<string, () => JSX.Element> = {
-  home: Home,
-  match: Match,
-  squad: Squad,
-  tactics: Tactics,
-  board: Board,
-  market: Market,
-  youth: Youth,
-  live: Live,
-  training: Training,
-  messages: Messages,
-  budget: Budget,
-  shop: Shop,
-  legends: Legends,
-  mgrmarket: MgrMarket,
-  achievements: Achievements,
-};
+/* ─── Root ─── */
 
 export function Dashboard() {
-  const tab = useGame((s) => s.tab);
-  const View = VIEWS[tab] ?? Home;
+  const space = useGame((s) => s.space);
+
+  let body: React.ReactNode;
+  if (space === 'central') body = <CentralHub />;
+  else if (space === 'squad') body = <SquadHub />;
+  else if (space === 'match') body = <MatchHub />;
+  else if (space === 'market') body = <MarketHub />;
+  else if (space === 'live') body = <LiveHub />;
+  else body = <MoreRouter />;
+
   return (
     <AppShell>
-      <View />
+      {body}
+      <PlayerDrawer />
     </AppShell>
   );
 }

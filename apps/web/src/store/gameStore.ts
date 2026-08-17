@@ -17,7 +17,10 @@ import {
   type GameEvent,
 } from '../lib/api';
 
+import type { DrawerKind, MainSpace, MoreSection } from './nav';
+
 export type Screen = 'splash' | 'title' | 'auth' | 'create-team' | 'dashboard';
+/** @deprecated use space — kept for loadTabData mapping */
 export type Tab =
   | 'home'
   | 'match'
@@ -34,6 +37,8 @@ export type Tab =
   | 'legends'
   | 'mgrmarket'
   | 'achievements';
+
+export type { MainSpace, MoreSection, DrawerKind };
 
 type LastMatch = {
   opponent: string;
@@ -84,6 +89,12 @@ type ManagerJob = {
 type State = {
   screen: Screen;
   tab: Tab;
+  space: MainSpace;
+  spaceSub: string;
+  moreSection: MoreSection | null;
+  drawer: DrawerKind;
+  searchOpen: boolean;
+  searchQuery: string;
   authMode: 'login' | 'register';
   userLabel: string;
   error: string;
@@ -114,6 +125,12 @@ type State = {
   setAuthMode: (m: 'login' | 'register') => void;
   setError: (e: string) => void;
   setSelectedPlayerId: (id: number | null) => void;
+  setDrawer: (d: DrawerKind) => void;
+  setSearchOpen: (v: boolean) => void;
+  setSearchQuery: (q: string) => void;
+  setSpaceSub: (sub: string) => void;
+  goSpace: (space: MainSpace, sub?: string) => void;
+  goMore: (section: MoreSection) => void;
   logout: () => void;
 
   bootstrap: () => Promise<void>;
@@ -142,9 +159,47 @@ type State = {
   applyJob: (clubId: number) => Promise<void>;
 };
 
+function spaceToTab(space: MainSpace, more?: MoreSection | null): Tab {
+  if (space === 'central') return 'home';
+  if (space === 'squad') return 'squad';
+  if (space === 'match') return 'match';
+  if (space === 'market') return 'market';
+  if (space === 'live') return 'live';
+  if (space === 'more' && more) {
+    const map: Partial<Record<MoreSection, Tab>> = {
+      board: 'board',
+      finance: 'budget',
+      tactics: 'tactics',
+      training: 'training',
+      academy: 'youth',
+      scouting: 'youth',
+      legends: 'legends',
+      news: 'messages',
+      manager: 'mgrmarket',
+      shop: 'shop',
+      achievements: 'achievements',
+      club: 'board',
+      staff: 'board',
+      calendar: 'home',
+      competitions: 'home',
+      world: 'mgrmarket',
+      analytics: 'board',
+      settings: 'home',
+    };
+    return map[more] ?? 'home';
+  }
+  return 'home';
+}
+
 export const useGame = create<State>((set, get) => ({
   screen: 'splash',
   tab: 'home',
+  space: 'central',
+  spaceSub: 'home',
+  moreSection: null,
+  drawer: null,
+  searchOpen: false,
+  searchQuery: '',
   authMode: 'register',
   userLabel: '',
   error: '',
@@ -175,6 +230,34 @@ export const useGame = create<State>((set, get) => ({
   setAuthMode: (authMode) => set({ authMode }),
   setError: (error) => set({ error }),
   setSelectedPlayerId: (selectedPlayerId) => set({ selectedPlayerId }),
+  setDrawer: (drawer) => set({ drawer }),
+  setSearchOpen: (searchOpen) => set({ searchOpen }),
+  setSearchQuery: (searchQuery) => set({ searchQuery }),
+  setSpaceSub: (spaceSub) => set({ spaceSub }),
+  goSpace: (space, sub) => {
+    const tab = spaceToTab(space, null);
+    set({
+      space,
+      spaceSub: sub ?? (space === 'central' ? 'home' : space === 'squad' ? 'players' : space === 'match' ? 'preview' : space === 'market' ? 'overview' : space === 'live' ? 'for_you' : 'home'),
+      moreSection: null,
+      tab,
+      error: '',
+      drawer: null,
+    });
+    get().loadTabData(tab).catch(console.error);
+  },
+  goMore: (section) => {
+    const tab = spaceToTab('more', section);
+    set({
+      space: 'more',
+      moreSection: section,
+      spaceSub: section,
+      tab,
+      error: '',
+      drawer: null,
+    });
+    get().loadTabData(tab).catch(console.error);
+  },
   logout: () => {
     setToken(null);
     set({
@@ -184,6 +267,9 @@ export const useGame = create<State>((set, get) => ({
       messages: [],
       userLabel: '',
       tab: 'home',
+      space: 'central',
+      moreSection: null,
+      drawer: null,
     });
   },
 
@@ -244,7 +330,42 @@ export const useGame = create<State>((set, get) => ({
   },
 
   switchTab: (tab) => {
-    set({ tab, error: '' });
+    const spaceMap: Partial<Record<Tab, MainSpace>> = {
+      home: 'central',
+      squad: 'squad',
+      match: 'match',
+      market: 'market',
+      live: 'live',
+      board: 'more',
+      tactics: 'more',
+      youth: 'more',
+      training: 'more',
+      messages: 'more',
+      budget: 'more',
+      shop: 'more',
+      legends: 'more',
+      mgrmarket: 'more',
+      achievements: 'more',
+    };
+    const moreMap: Partial<Record<Tab, MoreSection>> = {
+      board: 'board',
+      tactics: 'tactics',
+      youth: 'academy',
+      training: 'training',
+      messages: 'news',
+      budget: 'finance',
+      shop: 'shop',
+      legends: 'legends',
+      mgrmarket: 'manager',
+      achievements: 'achievements',
+    };
+    const space = spaceMap[tab] ?? 'central';
+    set({
+      tab,
+      space,
+      moreSection: space === 'more' ? moreMap[tab] ?? null : null,
+      error: '',
+    });
     get().loadTabData(tab).catch(console.error);
   },
 
