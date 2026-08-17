@@ -11,7 +11,7 @@ async function assertTeam(userId: number, teamId: number) {
 }
 
 router.get('/', async (req, res) => {
-  const teamId = Number(req.params.teamId);
+  const teamId = Number((req.params as Record<string, string>).teamId);
   const team = await assertTeam(req.user!.userId, teamId);
   if (!team) return res.status(404).json({ error: 'Équipe introuvable' });
 
@@ -28,8 +28,8 @@ router.get('/', async (req, res) => {
 });
 
 router.patch('/:messageId/read', async (req, res) => {
-  const teamId = Number(req.params.teamId);
-  const messageId = Number(req.params.messageId);
+  const teamId = Number((req.params as Record<string, string>).teamId);
+  const messageId = Number((req.params as Record<string, string>).messageId);
   const team = await assertTeam(req.user!.userId, teamId);
   if (!team) return res.status(404).json({ error: 'Équipe introuvable' });
 
