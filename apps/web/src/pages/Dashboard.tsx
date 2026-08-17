@@ -2,6 +2,15 @@ import { useMemo } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import { PlayerCard, OvrBadge, PosChip } from '../components/PlayerCard';
 import {
+  ArenaPanel,
+  BigStat,
+  ConditionRow,
+  HonourGrid,
+  MetricTile,
+  StartCta,
+  StripCard,
+} from '../components/patterns';
+import {
   Badge,
   Button,
   EmptyState,
@@ -97,15 +106,19 @@ function PlayerDrawer() {
         className="flex h-full w-full max-w-md flex-col border-l border-white/10 bg-[var(--elevated)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start gap-3 border-b border-white/8 p-4">
-          <OvrBadge rating={p.rating ?? 65} />
+        <div className="flex items-start gap-4 border-b border-white/8 bg-gradient-to-br from-sky-950/40 to-transparent p-4">
+          <div className="text-center">
+            <div className="data-num text-4xl font-bold text-white">{p.rating ?? 65}</div>
+            <div className="text-[10px] uppercase tracking-wide text-white/45">OVR</div>
+          </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[18px] font-bold text-white">{p.name}</div>
+            <div className="text-[20px] font-bold tracking-tight text-white">{p.name}</div>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-[var(--muted)]">
               <PosChip pos={p.position} />
               <span>{p.nation ?? '—'}</span>
-              <span>Pot. {p.potential ?? '—'}</span>
+              <span className="data-num">POT {p.potential ?? '—'}</span>
             </div>
+            <div className="mt-2 text-[12px] text-amber-200/90">{money(p.salary)}/sem</div>
           </div>
           <button type="button" className="text-sky-400" onClick={() => setDrawer(null)}>
             Fermer
@@ -268,47 +281,77 @@ function CentralHub() {
         </Card>
       )}
 
-      {/* Hero next match */}
-      <Card className="relative overflow-hidden p-5">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-sky-500/10 blur-3xl" />
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-sky-300/90">
-          {matchPreview?.competition ?? 'Championnat'} · {matchPreview?.kickoffLabel ?? 'Prochain match'}
+      {/* Club identity strip — FC26 club-select density */}
+      <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr_0.9fr]">
+        <ArenaPanel className="p-4">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-sky-300/90">
+            {matchPreview?.competition ?? 'Super Ligue'} · {matchPreview?.kickoffLabel ?? 'Prochain match'}
+          </div>
+          <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <div className="text-right">
+              <div className="text-xl font-bold tracking-tight text-white sm:text-2xl">{team?.name ?? 'Vous'}</div>
+              <div className="text-[11px] text-white/45">Domicile</div>
+            </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-sky-400/40 bg-sky-500/15 text-[12px] font-bold text-sky-200">
+              VS
+            </div>
+            <div>
+              <div className="text-xl font-bold tracking-tight text-white sm:text-2xl">
+                {matchPreview?.opponent ?? 'Adversaire'}
+              </div>
+              <div className="text-[11px] text-white/45">{matchPreview?.venue ?? 'Extérieur'}</div>
+            </div>
+          </div>
+          {lastMatch && (
+            <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-3 text-[13px]">
+              <span className="text-white/45">Dernier</span>
+              <span className="data-num font-semibold text-white">
+                {lastMatch.homeScore}–{lastMatch.awayScore}{' '}
+                <Badge tone={lastMatch.result === 'W' ? 'good' : lastMatch.result === 'D' ? 'warn' : 'bad'}>
+                  {lastMatch.result}
+                </Badge>
+              </span>
+            </div>
+          )}
+          <div className="mt-4">
+            <StartCta onClick={() => goSpace('match', 'preview')}>Préparer le match</StartCta>
+          </div>
+        </ArenaPanel>
+
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-1 sm:gap-2">
+          <HonourGrid
+            items={[
+              { label: 'Victoires', value: team?.wins ?? 0, icon: '🏆' },
+              { label: 'Nuls', value: team?.draws ?? 0 },
+              { label: 'Défaites', value: team?.losses ?? 0 },
+            ]}
+          />
+          <div className="hidden rounded-xl border border-white/8 bg-black/30 p-3 sm:block">
+            <div className="text-[10px] uppercase text-white/45">Matchs</div>
+            <div className="data-num text-2xl font-bold text-white">{played}</div>
+          </div>
         </div>
-        <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <div className="text-right">
-            <div className="text-lg font-bold text-white sm:text-xl">{team?.name ?? 'Vous'}</div>
-            <div className="text-[11px] text-[var(--muted)]">Domicile</div>
-          </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/40 text-xs font-bold text-sky-300">
-            VS
-          </div>
-          <div>
-            <div className="text-lg font-bold text-white sm:text-xl">{matchPreview?.opponent ?? 'Adversaire'}</div>
-            <div className="text-[11px] text-[var(--muted)]">{matchPreview?.venue ?? 'Extérieur'}</div>
-          </div>
+
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-1">
+          <MetricTile label="Fanbase" value="En construction" tone="orange" />
+          <MetricTile
+            label="Conseil"
+            value={sec >= 70 ? 'STABLE' : sec >= 45 ? 'SOUS PRESSION' : 'CRITIQUE'}
+            tone={sec >= 70 ? 'green' : sec >= 45 ? 'orange' : 'red'}
+          />
+          <MetricTile label="Budget" value={money(team?.budget ?? 0)} tone="blue" />
         </div>
-        {lastMatch && (
-          <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-3 text-[13px]">
-            <span className="text-[var(--muted)]">Dernier résultat</span>
-            <span className="data-num font-semibold text-white">
-              {lastMatch.homeScore}–{lastMatch.awayScore}{' '}
-              <Badge tone={lastMatch.result === 'W' ? 'good' : lastMatch.result === 'D' ? 'warn' : 'bad'}>
-                {lastMatch.result}
-              </Badge>
-            </span>
-          </div>
-        )}
-        <Button className="mt-4 w-full sm:w-auto" onClick={() => goSpace('match', 'preview')}>
-          Préparer le match
-        </Button>
-      </Card>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Tasks */}
         <Card className="p-4 lg:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <div className="text-[15px] font-semibold text-white">Tâches manager</div>
-            <button type="button" className="text-[12px] text-sky-400" onClick={() => setSpaceSub(spaceSub === 'tasks' ? 'home' : 'tasks')}>
+            <button
+              type="button"
+              className="text-[12px] text-sky-400"
+              onClick={() => setSpaceSub(spaceSub === 'tasks' ? 'home' : 'tasks')}
+            >
               Voir tout
             </button>
           </div>
@@ -321,7 +364,13 @@ function CentralHub() {
                   className="flex w-full items-center gap-3 py-3 text-left hover:bg-white/[0.03]"
                 >
                   <span className={`text-[10px] font-bold uppercase ${priorityColor[t.priority]}`}>
-                    {t.priority === 'urgent' ? 'URG' : t.priority === 'action' ? 'ACT' : t.priority === 'important' ? 'IMP' : 'FYI'}
+                    {t.priority === 'urgent'
+                      ? 'URG'
+                      : t.priority === 'action'
+                        ? 'ACT'
+                        : t.priority === 'important'
+                          ? 'IMP'
+                          : 'FYI'}
                   </span>
                   <span className={`flex-1 text-[14px] ${t.done ? 'text-[var(--muted)] line-through' : 'text-white'}`}>
                     {t.label}
@@ -333,35 +382,14 @@ function CentralHub() {
           </ul>
         </Card>
 
-        {/* Board + form */}
-        <div className="space-y-4">
-          <Card className="p-4">
-            <div className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Confiance conseil</div>
-            <div className="mt-1 data-num text-2xl font-bold text-white">{sec}%</div>
-            <ProgressBar value={sec} className="mt-2" />
-            <button type="button" className="mt-3 text-[12px] text-sky-400" onClick={() => goMore('board')}>
-              Objectifs ›
-            </button>
-          </Card>
-          <Card className="p-4">
-            <div className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Bilan</div>
-            <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-              <div>
-                <div className="data-num text-lg font-bold text-emerald-400">{team?.wins ?? 0}</div>
-                <div className="text-[10px] text-[var(--muted)]">V</div>
-              </div>
-              <div>
-                <div className="data-num text-lg font-bold text-amber-300">{team?.draws ?? 0}</div>
-                <div className="text-[10px] text-[var(--muted)]">N</div>
-              </div>
-              <div>
-                <div className="data-num text-lg font-bold text-red-400">{team?.losses ?? 0}</div>
-                <div className="text-[10px] text-[var(--muted)]">D</div>
-              </div>
-            </div>
-            <div className="mt-2 text-center text-[12px] text-[var(--muted)]">{played} matchs joués</div>
-          </Card>
-        </div>
+        <Card className="p-4">
+          <div className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Confiance conseil</div>
+          <BigStat value={`${sec}%`} label="Job security" size="lg" tone={sec >= 55 ? 'good' : 'bad'} />
+          <ProgressBar value={sec} className="mt-3" />
+          <button type="button" className="mt-3 text-[12px] text-sky-400" onClick={() => goMore('board')}>
+            Objectifs ›
+          </button>
+        </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -702,49 +730,96 @@ function LiveHub() {
   const sub = (LIVE_SUBS.find((s) => s.id === spaceSub) ? spaceSub : 'for_you') as string;
   const catalog = challenges?.catalog ?? [];
   const active = challenges?.active;
+  const focus = catalog[0] ?? active;
+
+  const conditions: string[] = [];
+  if (focus) {
+    if (focus.goalTarget) conditions.push(`Objectif : ${focus.goalTarget} victoire(s)`);
+    if (focus.matchesLimit) conditions.push(`Limite : ${focus.matchesLimit} matchs`);
+    if ((focus as { focus?: string }).focus) conditions.push(`Focus : ${(focus as { focus?: string }).focus}`);
+    conditions.push('Récompenses Or + budget en cas de réussite');
+  }
 
   return (
-    <div className="animate-enter">
-      <SectionTitle title="Manager Live" sub="Défis paramétrés · sessions courtes" />
+    <div className="animate-enter space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <SectionTitle title="Manager Live" sub="Hub défis · Pour vous · Actif · Catalogue" />
+      </div>
       <SubNav items={LIVE_SUBS} active={sub} onChange={setSpaceSub} />
 
-      {sub === 'active' && active && (
-        <Card className="p-5">
-          <Badge tone="brass">En cours</Badge>
-          <div className="mt-2 text-xl font-bold text-white">{active.title}</div>
-          <p className="mt-1 text-[13px] text-[var(--muted)]">{active.description}</p>
-          <div className="mt-4 grid grid-cols-2 gap-2 text-[13px]">
-            <div className="rounded-xl bg-black/30 p-3">
-              <div className="text-[var(--muted)]">Objectif</div>
-              <div className="data-num text-lg font-bold text-white">
-                {active.progress?.wins ?? 0}/{active.goalTarget ?? '—'}
+      {/* Hero detail — FC26 challenge focus pattern */}
+      {(sub === 'for_you' || sub === 'catalog' || (sub === 'active' && active)) && focus && (
+        <ArenaPanel className="p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2 text-[12px] text-white/55">
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-white/80">Défi</span>
+                <span>{active && focus.id === active.id ? 'En cours' : 'Disponible'}</span>
+              </div>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                {focus.title}
+              </h2>
+              <p className="mt-2 max-w-xl text-[14px] text-white/60">{focus.description}</p>
+              <div className="mt-4">
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-white/40">
+                  Conditions
+                </div>
+                <ConditionRow items={conditions} />
+              </div>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {active && focus.id === active.id ? (
+                  <Button variant="danger" disabled={loading} onClick={() => abandonChallenge()}>
+                    Abandonner
+                  </Button>
+                ) : (
+                  <StartCta disabled={loading || !!active} onClick={() => startChallenge(focus.id)}>
+                    Lancer le défi
+                  </StartCta>
+                )}
               </div>
             </div>
-            <div className="rounded-xl bg-black/30 p-3">
-              <div className="text-[var(--muted)]">Matchs</div>
-              <div className="data-num text-lg font-bold text-white">
-                {active.progress?.matches ?? 0}/{active.matchesLimit ?? '—'}
-              </div>
+            <div className="w-full max-w-[160px] rounded-xl border border-white/10 bg-black/40 p-3 text-center">
+              <div className="text-[10px] uppercase text-white/45">Récompense</div>
+              <div className="mt-2 text-3xl">🏅</div>
+              <div className="mt-1 text-[12px] font-semibold text-amber-200">Or + budget</div>
+              {active && focus.id === active.id && (
+                <div className="mt-3 space-y-1 text-[11px] text-white/60">
+                  <div>
+                    V {active.progress?.wins ?? 0}/{active.goalTarget ?? '—'}
+                  </div>
+                  <div>
+                    M {active.progress?.matches ?? 0}/{active.matchesLimit ?? '—'}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          <Button className="mt-4" disabled={loading} onClick={() => abandonChallenge()}>
-            Abandonner
-          </Button>
-        </Card>
+        </ArenaPanel>
       )}
-      {sub === 'active' && !active && <EmptyState title="Aucun défi actif" body="Choisissez-en un dans Catalogue." />}
 
+      {sub === 'active' && !active && (
+        <EmptyState title="Aucun défi actif" body="Choisissez-en un dans Pour vous ou Catalogue." />
+      )}
+
+      {/* Horizontal strip — FC26 challenge carousel */}
       {(sub === 'for_you' || sub === 'catalog') && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {catalog.map((c) => (
-            <Card key={c.id} className="flex flex-col p-4">
-              <div className="text-[15px] font-semibold text-white">{c.title}</div>
-              <p className="mt-1 flex-1 text-[12px] text-[var(--muted)]">{c.description}</p>
-              <Button className="mt-3" disabled={loading || !!active} onClick={() => startChallenge(c.id)}>
-                Lancer
-              </Button>
-            </Card>
-          ))}
+        <div>
+          <div className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-white/40">
+            Catalogue
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {catalog.map((c) => (
+              <StripCard
+                key={c.id}
+                title={c.title}
+                subtitle={c.description?.slice(0, 42)}
+                badge="Défi"
+                active={active?.id === c.id}
+                completed={false}
+                onClick={() => !active && startChallenge(c.id)}
+              />
+            ))}
+          </div>
         </div>
       )}
 

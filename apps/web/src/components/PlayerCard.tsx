@@ -10,10 +10,13 @@ function ovrTone(r: number) {
   return 'text-slate-300 border-white/10 bg-white/5';
 }
 
-export function OvrBadge({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' }) {
-  const s = size === 'sm' ? 'h-7 w-7 text-[11px]' : 'h-9 w-9 text-sm';
+export function OvrBadge({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' | 'lg' }) {
+  const s =
+    size === 'sm' ? 'h-7 w-7 text-[11px]' : size === 'lg' ? 'h-14 w-14 text-xl' : 'h-10 w-10 text-[15px]';
   return (
-    <span className={`inline-flex ${s} items-center justify-center rounded-lg border font-bold data-num ${ovrTone(rating)}`}>
+    <span
+      className={`inline-flex ${s} items-center justify-center rounded-xl border font-bold data-num ${ovrTone(rating)}`}
+    >
       {rating}
     </span>
   );

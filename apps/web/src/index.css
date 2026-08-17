@@ -97,6 +97,18 @@
     background: rgba(255,69,58,0.15); color: #ff6b63; font-size: 14px; font-weight: 600;
     padding: 10px 16px; border: 0.5px solid rgba(255,69,58,0.25);
   }
+  .data-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+    letter-spacing: -0.02em;
+  }
+  .animate-enter {
+    animation: alym-enter 0.28s ease-out;
+  }
+  @keyframes alym-enter {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
   .field {
     width: 100%; border-radius: 12px; border: 0.5px solid rgba(255,255,255,0.12);
     background: rgba(0,0,0,0.35); color: white; font-size: 15px; padding: 12px 14px; outline: none;
