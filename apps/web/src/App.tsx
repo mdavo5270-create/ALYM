@@ -14,6 +14,7 @@ import {
   type ChallengesResponse,
   type ChallengeDef,
   type TrainingInfo,
+  type Legend,
 } from './lib/api';
 import { AlymLogo, MylaMark } from './components/Logo';
 
@@ -30,7 +31,8 @@ type Tab =
   | 'youth'
   | 'market'
   | 'live'
-  | 'training';
+  | 'training'
+  | 'legends';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -55,6 +57,7 @@ export default function App() {
   const [listings, setListings] = useState<MarketListing[]>([]);
   const [challenges, setChallenges] = useState<ChallengesResponse | null>(null);
   const [training, setTraining] = useState<TrainingInfo | null>(null);
+  const [legends, setLegends] = useState<Legend[]>([]);
   const [challengeNote, setChallengeNote] = useState<string | null>(null);
   const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
   const [lastMatch, setLastMatch] = useState<{
@@ -101,6 +104,7 @@ export default function App() {
       }
       if (t === 'live') setChallenges(await api.challenges(teamId));
       if (t === 'training') setTraining(await api.training(teamId));
+      if (t === 'legends') setLegends((await api.legends(teamId)).legends);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur chargement');
     }
@@ -364,6 +368,21 @@ export default function App() {
     }
   }
 
+  async function recruitLegend(code: string) {
+    if (!team) return;
+    setLoading(true);
+    try {
+      await api.recruitLegend(team.id, code);
+      setLegends((await api.legends(team.id)).legends);
+      setPlayers((await api.players(team.id)).players);
+      await loadTeamData(team.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function buyItem(itemId: string) {
     if (!team) return;
     setLoading(true);
@@ -546,6 +565,7 @@ export default function App() {
     { id: 'youth', label: 'Académie' },
     { id: 'budget', label: 'Budget' },
     { id: 'shop', label: 'Boutique' },
+    { id: 'legends', label: 'Légendes' },
     { id: 'achievements', label: 'Succès' },
   ];
 
@@ -636,6 +656,7 @@ export default function App() {
                 d: `£${Number(team?.budget ?? 0).toLocaleString()}`,
                 action: () => switchTab('budget'),
               },
+              { t: 'Légendes', d: 'ICONs', action: () => switchTab('legends') },
               { t: 'Succès', d: 'Défis', action: () => switchTab('achievements') },
             ].map((c) => (
               <button
@@ -1027,6 +1048,49 @@ export default function App() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+
+        {tab === 'legends' && (
+          <div className="max-w-2xl space-y-4">
+            <h2 className="text-lg font-bold text-alym-gold">ICONs & Heroes</h2>
+            <p className="text-xs text-gray-500">
+              Débloque via victoires / défis, recrute pour £80,000.
+            </p>
+            {legends.map((l) => (
+              <div
+                key={l.code}
+                className={`bg-alym-surface border rounded-xl p-4 flex justify-between gap-3 ${
+                  l.unlocked ? 'border-alym-gold/40' : 'border-gray-800 opacity-60'
+                }`}
+              >
+                <div>
+                  <div className="font-semibold">
+                    {l.name} <span className="text-alym-gold text-xs">{l.position}</span>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {l.nation} · ATT {l.stats.shot} PAS {l.stats.pass} DEF {l.stats.defense}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {l.owned
+                      ? 'Dans l effectif'
+                      : l.unlocked
+                        ? 'Debloquee'
+                        : `Verrouillee (${l.unlock})`}
+                  </div>
+                </div>
+                {l.unlocked && !l.owned && (
+                  <button
+                    onClick={() => recruitLegend(l.code)}
+                    disabled={loading}
+                    className="self-center bg-alym-gold text-black text-xs font-bold px-3 py-2 rounded-lg"
+                  >
+                    Recruter
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
