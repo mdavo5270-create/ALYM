@@ -1,5 +1,4 @@
 node_modules/
-dist/
 build/
 .next/
 .turbo/
@@ -13,3 +12,5 @@ coverage/
 .idea/
 *.tsbuildinfo
 apps/api/prisma/migrations/**/migration_lock.toml
+# Prebuilt dist is committed for reliable Render deploys when CI network flakes
+# (apps/web/dist + apps/api/dist)
