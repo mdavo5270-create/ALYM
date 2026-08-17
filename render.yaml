@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: alym
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: develop
+    buildCommand: yarn install && yarn db:generate && yarn build && yarn db:push
+    startCommand: yarn start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: file:./prod.db
+      - key: JWT_SECRET
+        generateValue: true
