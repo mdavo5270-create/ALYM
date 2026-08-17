@@ -78,16 +78,17 @@ function buildTimeline(
     const types: MatchEvent['type'][] = ['yellow', 'sub', 'chance'];
     const type = types[Math.floor(Math.random() * types.length)];
     const side = Math.random() > 0.5 ? 'home' : 'away';
-    const labels = {
+    const labels: Record<string, string> = {
       yellow: 'Carton jaune',
       sub: 'Remplacement',
       chance: 'Occasion nette',
+      goal: 'But',
     };
     events.push({
       minute: 10 + Math.floor(Math.random() * 75),
       type,
       side,
-      label: labels[type],
+      label: labels[type] ?? type,
     });
   }
   return events.sort((a, b) => a.minute - b.minute);
