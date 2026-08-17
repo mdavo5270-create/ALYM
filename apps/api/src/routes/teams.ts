@@ -7,11 +7,17 @@ import { seedStarterPlayers } from '../lib/seedPlayers.js';
 const router = Router();
 
 const createSchema = z.object({
-  name: z.string().min(2).max(40),
+  name: z.string().min(2, 'Nom d’équipe : 2 caractères minimum').max(40),
   nation: z.string().min(2).max(40).optional(),
   stadiumName: z.string().min(2).max(60).optional(),
   badgeDesign: z.number().int().min(0).max(20).optional(),
 });
+
+function firstZodError(error: z.ZodError): string {
+  const field = error.flatten().fieldErrors;
+  const first = Object.values(field).flat()[0];
+  return first || 'Données invalides';
+}
 
 router.use(requireAuth);
 
@@ -29,7 +35,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error.flatten() });
+    return res.status(400).json({ error: firstZodError(parsed.error) });
   }
 
   const existing = await prisma.team.findUnique({ where: { name: parsed.data.name } });
@@ -66,7 +72,7 @@ router.post('/', async (req, res) => {
       teamId: team.id,
       sender: 'SERVICE DES FINANCES',
       title: 'Budget de saison',
-      content: 'Votre budget de saison a été crédité : £124,000 opérationnel + réserve. Bonne gestion.',
+      content: 'Votre budget de saison a été crédité. Bonne gestion.',
     },
   });
 
@@ -79,7 +85,7 @@ router.post('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-  const id = Number(req.params.id);
+  const id = Number((req.params as Record<string, string>).id);
   const team = await prisma.team.findFirst({
     where: { id, userId: req.user!.userId },
     include: {
