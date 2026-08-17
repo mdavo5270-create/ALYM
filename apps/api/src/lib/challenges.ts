@@ -1,0 +1,77 @@
+/** Manager Live — défis dynamiques inspirés FC 26 */
+
+export type ChallengeDef = {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  goalType: 'wins' | 'budget' | 'youth' | 'no_loss_streak';
+  goalTarget: number;
+  matchesLimit: number;
+  rewardGold: number;
+  rewardBudget: number;
+  restriction?: string;
+};
+
+export const CHALLENGES: ChallengeDef[] = [
+  {
+    id: 'opening_blitz',
+    title: 'Opening Blitz',
+    description: 'Gagne 3 matchs en maximum 5 rencontres.',
+    difficulty: 'easy',
+    goalType: 'wins',
+    goalTarget: 3,
+    matchesLimit: 5,
+    rewardGold: 50,
+    rewardBudget: 25000,
+  },
+  {
+    id: 'iron_defense',
+    title: 'Iron Defense',
+    description: 'Enchaîne 4 matchs sans défaite (max 6 joués).',
+    difficulty: 'medium',
+    goalType: 'no_loss_streak',
+    goalTarget: 4,
+    matchesLimit: 6,
+    rewardGold: 80,
+    rewardBudget: 35000,
+  },
+  {
+    id: 'academy_first',
+    title: 'Academy First',
+    description: 'Promouvoir 2 jeunes pendant le défi (8 matchs max).',
+    difficulty: 'medium',
+    goalType: 'youth',
+    goalTarget: 2,
+    matchesLimit: 8,
+    rewardGold: 100,
+    rewardBudget: 20000,
+    restriction: 'Focus académie',
+  },
+  {
+    id: 'cash_flow',
+    title: 'Cash Flow',
+    description: 'Atteindre £350,000 de budget en 7 matchs.',
+    difficulty: 'hard',
+    goalType: 'budget',
+    goalTarget: 350000,
+    matchesLimit: 7,
+    rewardGold: 120,
+    rewardBudget: 50000,
+  },
+  {
+    id: 'title_push',
+    title: 'Title Push',
+    description: 'Remporter 6 victoires en 10 matchs.',
+    difficulty: 'hard',
+    goalType: 'wins',
+    goalTarget: 6,
+    matchesLimit: 10,
+    rewardGold: 150,
+    rewardBudget: 60000,
+  },
+];
+
+export function getChallenge(id: string) {
+  return CHALLENGES.find((c) => c.id === id) ?? null;
+}
