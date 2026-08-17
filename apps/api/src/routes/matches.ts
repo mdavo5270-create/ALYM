@@ -8,6 +8,8 @@ import {
   randomOpponentStrength,
 } from '../lib/matchEngine.js';
 import { rollUnexpectedEvent } from '../lib/gameSystems.js';
+import { getChallenge } from '../lib/challenges.js';
+import { applyTrainingGains } from './live.js';
 
 const router = Router({ mergeParams: true });
 router.use(requireAuth);
@@ -19,11 +21,13 @@ router.post('/play', async (req, res) => {
     include: { players: true },
   });
   if (!team) return res.status(404).json({ error: 'Équipe introuvable' });
-  if (team.players.length < 11) {
-    return res.status(400).json({ error: 'Il faut au moins 11 joueurs' });
+
+  const available = team.players.filter((p) => !p.onLoan);
+  if (available.length < 11) {
+    return res.status(400).json({ error: 'Il faut au moins 11 joueurs disponibles (hors prêt)' });
   }
 
-  const home = strengthFromPlayers(team.players);
+  const home = strengthFromPlayers(available);
   const awayName = randomOpponentName();
   const away = randomOpponentStrength();
   const sim = simulateMatch(home, away);
@@ -31,11 +35,111 @@ router.post('/play', async (req, res) => {
   const wins = team.wins + (sim.result === 'W' ? 1 : 0);
   const draws = team.draws + (sim.result === 'D' ? 1 : 0);
   const losses = team.losses + (sim.result === 'L' ? 1 : 0);
-  const newBudget = team.budget + sim.prize;
+  let newBudget = team.budget + sim.prize;
+  let goldBalance = team.goldBalance;
+
+  // Challenge tracking
+  let challengeId = team.challengeId;
+  let challengeWins = team.challengeWins;
+  let challengeMatches = team.challengeMatches;
+  let challengeStreak = team.challengeStreak;
+  let challengeYouth = team.challengeYouth;
+  let challengeResult: null | { status: 'won' | 'failed' | 'ongoing'; title: string; note: string } =
+    null;
+
+  if (challengeId) {
+    const def = getChallenge(challengeId);
+    challengeMatches += 1;
+    if (sim.result === 'W') {
+      challengeWins += 1;
+      challengeStreak += 1;
+    } else if (sim.result === 'L') {
+      challengeStreak = 0;
+    } else {
+      challengeStreak += 1; // draw counts for no-loss streak
+    }
+
+    if (def) {
+      let completed = false;
+      let failed = false;
+      if (def.goalType === 'wins' && challengeWins >= def.goalTarget) completed = true;
+      if (def.goalType === 'no_loss_streak' && challengeStreak >= def.goalTarget) completed = true;
+      if (def.goalType === 'youth' && challengeYouth >= def.goalTarget) completed = true;
+      if (def.goalType === 'budget' && newBudget >= def.goalTarget) completed = true;
+      if (challengeMatches >= def.matchesLimit && !completed) failed = true;
+
+      if (completed) {
+        newBudget += def.rewardBudget;
+        goldBalance += def.rewardGold;
+        challengeResult = {
+          status: 'won',
+          title: def.title,
+          note: `Défi réussi ! +${def.rewardGold} Or + £${def.rewardBudget.toLocaleString()}`,
+        };
+        await prisma.message.create({
+          data: {
+            teamId,
+            sender: 'MANAGER LIVE',
+            title: `Défi réussi : ${def.title}`,
+            content: challengeResult.note,
+          },
+        });
+        await prisma.transaction.create({
+          data: {
+            teamId,
+            type: 'challenge_reward',
+            amount: def.rewardBudget,
+            reason: `Récompense ${def.title}`,
+          },
+        });
+        challengeId = null;
+        challengeWins = 0;
+        challengeMatches = 0;
+        challengeStreak = 0;
+        challengeYouth = 0;
+      } else if (failed) {
+        challengeResult = {
+          status: 'failed',
+          title: def.title,
+          note: 'Défi échoué — limite de matchs atteinte.',
+        };
+        await prisma.message.create({
+          data: {
+            teamId,
+            sender: 'MANAGER LIVE',
+            title: `Défi échoué : ${def.title}`,
+            content: challengeResult.note,
+          },
+        });
+        challengeId = null;
+        challengeWins = 0;
+        challengeMatches = 0;
+        challengeStreak = 0;
+        challengeYouth = 0;
+      } else {
+        challengeResult = {
+          status: 'ongoing',
+          title: def.title,
+          note: `Progression ${challengeMatches}/${def.matchesLimit}`,
+        };
+      }
+    }
+  }
 
   await prisma.team.update({
     where: { id: teamId },
-    data: { wins, draws, losses, budget: newBudget },
+    data: {
+      wins,
+      draws,
+      losses,
+      budget: newBudget,
+      goldBalance,
+      challengeId,
+      challengeWins,
+      challengeMatches,
+      challengeStreak,
+      challengeYouth,
+    },
   });
 
   await prisma.transaction.create({
@@ -55,19 +159,16 @@ router.post('/play', async (req, res) => {
       teamId,
       sender: 'REPORTING MATCH',
       title: `${resultLabel} ${sim.homeScore}-${sim.awayScore} vs ${awayName}`,
-      content: `Votre équipe a ${resultLabel.toLowerCase()} contre ${awayName}. Prime : £${sim.prize.toLocaleString()}.`,
+      content: `Prime : £${sim.prize.toLocaleString()}.`,
     },
   });
 
-  // Achievements
   if (sim.result === 'W') {
     const hasFirst = await prisma.achievement.findFirst({
       where: { teamId, achievementCode: 'first_win' },
     });
     if (!hasFirst) {
-      await prisma.achievement.create({
-        data: { teamId, achievementCode: 'first_win' },
-      });
+      await prisma.achievement.create({ data: { teamId, achievementCode: 'first_win' } });
       await prisma.message.create({
         data: {
           teamId,
@@ -82,12 +183,13 @@ router.post('/play', async (req, res) => {
         where: { teamId, achievementCode: 'five_wins' },
       });
       if (!hasRoll) {
-        await prisma.achievement.create({
-          data: { teamId, achievementCode: 'five_wins' },
-        });
+        await prisma.achievement.create({ data: { teamId, achievementCode: 'five_wins' } });
       }
     }
   }
+
+  // Training gains
+  await applyTrainingGains(teamId);
 
   const event = rollUnexpectedEvent();
 
@@ -99,8 +201,9 @@ router.post('/play', async (req, res) => {
       result: sim.result,
       prize: sim.prize,
     },
-    team: { wins, draws, losses, budget: newBudget },
+    team: { wins, draws, losses, budget: newBudget, goldBalance },
     event,
+    challenge: challengeResult,
   });
 });
 
