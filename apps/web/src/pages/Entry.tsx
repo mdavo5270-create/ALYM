@@ -5,10 +5,13 @@ import { useGame } from '../store/gameStore';
 
 export function Splash() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-ink-950 px-6">
-      <AlymLogo size={72} />
-      <h1 className="mt-6 text-3xl font-semibold tracking-[0.2em] text-mist-50">ALYM</h1>
-      <div className="mt-3">
+    <div className="stage-bg flex min-h-screen flex-col items-center justify-center px-6">
+      <AlymLogo size={80} />
+      <h1 className="mt-8 text-4xl font-semibold tracking-[0.28em] text-mist-50">ALYM</h1>
+      <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.22em] text-mist-400">
+        Athletic League Youth Manager
+      </p>
+      <div className="mt-10">
         <MylaMark />
       </div>
     </div>
@@ -18,33 +21,40 @@ export function Splash() {
 export function Title() {
   const { setScreen, setAuthMode } = useGame();
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-ink-950 px-6">
-      <div className="animate-enter w-full max-w-md text-center">
-        <AlymLogo size={64} className="mx-auto" />
-        <h1 className="mt-5 text-4xl font-semibold tracking-tight text-mist-50">ALYM</h1>
-        <p className="mt-2 text-sm text-mist-400">Gestion de club · Carrière manager</p>
-        <div className="mt-10 space-y-3">
-          <Button
-            className="w-full py-3"
+    <div className="stage-bg flex min-h-screen flex-col items-center justify-center px-6">
+      <div className="animate-enter w-full max-w-lg text-center">
+        <AlymLogo size={72} className="mx-auto" />
+        <h1 className="mt-6 text-5xl font-semibold tracking-[0.18em] text-mist-50">ALYM</h1>
+        <p className="mt-3 text-sm text-mist-400">Carrière manager · Monde vivant</p>
+
+        <div className="mt-12 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            className="panel-hero group p-5 text-left transition hover:border-brass-500/40"
             onClick={() => {
               setAuthMode('register');
               setScreen('auth');
             }}
           >
-            Nouveau jeu
-          </Button>
-          <Button
-            variant="secondary"
-            className="w-full py-3"
+            <div className="label-caps text-brass-300">Nouveau</div>
+            <div className="mt-2 text-lg font-semibold text-mist-50 group-hover:text-brass-300">Carrière</div>
+            <p className="mt-1 text-xs text-mist-400">Créer un compte et prendre un club</p>
+          </button>
+          <button
+            type="button"
+            className="panel group p-5 text-left transition hover:border-white/15"
             onClick={() => {
               setAuthMode('login');
               setScreen('auth');
             }}
           >
-            Continuer
-          </Button>
+            <div className="label-caps">Continuer</div>
+            <div className="mt-2 text-lg font-semibold text-mist-50">Sauvegarde</div>
+            <p className="mt-1 text-xs text-mist-400">Reprendre une carrière existante</p>
+          </button>
         </div>
-        <div className="mt-12">
+
+        <div className="mt-14">
           <MylaMark />
         </div>
       </div>
@@ -64,12 +74,14 @@ export function Auth() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ink-950 px-4">
-      <Panel className="animate-enter w-full max-w-md p-6">
+    <div className="stage-bg flex min-h-screen items-center justify-center px-4">
+      <Panel className="animate-enter w-full max-w-md p-7">
         <div className="mb-6 flex items-center gap-3">
-          <AlymLogo size={40} />
+          <AlymLogo size={44} />
           <div>
-            <div className="text-lg font-semibold text-mist-50">{authMode === 'register' ? 'Créer un compte' : 'Connexion'}</div>
+            <div className="text-lg font-semibold text-mist-50">
+              {authMode === 'register' ? 'Créer un profil manager' : 'Connexion'}
+            </div>
             <MylaMark />
           </div>
         </div>
@@ -87,11 +99,11 @@ export function Auth() {
             onChange={(e) => setPassword(e.target.value)}
           />
           {error && <p className="text-sm text-signal-bad">{error}</p>}
-          <Button className="w-full" disabled={loading} type="submit">
-            {loading ? '…' : authMode === 'register' ? 'Créer' : 'Entrer'}
+          <Button className="w-full py-2.5" disabled={loading} type="submit">
+            {loading ? '…' : authMode === 'register' ? 'Créer le profil' : 'Entrer en carrière'}
           </Button>
         </form>
-        <div className="mt-4 flex items-center justify-between text-xs text-mist-400">
+        <div className="mt-5 flex items-center justify-between text-xs text-mist-400">
           <button type="button" className="hover:text-mist-200" onClick={() => setScreen('title')}>
             Retour
           </button>
@@ -100,7 +112,7 @@ export function Auth() {
             className="hover:text-mist-200"
             onClick={() => setAuthMode(authMode === 'register' ? 'login' : 'register')}
           >
-            {authMode === 'register' ? 'Déjà un compte ?' : 'Créer un compte'}
+            {authMode === 'register' ? 'Déjà un compte ?' : 'Créer un profil'}
           </button>
         </div>
       </Panel>
@@ -119,16 +131,17 @@ export function CreateTeam() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ink-950 px-4">
-      <Panel className="animate-enter w-full max-w-md p-6">
-        <h1 className="text-lg font-semibold text-mist-50">Créer votre club</h1>
-        <p className="mt-1 text-sm text-mist-400">Un nom, une nation — le reste se construit en jeu.</p>
+    <div className="stage-bg flex min-h-screen items-center justify-center px-4">
+      <Panel className="animate-enter w-full max-w-md p-7">
+        <div className="label-caps text-brass-300">Création de club</div>
+        <h1 className="mt-2 text-xl font-semibold text-mist-50">Prendre les rênes</h1>
+        <p className="mt-1 text-sm text-mist-400">Nom, nation — le reste se construit en saison.</p>
         <form className="mt-6 space-y-3" onSubmit={onSubmit}>
           <Input required minLength={2} placeholder="Nom du club" value={name} onChange={(e) => setName(e.target.value)} />
           <Input placeholder="Nation" value={nation} onChange={(e) => setNation(e.target.value)} />
           {error && <p className="text-sm text-signal-bad">{error}</p>}
-          <Button className="w-full" disabled={loading} type="submit">
-            {loading ? '…' : 'Prendre les rênes'}
+          <Button className="w-full py-2.5" disabled={loading} type="submit">
+            {loading ? '…' : 'Lancer la carrière'}
           </Button>
         </form>
       </Panel>

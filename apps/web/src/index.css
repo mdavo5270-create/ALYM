@@ -5,7 +5,7 @@
 @layer base {
   html, body, #root { min-height: 100%; }
   body {
-    background: #0b0d10;
+    background: #080a0e;
     color: #ede9e1;
     font-family: 'DM Sans', system-ui, sans-serif;
   }
@@ -14,24 +14,92 @@
 }
 
 @layer components {
-  .panel { @apply rounded-panel border border-ink-600/80 bg-ink-900/90 shadow-panel; }
-  .panel-soft { @apply rounded-panel border border-ink-700/70 bg-ink-800/60; }
-  .label-caps { @apply text-[11px] font-medium uppercase tracking-[0.14em] text-mist-400; }
-  .data-num { @apply font-mono tabular-nums tracking-tight; }
-  .nav-item { @apply flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-mist-300 transition-colors duration-150; }
-  .nav-item:hover { @apply bg-ink-700/70 text-mist-100; }
-  .nav-item-active { @apply bg-ink-700 text-mist-50; box-shadow: inset 2px 0 0 #d4af5a; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40; }
-  .btn-primary { @apply btn bg-brass-400 text-ink-950 hover:bg-brass-300 active:scale-[0.98]; }
-  .btn-secondary { @apply btn border border-ink-600 bg-ink-800 text-mist-100 hover:border-mist-400/40 hover:bg-ink-700; }
-  .btn-ghost { @apply btn text-mist-300 hover:bg-ink-800 hover:text-mist-50; }
-  .btn-danger { @apply btn border border-signal-bad/40 bg-signal-bad/10 text-signal-bad hover:bg-signal-bad/20; }
-  .field { @apply w-full rounded-lg border border-ink-600 bg-ink-950 px-3 py-2.5 text-sm text-mist-100 outline-none transition placeholder:text-mist-500 focus:border-brass-500/60 focus:ring-1 focus:ring-brass-500/30; }
-  .table-row { @apply border-b border-ink-700/60 transition-colors hover:bg-ink-800/50; }
+  /* Surfaces — denser, more “menu jeu” than SaaS card */
+  .panel {
+    @apply rounded-panel border border-white/[0.06] bg-[#12161d]/95 shadow-panel;
+  }
+  .panel-soft {
+    @apply rounded-panel border border-white/[0.05] bg-[#0e1218]/80;
+  }
+  .panel-hero {
+    @apply relative overflow-hidden rounded-panel border border-white/[0.08] bg-gradient-to-br from-[#1a2030] via-[#12161d] to-[#0a0d12] shadow-lift;
+  }
+  .label-caps {
+    @apply text-[10px] font-semibold uppercase tracking-[0.16em] text-mist-400;
+  }
+  .data-num {
+    @apply font-mono tabular-nums tracking-tight;
+  }
+
+  /* Nav — active state like game menus (accent bar + fill) */
+  .nav-item {
+    @apply flex w-full items-center gap-3 rounded-md px-3 py-2 text-[13px] font-medium text-mist-300 transition-colors duration-150;
+  }
+  .nav-item:hover { @apply bg-white/[0.04] text-mist-100; }
+  .nav-item-active {
+    @apply bg-white/[0.06] text-mist-50;
+    box-shadow: inset 2px 0 0 #d4af5a;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-[13px] font-semibold tracking-wide transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-primary {
+    @apply btn bg-brass-400 text-ink-950 hover:bg-brass-300 active:translate-y-px;
+  }
+  .btn-secondary {
+    @apply btn border border-white/10 bg-white/[0.04] text-mist-100 hover:border-brass-500/40 hover:bg-white/[0.07];
+  }
+  .btn-ghost {
+    @apply btn text-mist-300 hover:bg-white/[0.05] hover:text-mist-50;
+  }
+  .btn-danger {
+    @apply btn border border-signal-bad/40 bg-signal-bad/10 text-signal-bad hover:bg-signal-bad/20;
+  }
+
+  .field {
+    @apply w-full rounded-md border border-white/10 bg-[#0a0d12] px-3 py-2.5 text-sm text-mist-100 outline-none transition placeholder:text-mist-500 focus:border-brass-500/50 focus:ring-1 focus:ring-brass-500/25;
+  }
+
+  .table-row {
+    @apply border-b border-white/[0.04] transition-colors hover:bg-white/[0.03];
+  }
+
+  /* Game UI chips */
+  .chip {
+    @apply inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider;
+  }
+  .chip-brass { @apply chip bg-brass-500/15 text-brass-300; }
+  .chip-good { @apply chip bg-signal-good/15 text-signal-good; }
+  .chip-bad { @apply chip bg-signal-bad/15 text-signal-bad; }
+  .chip-muted { @apply chip bg-white/[0.06] text-mist-300; }
+
+  /* Horizontal sub-tabs (FC-like secondary nav) */
+  .subtabs {
+    @apply flex flex-wrap gap-1 border-b border-white/[0.06] pb-0;
+  }
+  .subtab {
+    @apply relative px-4 py-2.5 text-[13px] font-medium text-mist-400 transition-colors hover:text-mist-100;
+  }
+  .subtab-active {
+    @apply text-mist-50;
+  }
+  .subtab-active::after {
+    content: '';
+    @apply absolute bottom-0 left-0 right-0 h-0.5 bg-brass-400;
+  }
 }
 
 @keyframes enter-up {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.animate-enter { animation: enter-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-enter { animation: enter-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Ambient stage for title / splash */
+.stage-bg {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212, 175, 90, 0.08), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(30, 50, 80, 0.25), transparent 50%),
+    #080a0e;
+}

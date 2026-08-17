@@ -32,38 +32,39 @@ function Home() {
       <PageHeader title="Central" subtitle="Cockpit quotidien du manager" />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel className="p-5 lg:col-span-2">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="panel-hero p-6 lg:col-span-2">
+          <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-brass-500/10 blur-3xl" />
+          <div className="relative flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="label-caps">Prochain match</div>
-              <div className="mt-2 text-2xl font-semibold text-mist-50">
-                {lastMatch ? `Rejouer — dernier adversaire ${lastMatch.opponent}` : 'Adversaire à venir'}
+              <div className="label-caps text-brass-300">Prochain match</div>
+              <div className="mt-2 text-2xl font-semibold tracking-tight text-mist-50 sm:text-3xl">
+                {lastMatch ? `vs ${lastMatch.opponent}` : 'Adversaire à venir'}
               </div>
-              <p className="mt-1 text-sm text-mist-400">Championnat · Domicile · Simulation carrière</p>
+              <p className="mt-2 text-sm text-mist-400">Championnat · Domicile · Enjeu carrière</p>
             </div>
             <Button onClick={() => switchTab('match')}>Match Center</Button>
           </div>
           {lastMatch && (
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg border border-ink-600 bg-ink-950/50 px-3 py-2">
+            <div className="relative mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-md border border-white/[0.06] bg-black/30 px-3 py-3">
                 <div className="label-caps">Score</div>
-                <div className="data-num text-lg text-mist-50">
+                <div className="data-num mt-1 text-xl font-semibold text-mist-50">
                   {lastMatch.homeScore} — {lastMatch.awayScore}
                 </div>
               </div>
-              <div className="rounded-lg border border-ink-600 bg-ink-950/50 px-3 py-2">
+              <div className="rounded-md border border-white/[0.06] bg-black/30 px-3 py-3">
                 <div className="label-caps">Résultat</div>
-                <div className="text-sm text-mist-100">
+                <div className="mt-1 text-sm font-medium text-mist-100">
                   {lastMatch.result === 'W' ? 'Victoire' : lastMatch.result === 'D' ? 'Nul' : 'Défaite'}
                 </div>
               </div>
-              <div className="rounded-lg border border-ink-600 bg-ink-950/50 px-3 py-2">
+              <div className="rounded-md border border-white/[0.06] bg-black/30 px-3 py-3">
                 <div className="label-caps">Prime</div>
-                <div className="data-num text-brass-300">{money(lastMatch.prize)}</div>
+                <div className="data-num mt-1 text-lg font-semibold text-brass-300">{money(lastMatch.prize)}</div>
               </div>
             </div>
           )}
-        </Panel>
+        </div>
 
         <Panel className="p-5">
           <div className="label-caps">Confiance du conseil</div>
@@ -569,7 +570,7 @@ function Live() {
     <div className="animate-enter space-y-6">
       <PageHeader title="Manager Live" subtitle="Hub de défis — paramètres visibles avant lancement" />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="subtabs">
         {(
           [
             ['active', 'Actif'],
@@ -577,9 +578,14 @@ function Live() {
             ['done', 'Terminés'],
           ] as const
         ).map(([id, label]) => (
-          <Button key={id} variant={tab === id ? 'primary' : 'secondary'} onClick={() => setTab(id)}>
+          <button
+            key={id}
+            type="button"
+            className={`subtab ${tab === id ? 'subtab-active' : ''}`}
+            onClick={() => setTab(id)}
+          >
             {label}
-          </Button>
+          </button>
         ))}
       </div>
 
@@ -865,17 +871,22 @@ function MgrMarket() {
       <PageHeader title="Manager Market" subtitle="Mouvements IA · postes · candidatures" />
       {challengeNote && <Panel className="border-brass-500/30 p-3 text-sm text-mist-200">{challengeNote}</Panel>}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="subtabs">
         {(
           [
-            ['jobs', 'Postes / Suggestions'],
+            ['jobs', 'Postes'],
             ['clubs', 'Clubs'],
             ['feed', 'Fil d’actu'],
           ] as const
         ).map(([id, label]) => (
-          <Button key={id} variant={sub === id ? 'primary' : 'secondary'} onClick={() => setSub(id)}>
+          <button
+            key={id}
+            type="button"
+            className={`subtab ${sub === id ? 'subtab-active' : ''}`}
+            onClick={() => setSub(id)}
+          >
             {label}
-          </Button>
+          </button>
         ))}
       </div>
 
