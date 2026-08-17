@@ -16,7 +16,7 @@ const CATALOG = [
 ] as const;
 
 router.get('/', async (req, res) => {
-  const teamId = Number(req.params.teamId);
+  const teamId = Number((req.params as Record<string, string>).teamId);
   const team = await prisma.team.findFirst({
     where: { id: teamId, userId: req.user!.userId },
   });
@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/buy', async (req, res) => {
-  const teamId = Number(req.params.teamId);
+  const teamId = Number((req.params as Record<string, string>).teamId);
   const parsed = z.object({ itemId: z.string() }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'itemId requis' });
 
