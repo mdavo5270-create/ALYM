@@ -1,39 +1,28 @@
 # ALYM × FC 26 Manager — Roadmap
 
 Studio : **LA MYLA**  
-Objectif : porter dans ALYM (web) les **systèmes de gestion** de FC 26 Manager Career, pas le gameplay 3D.
+Live : https://alym-game.onrender.com
 
-## Déjà en place (MVP)
-- [x] Create Club / création d’équipe
-- [x] Effectif généré + notes
-- [x] Simulation de match (score + prime)
-- [x] Messages / inbox
-- [x] Budget + transactions
-- [x] Boutique (Or)
-- [x] Succès basiques
-- [x] Auth + deploy live
+## MVP + Phase A ✅
+- [x] Create Club, effectif, match sim, messages, budget, boutique, succès
+- [x] Board + job security
+- [x] Unexpected Events
+- [x] Tactical Vision
+- [x] Contrats (date fin)
+- [x] Mercato buy/sell
+- [x] Youth Academy scout + promote
 
-## Phase A — Monde vivant (en cours)
-- [ ] Board : objectifs saison + job security
-- [ ] Unexpected Events (joueur / board / médias)
-- [ ] Tactical Vision (Possession, High Press, Counter…)
-- [ ] Contrats joueurs (durée, volonté de prolonger)
-- [ ] Mercato simple (acheter / vendre / shortlist)
-- [ ] Youth Academy (génération de jeunes + promotion)
+## Phase B ✅
+- [x] Manager Live Challenges (5 défis + récompenses)
+- [x] Training Plans + gains post-match
+- [x] Prêts / rappel
 
-## Phase B — Profondeur
-- [ ] Manager Live Challenges (scénarios limités dans le temps)
-- [ ] Deeper Simulation (autres ligues + stats)
-- [ ] Prêts + fin de contrat agressive IA
-- [ ] Training Plans / développement par rôle
-- [ ] Live Start Points (milieu de saison)
+## Phase C ✅ (noyau)
+- [x] ICONs & Heroes (légendes déblocables + recrutement)
+- [x] DB Postgres persistante (plus de perte de comptes)
 
-## Phase C — Narratif avancé
-- [ ] Manager Market (coachs IA qui bougent)
-- [ ] ICONs / Heroes (légendes déblocables)
+## Plus tard (optionnel)
+- [ ] Manager Market (coachs IA)
+- [ ] Deeper Simulation multi-ligues stats
+- [ ] Season Pass cosmétique
 - [ ] Social / défis partagés
-- [ ] Season Pass cosmétique léger
-
-## Hors scope volontaire
-- Gameplay Authentic / sliders de match (pas de moteur 3D)
-- Conférences de presse animées type EA
