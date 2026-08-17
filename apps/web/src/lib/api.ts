@@ -125,6 +125,9 @@ export const api = {
     request<{ ok: boolean; fee: number }>(`/teams/${teamId}/live/loan/${playerId}`, { method: 'POST' }),
   recallLoan: (teamId: number, playerId: number) =>
     request<{ ok: boolean }>(`/teams/${teamId}/live/loan/${playerId}/recall`, { method: 'POST' }),
+  legends: (teamId: number) => request<{ legends: Legend[] }>(`/teams/${teamId}/legends`),
+  recruitLegend: (teamId: number, code: string) =>
+    request<{ player: Player }>(`/teams/${teamId}/legends/recruit/${code}`, { method: 'POST' }),
 };
 
 export type Team = {
@@ -238,4 +241,17 @@ export type ChallengesResponse = {
 export type TrainingInfo = {
   plans: { id: string; name: string; focus: string }[];
   players: { id: number; name: string; position: string; trainingPlan: string; onLoan: boolean; isYouth: boolean }[];
+};
+
+
+export type Legend = {
+  code: string;
+  name: string;
+  position: string;
+  nation: string;
+  stats: { speed: number; dribble: number; shot: number; pass: number; defense: number; physique: number };
+  salary: number;
+  unlock: string;
+  unlocked: boolean;
+  owned: boolean;
 };
