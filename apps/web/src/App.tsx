@@ -15,6 +15,7 @@ import {
   type ChallengeDef,
   type TrainingInfo,
   type Legend,
+  type ManagerMarketData,
 } from './lib/api';
 import { AlymLogo, MylaMark } from './components/Logo';
 
@@ -32,7 +33,8 @@ type Tab =
   | 'market'
   | 'live'
   | 'training'
-  | 'legends';
+  | 'legends'
+  | 'mgrmarket';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -58,6 +60,7 @@ export default function App() {
   const [challenges, setChallenges] = useState<ChallengesResponse | null>(null);
   const [training, setTraining] = useState<TrainingInfo | null>(null);
   const [legends, setLegends] = useState<Legend[]>([]);
+  const [mgrMarket, setMgrMarket] = useState<ManagerMarketData | null>(null);
   const [challengeNote, setChallengeNote] = useState<string | null>(null);
   const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
   const [lastMatch, setLastMatch] = useState<{
@@ -105,6 +108,7 @@ export default function App() {
       if (t === 'live') setChallenges(await api.challenges(teamId));
       if (t === 'training') setTraining(await api.training(teamId));
       if (t === 'legends') setLegends((await api.legends(teamId)).legends);
+      if (t === 'mgrmarket') setMgrMarket(await api.managerMarket(teamId));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur chargement');
     }
@@ -557,6 +561,7 @@ export default function App() {
     { id: 'home', label: 'Accueil' },
     { id: 'match', label: 'Match' },
     { id: 'live', label: 'Manager Live' },
+    { id: 'mgrmarket', label: 'Mgr Market' },
     { id: 'board', label: 'Board' },
     { id: 'training', label: 'Training' },
     { id: 'messages', label: `Messages${unread ? ` (${unread})` : ''}` },
@@ -1051,6 +1056,67 @@ export default function App() {
           </div>
         )}
 
+
+
+        {tab === 'mgrmarket' && mgrMarket && (
+          <div className="space-y-6">
+            <h2 className="text-lg font-bold text-alym-gold">Manager Market</h2>
+            <p className="text-xs text-gray-500">
+              Les clubs IA licencient, recrutent et passent en interim apres chaque match.
+            </p>
+            <div>
+              <h3 className="text-sm text-gray-400 mb-2">Fil d actualite</h3>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {mgrMarket.events.length === 0 && (
+                  <p className="text-xs text-gray-600">Aucun mouvement pour le moment. Joue un match.</p>
+                )}
+                {mgrMarket.events.map((e) => (
+                  <div key={e.id} className="text-xs border-b border-gray-900 py-2">
+                    <span className="text-alym-gold uppercase">{e.type}</span>
+                    {' — '}
+                    {e.detail || `${e.managerName || ''} @ ${e.clubName}`}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm text-gray-400 mb-2">Clubs</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {mgrMarket.clubs.map((c) => (
+                  <div key={c.id} className="bg-alym-surface border border-gray-800 rounded-xl p-3 text-sm">
+                    <div className="font-semibold">{c.name}</div>
+                    <div className="text-xs text-gray-500">
+                      T{c.leagueTier} · {c.tacticalVision} · sécu {c.jobSecurity}% · {c.record}
+                    </div>
+                    <div className="text-xs mt-1">
+                      {c.manager ? (
+                        <span>
+                          <span className="text-alym-gold">{c.manager.name}</span>
+                          {' '}({c.manager.status}, rep {c.manager.reputation})
+                        </span>
+                      ) : (
+                        <span className="text-red-400">Poste vacant</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm text-gray-400 mb-2">Agents libres / interim</h3>
+              <div className="flex flex-wrap gap-2">
+                {mgrMarket.freeAgents.map((m) => (
+                  <span
+                    key={m.id}
+                    className="text-xs bg-alym-surface border border-gray-800 rounded-lg px-2 py-1"
+                  >
+                    {m.name} · {m.status} · {m.preferredVision}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {tab === 'legends' && (
           <div className="max-w-2xl space-y-4">
