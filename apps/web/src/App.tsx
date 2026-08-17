@@ -9,12 +9,13 @@ import {
   type Achievement,
   type BudgetInfo,
 } from './lib/api';
+import { AlymLogo, MylaMark } from './components/Logo';
 
-type Screen = 'title' | 'auth' | 'create-team' | 'dashboard';
+type Screen = 'splash' | 'title' | 'auth' | 'create-team' | 'dashboard';
 type Tab = 'home' | 'messages' | 'squad' | 'match' | 'budget' | 'shop' | 'achievements';
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('title');
+  const [screen, setScreen] = useState<Screen>('splash');
   const [tab, setTab] = useState<Tab>('home');
   const [mode, setMode] = useState<'login' | 'register'>('register');
   const [email, setEmail] = useState('');
@@ -38,6 +39,11 @@ export default function App() {
     result: string;
     prize: number;
   } | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setScreen((s) => (s === 'splash' ? 'title' : s)), 2200);
+    return () => clearTimeout(t);
+  }, []);
 
   async function loadTeamData(teamId: number) {
     const [t, m, p] = await Promise.all([
@@ -191,22 +197,38 @@ export default function App() {
     setLastMatch(null);
   }
 
+  if (screen === 'splash') {
+    return (
+      <div className="min-h-screen alym-title-bg text-white flex flex-col items-center justify-center gap-6">
+        <AlymLogo size={140} className="alym-logo-anim" />
+        <h1 className="text-5xl font-bold alym-title tracking-[0.2em]">ALYM</h1>
+        <p className="text-xs text-gray-500 tracking-[0.35em] uppercase alym-fade-up-delay">
+          Athletic League Youth Manager
+        </p>
+        <div className="mt-10 alym-fade-up-delay-2">
+          <MylaMark />
+        </div>
+      </div>
+    );
+  }
+
   if (screen === 'title') {
     return (
-      <div className="min-h-screen bg-alym-dark text-white flex flex-col items-center justify-center gap-6 px-4">
-        <div className="text-center">
-          <h1 className="text-5xl font-bold text-alym-gold tracking-wide">ALYM</h1>
-          <p className="text-sm text-gray-400 mt-2 uppercase tracking-widest">
+      <div className="min-h-screen alym-title-bg text-white flex flex-col items-center justify-center gap-6 px-4">
+        <AlymLogo size={120} className="alym-logo-anim alym-fade-up" />
+        <div className="text-center alym-fade-up-delay">
+          <h1 className="text-5xl font-bold alym-title tracking-[0.18em]">ALYM</h1>
+          <p className="text-sm text-gray-400 mt-3 uppercase tracking-[0.28em]">
             Athletic League Youth Manager
           </p>
         </div>
-        <div className="flex flex-col gap-3 w-64">
+        <div className="flex flex-col gap-3 w-64 alym-fade-up-delay-2">
           <button
             onClick={() => {
               setMode('register');
               setScreen('auth');
             }}
-            className="bg-alym-gold text-black font-bold py-3 rounded-lg hover:brightness-110"
+            className="bg-alym-gold text-black font-bold py-3 rounded-lg hover:brightness-110 transition"
           >
             Nouveau Jeu
           </button>
@@ -215,10 +237,13 @@ export default function App() {
               setMode('login');
               setScreen('auth');
             }}
-            className="border border-alym-gold text-alym-gold font-bold py-3 rounded-lg hover:bg-alym-gold/10"
+            className="border border-alym-gold text-alym-gold font-bold py-3 rounded-lg hover:bg-alym-gold/10 transition"
           >
             Continuer
           </button>
+        </div>
+        <div className="absolute bottom-8">
+          <MylaMark />
         </div>
       </div>
     );
@@ -227,6 +252,7 @@ export default function App() {
   if (screen === 'auth') {
     return (
       <div className="min-h-screen bg-alym-dark text-white flex flex-col items-center justify-center px-4">
+        <AlymLogo size={64} className="mb-4 alym-logo-anim" />
         <h2 className="text-2xl font-bold text-alym-gold mb-6">
           {mode === 'register' ? 'Créer un compte' : 'Connexion'}
         </h2>
@@ -252,7 +278,7 @@ export default function App() {
             required
             minLength={6}
             className="bg-alym-surface border border-gray-700 rounded-lg px-4 py-3 outline-none focus:border-alym-gold"
-            placeholder="Mot de passe"
+            placeholder="Mot de passe (6+ caractères)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -268,6 +294,9 @@ export default function App() {
             Retour
           </button>
         </form>
+        <div className="mt-10">
+          <MylaMark />
+        </div>
       </div>
     );
   }
@@ -275,6 +304,7 @@ export default function App() {
   if (screen === 'create-team') {
     return (
       <div className="min-h-screen bg-alym-dark text-white flex flex-col items-center justify-center px-4">
+        <AlymLogo size={56} className="mb-3" />
         <h2 className="text-2xl font-bold text-alym-gold mb-2">Créer une équipe</h2>
         <p className="text-gray-400 text-sm mb-6">Bienvenue {userLabel}</p>
         <form onSubmit={handleCreateTeam} className="w-full max-w-sm flex flex-col gap-3">
@@ -319,7 +349,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-alym-dark text-white flex">
       <aside className="w-52 bg-alym-surface border-r border-gray-800 p-4 flex flex-col shrink-0">
-        <div className="text-alym-gold font-bold text-lg mb-8">ALYM</div>
+        <div className="flex items-center gap-2 mb-8">
+          <AlymLogo size={32} />
+          <span className="text-alym-gold font-bold text-lg tracking-wide">ALYM</span>
+        </div>
         <nav className="flex flex-col gap-1 text-sm">
           {nav.map((n) => (
             <button
@@ -335,9 +368,12 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <button onClick={logout} className="mt-auto text-xs text-gray-600 hover:text-red-400">
-          Déconnexion
-        </button>
+        <div className="mt-auto space-y-3">
+          <MylaMark />
+          <button onClick={logout} className="text-xs text-gray-600 hover:text-red-400">
+            Déconnexion
+          </button>
+        </div>
       </aside>
 
       <main className="flex-1 p-6 overflow-auto">
