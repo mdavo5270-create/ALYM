@@ -8,11 +8,24 @@ import {
   type ShopItem,
   type Achievement,
   type BudgetInfo,
+  type BoardInfo,
+  type GameEvent,
+  type MarketListing,
 } from './lib/api';
 import { AlymLogo, MylaMark } from './components/Logo';
 
 type Screen = 'splash' | 'title' | 'auth' | 'create-team' | 'dashboard';
-type Tab = 'home' | 'messages' | 'squad' | 'match' | 'budget' | 'shop' | 'achievements';
+type Tab =
+  | 'home'
+  | 'messages'
+  | 'squad'
+  | 'match'
+  | 'budget'
+  | 'shop'
+  | 'achievements'
+  | 'board'
+  | 'youth'
+  | 'market';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -32,6 +45,10 @@ export default function App() {
   const [shopItems, setShopItems] = useState<ShopItem[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [budgetInfo, setBudgetInfo] = useState<BudgetInfo | null>(null);
+  const [board, setBoard] = useState<BoardInfo | null>(null);
+  const [youth, setYouth] = useState<Player[]>([]);
+  const [listings, setListings] = useState<MarketListing[]>([]);
+  const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
   const [lastMatch, setLastMatch] = useState<{
     opponent: string;
     homeScore: number;
@@ -57,31 +74,31 @@ export default function App() {
   }
 
   async function loadTabData(teamId: number, t: Tab) {
-    if (t === 'shop') {
-      const s = await api.shop(teamId);
-      setShopItems(s.items);
-      setTeam((prev) => (prev ? { ...prev, goldBalance: s.gold } : prev));
-    }
-    if (t === 'achievements') {
-      const a = await api.achievements(teamId);
-      setAchievements(a.achievements);
-    }
-    if (t === 'budget') {
-      const b = await api.budget(teamId);
-      setBudgetInfo(b);
-    }
-    if (t === 'messages') {
-      const m = await api.messages(teamId);
-      setMessages(m.messages);
-    }
-    if (t === 'squad') {
-      const p = await api.players(teamId);
-      setPlayers(p.players);
+    try {
+      if (t === 'shop') {
+        const s = await api.shop(teamId);
+        setShopItems(s.items);
+        setTeam((prev) => (prev ? { ...prev, goldBalance: s.gold } : prev));
+      }
+      if (t === 'achievements') setAchievements((await api.achievements(teamId)).achievements);
+      if (t === 'budget') setBudgetInfo(await api.budget(teamId));
+      if (t === 'messages') setMessages((await api.messages(teamId)).messages);
+      if (t === 'squad') setPlayers((await api.players(teamId)).players);
+      if (t === 'board') setBoard(await api.board(teamId));
+      if (t === 'youth') setYouth((await api.youth(teamId)).youth);
+      if (t === 'market') {
+        const m = await api.market(teamId);
+        setListings(m.listings);
+        setTeam((prev) => (prev ? { ...prev, budget: m.budget } : prev));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erreur chargement');
     }
   }
 
   function switchTab(t: Tab) {
     setTab(t);
+    setError('');
     if (team) loadTabData(team.id, t).catch(console.error);
   }
 
@@ -157,8 +174,107 @@ export default function App() {
             }
           : prev
       );
-      const m = await api.messages(team.id);
-      setMessages(m.messages);
+      setMessages((await api.messages(team.id)).messages);
+      if (res.event) setActiveEvent(res.event);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resolveEvent(choice: { id: string; effect: string }) {
+    if (!team || !activeEvent) return;
+    setLoading(true);
+    try {
+      const res = await api.resolveEvent(team.id, {
+        eventId: activeEvent.id,
+        choiceId: choice.id,
+        effect: choice.effect,
+      });
+      setTeam((prev) =>
+        prev
+          ? {
+              ...prev,
+              budget: res.budget,
+              jobSecurity: res.jobSecurity,
+              tacticalVision: res.tacticalVision,
+            }
+          : prev
+      );
+      setActiveEvent(null);
+      setMessages((await api.messages(team.id)).messages);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function setVision(vision: string) {
+    if (!team) return;
+    setLoading(true);
+    try {
+      await api.setTactics(team.id, vision);
+      setBoard(await api.board(team.id));
+      setTeam((prev) => (prev ? { ...prev, tacticalVision: vision } : prev));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function scoutYouth() {
+    if (!team) return;
+    setLoading(true);
+    try {
+      await api.scoutYouth(team.id);
+      setYouth((await api.youth(team.id)).youth);
+      await loadTeamData(team.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function promote(playerId: number) {
+    if (!team) return;
+    setLoading(true);
+    try {
+      await api.promoteYouth(team.id, playerId);
+      setYouth((await api.youth(team.id)).youth);
+      setPlayers((await api.players(team.id)).players);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function buyListing(listing: MarketListing) {
+    if (!team) return;
+    setLoading(true);
+    try {
+      await api.marketBuy(team.id, listing);
+      const m = await api.market(team.id);
+      setListings(m.listings);
+      await loadTeamData(team.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function sellPlayer(playerId: number) {
+    if (!team) return;
+    setLoading(true);
+    try {
+      await api.marketSell(team.id, playerId);
+      setPlayers((await api.players(team.id)).players);
+      await loadTeamData(team.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
     } finally {
@@ -174,8 +290,7 @@ export default function App() {
       setTeam((prev) =>
         prev ? { ...prev, goldBalance: res.gold, budget: res.budget } : prev
       );
-      const m = await api.messages(team.id);
-      setMessages(m.messages);
+      setMessages((await api.messages(team.id)).messages);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
     } finally {
@@ -195,6 +310,7 @@ export default function App() {
     setScreen('title');
     setTab('home');
     setLastMatch(null);
+    setActiveEvent(null);
   }
 
   if (screen === 'splash') {
@@ -339,21 +455,46 @@ export default function App() {
   const nav: { id: Tab; label: string }[] = [
     { id: 'home', label: 'Accueil' },
     { id: 'match', label: 'Match' },
+    { id: 'board', label: 'Board' },
     { id: 'messages', label: `Messages${unread ? ` (${unread})` : ''}` },
     { id: 'squad', label: 'Effectif' },
+    { id: 'market', label: 'Mercato' },
+    { id: 'youth', label: 'Académie' },
     { id: 'budget', label: 'Budget' },
     { id: 'shop', label: 'Boutique' },
     { id: 'achievements', label: 'Succès' },
   ];
 
   return (
-    <div className="min-h-screen bg-alym-dark text-white flex">
+    <div className="min-h-screen bg-alym-dark text-white flex relative">
+      {activeEvent && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-alym-surface border border-alym-gold/40 rounded-2xl max-w-md w-full p-6 space-y-4">
+            <div className="text-xs uppercase tracking-widest text-alym-gold">{activeEvent.category}</div>
+            <h3 className="text-xl font-bold">{activeEvent.title}</h3>
+            <p className="text-sm text-gray-400">{activeEvent.body}</p>
+            <div className="flex flex-col gap-2 pt-2">
+              {activeEvent.choices.map((c) => (
+                <button
+                  key={c.id}
+                  disabled={loading}
+                  onClick={() => resolveEvent(c)}
+                  className="text-left px-4 py-3 rounded-lg border border-gray-700 hover:border-alym-gold/50 hover:bg-alym-gold/10 text-sm"
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <aside className="w-52 bg-alym-surface border-r border-gray-800 p-4 flex flex-col shrink-0">
-        <div className="flex items-center gap-2 mb-8">
+        <div className="flex items-center gap-2 mb-6">
           <AlymLogo size={32} />
           <span className="text-alym-gold font-bold text-lg tracking-wide">ALYM</span>
         </div>
-        <nav className="flex flex-col gap-1 text-sm">
+        <nav className="flex flex-col gap-0.5 text-sm overflow-y-auto">
           {nav.map((n) => (
             <button
               key={n.id}
@@ -368,7 +509,7 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className="mt-auto space-y-3">
+        <div className="mt-auto space-y-3 pt-4">
           <MylaMark />
           <button onClick={logout} className="text-xs text-gray-600 hover:text-red-400">
             Déconnexion
@@ -382,10 +523,16 @@ export default function App() {
             <h1 className="text-2xl font-bold">{team?.name}</h1>
             <p className="text-gray-500 text-sm">
               Saison 1 · {team?.nation} · {team?.wins ?? 0}V {team?.draws ?? 0}N {team?.losses ?? 0}D
+              {team?.tacticalVision ? ` · ${team.tacticalVision}` : ''}
             </p>
           </div>
-          <div className="text-alym-gold font-semibold">
-            £{Number(team?.budget ?? 0).toLocaleString()} · {team?.goldBalance ?? 0} Or
+          <div className="text-right text-sm">
+            <div className="text-alym-gold font-semibold">
+              £{Number(team?.budget ?? 0).toLocaleString()} · {team?.goldBalance ?? 0} Or
+            </div>
+            {typeof team?.jobSecurity === 'number' && (
+              <div className="text-gray-500">Sécurité emploi : {team.jobSecurity}%</div>
+            )}
           </div>
         </header>
 
@@ -394,7 +541,10 @@ export default function App() {
         {tab === 'home' && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { t: 'Jouer un match', d: 'Simuler', action: () => switchTab('match') },
+              { t: 'Match', d: 'Simuler', action: () => switchTab('match') },
+              { t: 'Board', d: `${team?.jobSecurity ?? '—'}%`, action: () => switchTab('board') },
+              { t: 'Mercato', d: 'Transferts', action: () => switchTab('market') },
+              { t: 'Académie', d: 'Jeunes', action: () => switchTab('youth') },
               { t: 'Messages', d: String(unread), action: () => switchTab('messages') },
               { t: 'Effectif', d: `${players.length}/16`, action: () => switchTab('squad') },
               {
@@ -402,6 +552,7 @@ export default function App() {
                 d: `£${Number(team?.budget ?? 0).toLocaleString()}`,
                 action: () => switchTab('budget'),
               },
+              { t: 'Succès', d: 'Défis', action: () => switchTab('achievements') },
             ].map((c) => (
               <button
                 key={c.t}
@@ -419,7 +570,7 @@ export default function App() {
           <div className="max-w-lg space-y-6">
             <h2 className="text-lg font-bold text-alym-gold">Préparation Match</h2>
             <p className="text-gray-400 text-sm">
-              Effectif : {players.length} joueurs · Formation auto 4-3-3
+              Effectif : {players.length} · Vision : {team?.tacticalVision || 'standard'}
             </p>
             <button
               onClick={playMatch}
@@ -447,6 +598,145 @@ export default function App() {
           </div>
         )}
 
+        {tab === 'board' && board && (
+          <div className="max-w-2xl space-y-6">
+            <h2 className="text-lg font-bold text-alym-gold">Board & Tactique</h2>
+            <div className="bg-alym-surface border border-gray-800 rounded-xl p-4">
+              <div className="text-xs text-gray-500">Sécurité de l’emploi</div>
+              <div className="text-3xl font-bold text-alym-gold">{board.jobSecurity}%</div>
+              <div className="mt-2 h-2 bg-gray-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-alym-gold"
+                  style={{ width: `${board.jobSecurity}%` }}
+                />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm text-gray-400 mb-2">Objectifs saison</h3>
+              {board.objectives.map((o) => (
+                <div key={o.code} className="flex justify-between py-2 border-b border-gray-900 text-sm">
+                  <span>{o.label}</span>
+                  <span className="text-alym-gold">
+                    {Math.round(o.current)} / {o.target}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <h3 className="text-sm text-gray-400 mb-3">Tactical Vision</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {board.visions.map((v) => (
+                  <button
+                    key={v.id}
+                    disabled={loading}
+                    onClick={() => setVision(v.id)}
+                    className={`text-left p-3 rounded-xl border text-sm ${\n                      board.tacticalVision === v.id
+                        ? 'border-alym-gold bg-alym-gold/10'
+                        : 'border-gray-800 hover:border-gray-600'
+                    }`}
+                  >
+                    <div className="font-semibold">{v.name}</div>
+                    <div className="text-gray-500 text-xs mt-1">{v.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'youth' && (
+          <div className="max-w-2xl space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-bold text-alym-gold">Youth Academy</h2>
+              <button
+                onClick={scoutYouth}
+                disabled={loading}
+                className="bg-alym-gold text-black text-sm font-bold px-4 py-2 rounded-lg disabled:opacity-50"
+              >
+                Scout (£8,000)
+              </button>
+            </div>
+            {youth.length === 0 && (
+              <p className="text-gray-500 text-sm">Aucun prospect. Lance un scout.</p>
+            )}
+            {youth.map((p) => (
+              <div
+                key={p.id}
+                className="flex justify-between items-center bg-alym-surface border border-gray-800 rounded-xl p-4"
+              >
+                <div>
+                  <div className="font-semibold">
+                    {p.name}{' '}
+                    <span className="text-alym-gold text-xs">{p.position}</span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Potentiel {p.potential ?? '—'} · £{Number(p.salary).toLocaleString()}/sem
+                  </div>
+                </div>
+                <button
+                  onClick={() => promote(p.id)}
+                  disabled={loading}
+                  className="text-sm border border-alym-gold text-alym-gold px-3 py-1.5 rounded-lg"
+                >
+                  Promouvoir
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab === 'market' && (
+          <div className="space-y-6">
+            <h2 className="text-lg font-bold text-alym-gold">Mercato</h2>
+            <p className="text-sm text-gray-400">Budget : £{Number(team?.budget ?? 0).toLocaleString()}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {listings.map((l) => (
+                <div
+                  key={l.tempId || l.name + l.price}
+                  className="bg-alym-surface border border-gray-800 rounded-xl p-4 flex justify-between"
+                >
+                  <div>
+                    <div className="font-semibold">
+                      {l.name} <span className="text-alym-gold text-xs">{l.position}</span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Note {l.rating} · Pot {l.potential}
+                    </div>
+                    <div className="text-alym-gold text-sm mt-1">£{l.price.toLocaleString()}</div>
+                  </div>
+                  <button
+                    onClick={() => buyListing(l)}
+                    disabled={loading}
+                    className="self-center bg-alym-gold text-black text-xs font-bold px-3 py-2 rounded-lg disabled:opacity-40"
+                  >
+                    Acheter
+                  </button>
+                </div>
+              ))}
+            </div>
+            <h3 className="text-sm text-gray-400 pt-4">Vendre un joueur de l’effectif</h3>
+            <div className="space-y-2">
+              {players.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex justify-between items-center border-b border-gray-900 py-2 text-sm"
+                >
+                  <span>
+                    {p.name} · {p.position}
+                  </span>
+                  <button
+                    onClick={() => sellPlayer(p.id)}
+                    disabled={loading}
+                    className="text-red-400 text-xs hover:underline"
+                  >
+                    Vendre
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {tab === 'messages' && (
           <div className="space-y-3 max-w-2xl">
             <h2 className="text-lg font-bold text-alym-gold mb-4">Messages</h2>
@@ -454,8 +744,7 @@ export default function App() {
               <button
                 key={m.id}
                 onClick={() => openMessage(m)}
-                className={`w-full text-left bg-alym-surface border rounded-xl p-4 ${
-                  m.read ? 'border-gray-800 opacity-70' : 'border-alym-gold/50'
+                className={`w-full text-left bg-alym-surface border rounded-xl p-4 ${\n                  m.read ? 'border-gray-800 opacity-70' : 'border-alym-gold/50'
                 }`}
               >
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
@@ -489,7 +778,7 @@ export default function App() {
                     <td className="py-3 pr-4">{p.name}</td>
                     <td className="py-3 pr-4 text-gray-400">{p.nation}</td>
                     <td className="py-3 pr-4">£{Number(p.salary).toLocaleString()}</td>
-                    <td className="py-3 text-alym-gold font-bold">{p.rating?.toFixed(1)}</td>
+                    <td className="py-3 text-alym-gold font-bold">{p.rating?.toFixed(1) ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -515,12 +804,9 @@ export default function App() {
               </div>
             </div>
             <div>
-              <h3 className="text-sm text-gray-400 mb-2">Transactions récentes</h3>
+              <h3 className="text-sm text-gray-400 mb-2">Transactions</h3>
               {budgetInfo.transactions.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex justify-between py-2 border-b border-gray-900 text-sm"
-                >
+                <div key={t.id} className="flex justify-between py-2 border-b border-gray-900 text-sm">
                   <span className="text-gray-400">{t.reason || t.type}</span>
                   <span className={t.amount >= 0 ? 'text-green-400' : 'text-red-400'}>
                     {t.amount >= 0 ? '+' : ''}£{Number(t.amount).toLocaleString()}
@@ -534,7 +820,7 @@ export default function App() {
         {tab === 'shop' && (
           <div>
             <h2 className="text-lg font-bold text-alym-gold mb-2">Boutique</h2>
-            <p className="text-sm text-gray-400 mb-4">Or disponible : {team?.goldBalance ?? 0}</p>
+            <p className="text-sm text-gray-400 mb-4">Or : {team?.goldBalance ?? 0}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {shopItems.map((item) => (
                 <div
@@ -562,8 +848,7 @@ export default function App() {
             {achievements.map((a) => (
               <div
                 key={a.code}
-                className={`bg-alym-surface border rounded-xl p-4 flex justify-between items-center ${
-                  a.unlocked ? 'border-alym-gold/40' : 'border-gray-800 opacity-60'
+                className={`bg-alym-surface border rounded-xl p-4 flex justify-between items-center ${\n                  a.unlocked ? 'border-alym-gold/40' : 'border-gray-800 opacity-60'
                 }`}
               >
                 <div>
