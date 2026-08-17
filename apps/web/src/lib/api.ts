@@ -9,6 +9,22 @@ export function setToken(token: string | null) {
   else localStorage.removeItem('alym_token');
 }
 
+function extractError(data: unknown, status: number): string {
+  if (!data || typeof data !== 'object') return `Erreur ${status}`;
+  const d = data as Record<string, unknown>;
+  const err = d.error;
+  if (typeof err === 'string') return err;
+  if (err && typeof err === 'object') {
+    const field = (err as { fieldErrors?: Record<string, string[]> }).fieldErrors;
+    if (field) {
+      const first = Object.values(field).flat()[0];
+      if (first) return first;
+    }
+  }
+  if (typeof d.message === 'string') return d.message;
+  return `Erreur ${status}`;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -20,8 +36,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API}${path}`, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = data.error;
-    throw new Error(typeof err === 'string' ? err : data.message || `Erreur ${res.status}`);
+    throw new Error(extractError(data, res.status));
   }
   return data as T;
 }
