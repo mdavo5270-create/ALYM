@@ -7,6 +7,7 @@ import {
   randomOpponentName,
   randomOpponentStrength,
 } from '../lib/matchEngine.js';
+import { rollUnexpectedEvent } from '../lib/gameSystems.js';
 
 const router = Router({ mergeParams: true });
 router.use(requireAuth);
@@ -88,6 +89,8 @@ router.post('/play', async (req, res) => {
     }
   }
 
+  const event = rollUnexpectedEvent();
+
   res.json({
     match: {
       opponent: awayName,
@@ -97,6 +100,7 @@ router.post('/play', async (req, res) => {
       prize: sim.prize,
     },
     team: { wins, draws, losses, budget: newBudget },
+    event,
   });
 });
 
