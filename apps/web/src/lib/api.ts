@@ -128,6 +128,8 @@ export const api = {
   legends: (teamId: number) => request<{ legends: Legend[] }>(`/teams/${teamId}/legends`),
   recruitLegend: (teamId: number, code: string) =>
     request<{ player: Player }>(`/teams/${teamId}/legends/recruit/${code}`, { method: 'POST' }),
+  managerMarket: (teamId: number) =>
+    request<ManagerMarketData>(`/teams/${teamId}/manager-market`),
 };
 
 export type Team = {
@@ -254,4 +256,42 @@ export type Legend = {
   unlock: string;
   unlocked: boolean;
   owned: boolean;
+};
+
+
+export type ManagerMarketData = {
+  clubs: {
+    id: number;
+    name: string;
+    nation: string | null;
+    reputation: number;
+    tacticalVision: string;
+    leagueTier: number;
+    jobSecurity: number;
+    record: string;
+    manager: {
+      name: string;
+      nation: string | null;
+      reputation: number;
+      status: string;
+      preferredVision: string;
+      seasonsAtClub: number;
+    } | null;
+  }[];
+  freeAgents: {
+    id: number;
+    name: string;
+    nation: string | null;
+    reputation: number;
+    status: string;
+    preferredVision: string;
+  }[];
+  events: {
+    id: number;
+    type: string;
+    clubName: string;
+    managerName: string | null;
+    detail: string | null;
+    createdAt: string;
+  }[];
 };
