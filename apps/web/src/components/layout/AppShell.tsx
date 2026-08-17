@@ -3,41 +3,48 @@ import { AlymLogo, MylaMark } from '../Logo';
 import { useGame, type Tab } from '../../store/gameStore';
 import { money } from '../ui';
 
+/** Navigation alignée architecture ALYM (HOME / TEAM / MATCH / …) — pas une copie des menus EA */
 const NAV: { group: string; items: { id: Tab; label: string }[] }[] = [
   {
-    group: 'Direction',
+    group: 'Home',
     items: [
-      { id: 'home', label: 'Bureau' },
-      { id: 'match', label: 'Match' },
-      { id: 'board', label: 'Conseil' },
+      { id: 'home', label: 'Central' },
+      { id: 'messages', label: 'Courrier' },
+      { id: 'live', label: 'Manager Live' },
+    ],
+  },
+  {
+    group: 'Team',
+    items: [
+      { id: 'squad', label: 'Effectif' },
       { id: 'tactics', label: 'Tactique' },
+      { id: 'training', label: 'Développement' },
+      { id: 'youth', label: 'Académie' },
+    ],
+  },
+  {
+    group: 'Match',
+    items: [{ id: 'match', label: 'Match Center' }],
+  },
+  {
+    group: 'Transfers',
+    items: [
+      { id: 'market', label: 'Mercato' },
+      { id: 'legends', label: 'Légendes' },
     ],
   },
   {
     group: 'Club',
     items: [
-      { id: 'squad', label: 'Effectif' },
-      { id: 'training', label: 'Entraînement' },
-      { id: 'youth', label: 'Académie' },
-    ],
-  },
-  {
-    group: 'Carrière',
-    items: [
-      { id: 'market', label: 'Mercato' },
-      { id: 'live', label: 'Défis' },
-      { id: 'legends', label: 'Légendes' },
-      { id: 'mgrmarket', label: 'Marché coaches' },
-    ],
-  },
-  {
-    group: 'Opérations',
-    items: [
-      { id: 'messages', label: 'Courrier' },
+      { id: 'board', label: 'Conseil' },
       { id: 'budget', label: 'Finances' },
       { id: 'shop', label: 'Boutique' },
       { id: 'achievements', label: 'Succès' },
     ],
+  },
+  {
+    group: 'World',
+    items: [{ id: 'mgrmarket', label: 'Manager Market' }],
   },
 ];
 

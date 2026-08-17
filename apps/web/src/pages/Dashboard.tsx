@@ -23,7 +23,7 @@ function Home() {
 
   return (
     <div className="animate-enter space-y-6">
-      <PageHeader title="Bureau" subtitle="Vue d’ensemble du club et prochaines décisions" />
+      <PageHeader title="Central" subtitle="Cockpit quotidien du manager" />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel className="p-5 lg:col-span-2">
