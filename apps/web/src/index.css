@@ -8,14 +8,14 @@
 */
 
 :root {
-  --paper: #141210;
-  --paper-2: #1c1915;
-  --panel: #221f1a;
-  --panel-2: #2a2620;
-  --ink: #f2ebe0;
-  --ink-dim: rgba(242, 235, 224, 0.58);
-  --ink-faint: rgba(242, 235, 224, 0.32);
-  --rule: rgba(242, 235, 224, 0.12);
+  --paper: #0e0f12;
+  --paper-2: #14161b;
+  --panel: #181b21;
+  --panel-2: #1e2229;
+  --ink: #e8eaef;
+  --ink-dim: rgba(232, 234, 239, 0.58);
+  --ink-faint: rgba(232, 234, 239, 0.32);
+  --rule: rgba(232, 234, 239, 0.10);
   --brass: #c4a35a;
   --brass-dim: rgba(196, 163, 90, 0.35);
   --signal: #d4573c;
@@ -352,5 +352,34 @@
     border-radius: 2px;
     overflow: hidden;
     border: 1px solid var(--rule);
+  }
+
+  .shell-desktop-top {
+    background: rgba(14, 15, 18, 0.97);
+  }
+
+  /* Desktop: no bottom padding needed for tabbar */
+  @media (min-width: 768px) {
+    .shell-tabbar {
+      display: none;
+    }
+  }
+
+  /* Compact data table header */
+  .data-table-head {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .workspace-frame {
+    border: 1px solid var(--rule);
+    background: var(--panel);
   }
 }

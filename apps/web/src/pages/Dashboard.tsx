@@ -300,10 +300,10 @@ function CentralHub() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="type-display text-[26px] tracking-tight text-[var(--ink)] sm:text-[30px]">
-            Bureau
+            Portal
           </h1>
           <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">
-            Command Center · priorités · prochain match · confiance
+            Important now · inbox · fixtures · board · career
           </p>
         </div>
         <div className="label-caps text-[var(--brass)]">Saison 1 · J{Math.max(1, played + 1)}</div>
@@ -404,7 +404,7 @@ function CentralHub() {
       {/* Task list — primary FC Manager Live language */}
       <div className="panel overflow-hidden">
         <div className="flex items-center justify-between border-b border-[var(--rule)] px-3 py-2.5">
-          <span className="label-caps text-[var(--brass)]">Priorités manager</span>
+          <span className="label-caps text-[var(--brass)]">Important now</span>
           <span className="text-[11px] text-[var(--ink-faint)]">{tasks.filter((t) => !t.done).length} ouvertes</span>
         </div>
         {tasks.map((t) => (

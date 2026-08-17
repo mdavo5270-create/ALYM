@@ -1,4 +1,4 @@
-/** Navigation unifiée ALYM — 6 espaces principaux, sous-vues, drawers */
+/** Navigation ALYM — structure desktop type FM26 (top nav + domaines + sous-menus) */
 
 export type MainSpace = 'central' | 'squad' | 'match' | 'market' | 'live' | 'more';
 
@@ -45,72 +45,105 @@ export type ManagerTask = {
   label: string;
   priority: TaskPriority;
   done: boolean;
-  /** navigation target */
   space: MainSpace;
   sub?: string;
   more?: MoreSection;
   playerId?: number;
 };
 
+/** Top primary domains — FM26 style (desktop-first) */
+export const TOP_NAV: {
+  id: string;
+  label: string;
+  space?: MainSpace;
+  more?: MoreSection;
+  sub?: string;
+}[] = [
+  { id: 'central', label: 'Portal', space: 'central' },
+  { id: 'squad', label: 'Squad', space: 'squad', sub: 'players' },
+  { id: 'match', label: 'Match', space: 'match', sub: 'preview' },
+  { id: 'recruitment', label: 'Recruitment', space: 'market', sub: 'search' },
+  { id: 'tactics', label: 'Tactics', space: 'more', more: 'tactics' },
+  { id: 'club', label: 'Club', space: 'more', more: 'board' },
+  { id: 'career', label: 'Career', space: 'live' },
+];
+
+/** Quick bookmarks — personalisable (defaults) */
+export const DEFAULT_BOOKMARKS: {
+  id: string;
+  label: string;
+  space: MainSpace;
+  sub?: string;
+  more?: MoreSection;
+}[] = [
+  { id: 'bm-squad', label: 'Squad', space: 'squad', sub: 'players' },
+  { id: 'bm-tactics', label: 'Tactics', space: 'more', more: 'tactics' },
+  { id: 'bm-training', label: 'Training', space: 'more', more: 'training' },
+  { id: 'bm-transfers', label: 'Transfers', space: 'market', sub: 'search' },
+  { id: 'bm-scouting', label: 'Scouting', space: 'more', more: 'academy' },
+  { id: 'bm-calendar', label: 'Calendar', space: 'more', more: 'calendar' },
+];
+
+/** Legacy bottom nav — mobile only fallback */
 export const MAIN_NAV: { id: MainSpace; label: string; icon: string }[] = [
-  { id: 'central', label: 'Central', icon: '⌂' },
-  { id: 'squad', label: 'Effectif', icon: '☰' },
+  { id: 'central', label: 'Portal', icon: '⌂' },
+  { id: 'squad', label: 'Squad', icon: '☰' },
   { id: 'match', label: 'Match', icon: '▶' },
   { id: 'market', label: 'Market', icon: '⇄' },
-  { id: 'live', label: 'Live', icon: '◉' },
-  { id: 'more', label: 'Plus', icon: '•••' },
+  { id: 'live', label: 'Career', icon: '◉' },
+  { id: 'more', label: 'More', icon: '•••' },
 ];
 
 export const MORE_SECTIONS: { id: MoreSection; label: string; group: string }[] = [
-  { id: 'board', label: 'Conseil', group: 'Club' },
+  { id: 'board', label: 'Board', group: 'Club' },
   { id: 'finance', label: 'Finances', group: 'Club' },
-  { id: 'club', label: 'Vue club', group: 'Club' },
+  { id: 'club', label: 'Club view', group: 'Club' },
   { id: 'staff', label: 'Staff', group: 'Club' },
-  { id: 'tactics', label: 'Tactique', group: 'Terrain' },
-  { id: 'training', label: 'Entraînement', group: 'Terrain' },
-  { id: 'academy', label: 'Académie', group: 'Recrutement' },
-  { id: 'scouting', label: 'Scouting', group: 'Recrutement' },
-  { id: 'legends', label: 'Légendes', group: 'Recrutement' },
-  { id: 'news', label: 'Courrier', group: 'Monde' },
-  { id: 'chronicle', label: 'Chronique', group: 'Monde' },
-  { id: 'calendar', label: 'Calendrier', group: 'Monde' },
-  { id: 'competitions', label: 'Compétitions', group: 'Monde' },
-  { id: 'world', label: 'Monde du foot', group: 'Monde' },
-  { id: 'analytics', label: 'Analytics', group: 'Analyse' },
-  { id: 'manager', label: 'Manager Market', group: 'Analyse' },
-  { id: 'shop', label: 'Boutique', group: 'Compte' },
-  { id: 'achievements', label: 'Succès', group: 'Compte' },
-  { id: 'settings', label: 'Réglages', group: 'Compte' },
+  { id: 'tactics', label: 'Tactics', group: 'Pitch' },
+  { id: 'training', label: 'Training', group: 'Pitch' },
+  { id: 'academy', label: 'Academy', group: 'Recruitment' },
+  { id: 'scouting', label: 'Scouting', group: 'Recruitment' },
+  { id: 'legends', label: 'Legends', group: 'Recruitment' },
+  { id: 'news', label: 'Inbox', group: 'World' },
+  { id: 'chronicle', label: 'Chronicle', group: 'World' },
+  { id: 'calendar', label: 'Calendar', group: 'World' },
+  { id: 'competitions', label: 'Competitions', group: 'World' },
+  { id: 'world', label: 'World football', group: 'World' },
+  { id: 'analytics', label: 'Analytics', group: 'Analysis' },
+  { id: 'manager', label: 'Manager Market', group: 'Analysis' },
+  { id: 'shop', label: 'Shop', group: 'Account' },
+  { id: 'achievements', label: 'Achievements', group: 'Account' },
+  { id: 'settings', label: 'Settings', group: 'Account' },
 ];
 
 export const SQUAD_SUBS: { id: SquadSub; label: string }[] = [
-  { id: 'overview', label: 'Vue' },
-  { id: 'players', label: 'Joueurs' },
-  { id: 'depth', label: 'Profondeur' },
-  { id: 'development', label: 'Développement' },
-  { id: 'contracts', label: 'Contrats' },
+  { id: 'overview', label: 'Overview' },
+  { id: 'players', label: 'Players' },
+  { id: 'depth', label: 'Depth' },
+  { id: 'development', label: 'Development' },
+  { id: 'contracts', label: 'Contracts' },
 ];
 
 export const MARKET_SUBS: { id: MarketSub; label: string }[] = [
   { id: 'overview', label: 'Hub' },
-  { id: 'search', label: 'Recherche' },
-  { id: 'targets', label: 'Cibles' },
-  { id: 'negotiations', label: 'Négos' },
-  { id: 'loans', label: 'Prêts' },
-  { id: 'history', label: 'Historique' },
-  { id: 'mgr', label: 'Coachs' },
+  { id: 'search', label: 'Search' },
+  { id: 'targets', label: 'Targets' },
+  { id: 'negotiations', label: 'Negotiations' },
+  { id: 'loans', label: 'Loans' },
+  { id: 'history', label: 'History' },
+  { id: 'mgr', label: 'Coaches' },
 ];
 
 export const MATCH_SUBS: { id: MatchSub; label: string }[] = [
-  { id: 'preview', label: 'Avant-match' },
+  { id: 'preview', label: 'Pre-match' },
   { id: 'live', label: 'Match' },
-  { id: 'post', label: 'Après-match' },
-  { id: 'tactics', label: 'Tactique' },
+  { id: 'post', label: 'Post-match' },
+  { id: 'tactics', label: 'Tactics' },
 ];
 
 export const LIVE_SUBS: { id: LiveSub; label: string }[] = [
-  { id: 'for_you', label: 'Pour vous' },
-  { id: 'active', label: 'Actif' },
-  { id: 'catalog', label: 'Catalogue' },
-  { id: 'completed', label: 'Terminés' },
+  { id: 'for_you', label: 'For you' },
+  { id: 'active', label: 'Active' },
+  { id: 'catalog', label: 'Catalog' },
+  { id: 'completed', label: 'Completed' },
 ];
