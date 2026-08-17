@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
 import teamRoutes from './routes/teams.js';
+import messageRoutes from './routes/messages.js';
+import playerRoutes from './routes/players.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,6 +18,8 @@ app.get('/health', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/teams', teamRoutes);
+app.use('/api/teams/:teamId/messages', messageRoutes);
+app.use('/api/teams/:teamId/players', playerRoutes);
 
 app.get('/api', (_req, res) => {
   res.json({
@@ -27,6 +31,8 @@ app.get('/api', (_req, res) => {
       me: 'GET /api/auth/me',
       teams: 'GET|POST /api/teams',
       team: 'GET /api/teams/:id',
+      messages: 'GET /api/teams/:teamId/messages',
+      players: 'GET /api/teams/:teamId/players',
     },
   });
 });
