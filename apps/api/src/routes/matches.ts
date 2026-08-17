@@ -10,6 +10,7 @@ import {
 import { rollUnexpectedEvent } from '../lib/gameSystems.js';
 import { getChallenge } from '../lib/challenges.js';
 import { applyTrainingGains } from './live.js';
+import { tickManagerMarket } from '../lib/managerMarket.js';
 
 const router = Router({ mergeParams: true });
 router.use(requireAuth);
@@ -38,7 +39,6 @@ router.post('/play', async (req, res) => {
   let newBudget = team.budget + sim.prize;
   let goldBalance = team.goldBalance;
 
-  // Challenge tracking
   let challengeId = team.challengeId;
   let challengeWins = team.challengeWins;
   let challengeMatches = team.challengeMatches;
@@ -56,7 +56,7 @@ router.post('/play', async (req, res) => {
     } else if (sim.result === 'L') {
       challengeStreak = 0;
     } else {
-      challengeStreak += 1; // draw counts for no-loss streak
+      challengeStreak += 1;
     }
 
     if (def) {
@@ -92,6 +92,14 @@ router.post('/play', async (req, res) => {
             reason: `Récompense ${def.title}`,
           },
         });
+        const hasCW = await prisma.achievement.findFirst({
+          where: { teamId, achievementCode: 'challenge_won' },
+        });
+        if (!hasCW) {
+          await prisma.achievement.create({
+            data: { teamId, achievementCode: 'challenge_won' },
+          });
+        }
         challengeId = null;
         challengeWins = 0;
         challengeMatches = 0;
@@ -188,8 +196,16 @@ router.post('/play', async (req, res) => {
     }
   }
 
-  // Training gains
   await applyTrainingGains(teamId);
+
+  // Manager Market AI world tick
+  let marketHeadlines: string[] = [];
+  try {
+    const market = await tickManagerMarket(teamId);
+    marketHeadlines = market.headlines;
+  } catch (e) {
+    console.error('manager market tick failed', e);
+  }
 
   const event = rollUnexpectedEvent();
 
@@ -204,6 +220,7 @@ router.post('/play', async (req, res) => {
     team: { wins, draws, losses, budget: newBudget, goldBalance },
     event,
     challenge: challengeResult,
+    marketHeadlines,
   });
 });
 
