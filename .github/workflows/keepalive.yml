@@ -1,0 +1,15 @@
+# Ping Render toutes les 10 min pour éviter le sleep free tier
+name: Keep ALYM awake
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health ping
+        run: |
+          curl -fsS --max-time 30 "https://alym-game.onrender.com/health" || true
+          curl -fsS --max-time 30 "https://alym-game.onrender.com/api" || true

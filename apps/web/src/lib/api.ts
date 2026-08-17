@@ -192,6 +192,62 @@ export const api = {
       tacticalVision: string;
       jobs: ManagerJob[];
     }>(`/teams/${teamId}/manager-market/jobs`),
+  staff: (teamId: number) =>
+    request<{
+      staff: { id: number; role: string; name: string; rating: number; salary: number; specialty: string | null }[];
+      catalog: { role: string; name: string; rating: number; salary: number; specialty: string; cost: number; hired: boolean }[];
+      weeklyStaffCost: number;
+    }>(`/teams/${teamId}/staff`),
+  hireStaff: (teamId: number, role: string) =>
+    request<{ member: unknown; budget: number }>(`/teams/${teamId}/staff/hire`, {
+      method: 'POST',
+      body: JSON.stringify({ role }),
+    }),
+  fireStaff: (teamId: number, staffId: number) =>
+    request<{ ok: boolean; severance: number; budget: number }>(`/teams/${teamId}/staff/fire/${staffId}`, {
+      method: 'POST',
+    }),
+  leagueTable: (teamId: number) =>
+    request<{
+      competition: string;
+      season: number;
+      table: {
+        rank: number;
+        teamName: string;
+        isPlayer: boolean;
+        played: number;
+        wins: number;
+        draws: number;
+        losses: number;
+        goalsFor: number;
+        goalsAgainst: number;
+        gd: number;
+        points: number;
+        form: string;
+      }[];
+      myRank: number | null;
+    }>(`/teams/${teamId}/competitions/table`),
+  negotiations: (teamId: number) =>
+    request<{ negotiations: TransferNego[] }>(`/teams/${teamId}/transfers/negotiations`),
+  openNegotiation: (teamId: number, body: Record<string, unknown>) =>
+    request<{ negotiation: TransferNego; note: string }>(`/teams/${teamId}/transfers/negotiations`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  respondNegotiation: (
+    teamId: number,
+    id: string,
+    body: { action: string; raiseAmount?: number }
+  ) =>
+    request<{ negotiation: TransferNego; note: string }>(
+      `/teams/${teamId}/transfers/negotiations/${id}/respond`,
+      { method: 'POST', body: JSON.stringify(body) }
+    ),
+  completeNegotiation: (teamId: number, id: string) =>
+    request<{ ok: boolean; player: Player; budget: number }>(
+      `/teams/${teamId}/transfers/negotiations/${id}/complete`,
+      { method: 'POST' }
+    ),
   applyJob: (teamId: number, clubId: number) =>
     request<{ ok: boolean; accepted: boolean; clubName: string; score: number; note: string }>(
       `/teams/${teamId}/manager-market/jobs/${clubId}/apply`,
@@ -407,4 +463,19 @@ export type ManagerMarketData = {
     detail: string | null;
     createdAt: string;
   }[];
+};
+
+
+export type TransferNego = {
+  id: string;
+  playerName: string;
+  position: string;
+  rating: number;
+  status: string;
+  offerAmount: number;
+  counterAmount: number | null;
+  wageOffer: number | null;
+  contractYears: number;
+  step: number;
+  historyJson: string;
 };

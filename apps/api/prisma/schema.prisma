@@ -51,6 +51,9 @@ model Team {
   transactions Transaction[]
   achievements Achievement[]
   careerEvents CareerEvent[]
+  staff         StaffMember[]
+  negotiations  TransferNegotiation[]
+  standings     LeagueStanding[]
 
   @@schema("alym")
 }
@@ -213,6 +216,69 @@ model CareerEvent {
   createdAt        DateTime  @default(now())
   resolvedAt       DateTime?
   expiresAt        DateTime?
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId, status])
+  @@schema("alym")
+}
+
+model LeagueStanding {
+  id            Int      @id @default(autoincrement())
+  leagueKey     String   @default("super_ligue_1")
+  season        Int      @default(1)
+  teamName      String
+  isPlayer      Boolean  @default(false)
+  playerTeamId  Int?
+  played        Int      @default(0)
+  wins          Int      @default(0)
+  draws         Int      @default(0)
+  losses        Int      @default(0)
+  goalsFor      Int      @default(0)
+  goalsAgainst  Int      @default(0)
+  points        Int      @default(0)
+  form          String   @default("")
+  updatedAt     DateTime @updatedAt
+
+  team Team? @relation(fields: [playerTeamId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueKey, season, teamName])
+  @@index([leagueKey, season, points])
+  @@schema("alym")
+}
+
+model StaffMember {
+  id        Int      @id @default(autoincrement())
+  teamId    Int
+  role      String
+  name      String
+  rating    Int      @default(60)
+  salary    Float    @default(1000)
+  specialty String?
+  hiredAt   DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@schema("alym")
+}
+
+model TransferNegotiation {
+  id             String   @id @default(cuid())
+  teamId         Int
+  playerName     String
+  position       String
+  rating         Int
+  listingJson    String
+  status         String   @default("offered")
+  offerAmount    Float
+  counterAmount  Float?
+  wageOffer      Float?
+  contractYears  Int      @default(2)
+  step           Int      @default(1)
+  historyJson    String   @default("[]")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
 

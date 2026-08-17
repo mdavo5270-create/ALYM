@@ -7,12 +7,13 @@ const router = Router({ mergeParams: true });
 router.use(requireAuth);
 
 const CATALOG = [
-  { id: 'stadium_2', name: 'Stade niv. 2', price: 10000, effect: 'budget_bonus', value: 15000 },
-  { id: 'training_ai', name: 'Formation IA', price: 5000, effect: 'gold', value: 0 },
-  { id: 'coach', name: 'Coach Expert', price: 8000, effect: 'gold', value: 0 },
-  { id: 'medical', name: 'Staff Médical', price: 6000, effect: 'gold', value: 0 },
-  { id: 'badge_skin', name: 'Skin écusson', price: 500, effect: 'cosmetic', value: 0 },
-  { id: 'kit_custom', name: 'Maillot custom', price: 1000, effect: 'cosmetic', value: 0 },
+  { id: 'stadium_2', name: 'Stade niv. 2', price: 200, effect: 'budget_bonus', value: 15000 },
+  { id: 'training_ai', name: 'Formation IA', price: 120, effect: 'gold', value: 40 },
+  { id: 'coach', name: 'Coach Expert', price: 150, effect: 'job_boost', value: 3 },
+  { id: 'medical', name: 'Staff Médical', price: 100, effect: 'job_boost', value: 2 },
+  { id: 'badge_skin', name: 'Skin écusson', price: 40, effect: 'cosmetic', value: 0 },
+  { id: 'kit_custom', name: 'Maillot custom', price: 60, effect: 'cosmetic', value: 0 },
+  { id: 'gold_pack', name: 'Pack Or +80', price: 50, effect: 'gold', value: 80 },
 ] as const;
 
 router.get('/', async (req, res) => {
@@ -51,11 +52,14 @@ router.post('/buy', async (req, res) => {
 
   let budget = team.budget;
   let gold = team.goldBalance - item.price;
+  let jobSecurity = team.jobSecurity;
   if (item.effect === 'budget_bonus') budget += item.value;
+  if (item.effect === 'gold') gold += item.value;
+  if (item.effect === 'job_boost') jobSecurity = Math.min(99, jobSecurity + item.value);
 
   await prisma.team.update({
     where: { id: teamId },
-    data: { goldBalance: gold, budget },
+    data: { goldBalance: gold, budget, jobSecurity },
   });
 
   await prisma.transaction.create({

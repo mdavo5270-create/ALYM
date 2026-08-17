@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
 import { seedStarterPlayers } from '../lib/seedPlayers.js';
+import { ensureLeagueForTeam } from '../lib/league.js';
 const router = Router();
 const createSchema = z.object({
     name: z.string().min(2, 'Nom d’équipe : 2 caractères minimum').max(40),
@@ -44,10 +45,11 @@ router.post('/', async (req, res) => {
             stadiumName: parsed.data.stadiumName ?? `Stade ${parsed.data.name}`,
             badgeDesign: parsed.data.badgeDesign ?? 0,
             budget: 200000,
-            goldBalance: 250,
+            goldBalance: 500,
         },
     });
     await seedStarterPlayers(team.id, nation);
+    await ensureLeagueForTeam(team.id, team.name);
     await prisma.message.create({
         data: {
             teamId: team.id,

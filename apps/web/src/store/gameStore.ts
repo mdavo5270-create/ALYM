@@ -15,6 +15,7 @@ import {
   type Achievement,
   type ShopItem,
   type GameEvent,
+  type TransferNego,
 } from '../lib/api';
 
 import type { DrawerKind, MainSpace, MoreSection } from './nav';
@@ -119,6 +120,10 @@ type State = {
   selectedPlayerId: number | null;
   managerJobs: ManagerJob[];
   marketHeadlines: string[];
+  leagueTable: { rank: number; teamName: string; isPlayer: boolean; played: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number; gd: number; points: number; form: string }[] | null;
+  staffCatalog: { role: string; name: string; rating: number; salary: number; specialty: string; cost: number; hired: boolean }[];
+  staffMembers: { id: number; role: string; name: string; rating: number; salary: number; specialty: string | null }[];
+  negotiations: TransferNego[];
 
   setScreen: (s: Screen) => void;
   setTab: (t: Tab) => void;
@@ -157,6 +162,11 @@ type State = {
   loadMatchPreview: () => Promise<void>;
   loadManagerJobs: () => Promise<void>;
   applyJob: (clubId: number) => Promise<void>;
+  hireStaff: (role: string) => Promise<void>;
+  fireStaff: (id: number) => Promise<void>;
+  openNego: (listing: MarketListing, offerAmount: number) => Promise<void>;
+  respondNego: (id: string, action: string, raiseAmount?: number) => Promise<void>;
+  completeNego: (id: string) => Promise<void>;
 };
 
 function spaceToTab(space: MainSpace, more?: MoreSection | null): Tab {
@@ -181,7 +191,7 @@ function spaceToTab(space: MainSpace, more?: MoreSection | null): Tab {
       club: 'board',
       staff: 'board',
       calendar: 'home',
-      competitions: 'home',
+      competitions: 'board',
       world: 'mgrmarket',
       analytics: 'board',
       settings: 'home',
@@ -224,6 +234,10 @@ export const useGame = create<State>((set, get) => ({
   selectedPlayerId: null,
   managerJobs: [],
   marketHeadlines: [],
+  leagueTable: null,
+  staffCatalog: [],
+  staffMembers: [],
+  negotiations: [],
 
   setScreen: (screen) => set({ screen }),
   setTab: (tab) => set({ tab }),
@@ -332,6 +346,21 @@ export const useGame = create<State>((set, get) => ({
           /* ignore */
         }
       }
+
+      try {
+        if (tab === 'home' || tab === 'board') {
+          const table = await api.leagueTable(team.id);
+          set({ leagueTable: table.table });
+        }
+        if (tab === 'board') {
+          const st = await api.staff(team.id);
+          set({ staffCatalog: st.catalog, staffMembers: st.staff });
+        }
+        if (tab === 'market') {
+          const n = await api.negotiations(team.id);
+          set({ negotiations: n.negotiations });
+        }
+      } catch { /* optional modules */ }
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Erreur chargement' });
     }
@@ -710,4 +739,85 @@ export const useGame = create<State>((set, get) => ({
       set({ error: err instanceof Error ? err.message : 'Erreur' });
     }
   },
+
+  hireStaff: async (role) => {
+    const team = get().team;
+    if (!team) return;
+    set({ loading: true, error: '' });
+    try {
+      const res = await api.hireStaff(team.id, role);
+      const st = await api.staff(team.id);
+      set({
+        staffCatalog: st.catalog,
+        staffMembers: st.staff,
+        team: { ...team, budget: res.budget },
+        messages: (await api.messages(team.id)).messages,
+      });
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Erreur' });
+    } finally {
+      set({ loading: false });
+    }
+  },
+  fireStaff: async (id) => {
+    const team = get().team;
+    if (!team) return;
+    set({ loading: true, error: '' });
+    try {
+      const res = await api.fireStaff(team.id, id);
+      const st = await api.staff(team.id);
+      set({ staffCatalog: st.catalog, staffMembers: st.staff, team: { ...team, budget: res.budget } });
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Erreur' });
+    } finally {
+      set({ loading: false });
+    }
+  },
+  openNego: async (listing, offerAmount) => {
+    const team = get().team;
+    if (!team) return;
+    set({ loading: true, error: '' });
+    try {
+      await api.openNegotiation(team.id, { ...listing, offerAmount });
+      set({
+        negotiations: (await api.negotiations(team.id)).negotiations,
+        messages: (await api.messages(team.id)).messages,
+      });
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Erreur' });
+    } finally {
+      set({ loading: false });
+    }
+  },
+  respondNego: async (id, action, raiseAmount) => {
+    const team = get().team;
+    if (!team) return;
+    set({ loading: true, error: '' });
+    try {
+      await api.respondNegotiation(team.id, id, { action, raiseAmount });
+      set({ negotiations: (await api.negotiations(team.id)).negotiations });
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Erreur' });
+    } finally {
+      set({ loading: false });
+    }
+  },
+  completeNego: async (id) => {
+    const team = get().team;
+    if (!team) return;
+    set({ loading: true, error: '' });
+    try {
+      const res = await api.completeNegotiation(team.id, id);
+      set({
+        team: { ...team, budget: res.budget },
+        players: (await api.players(team.id)).players,
+        negotiations: (await api.negotiations(team.id)).negotiations,
+      });
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Erreur' });
+    } finally {
+      set({ loading: false });
+    }
+  },
+
 }));

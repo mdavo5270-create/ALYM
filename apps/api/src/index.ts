@@ -16,6 +16,9 @@ import liveRoutes from './routes/live.js';
 import legendRoutes from './routes/legends.js';
 import managerMarketRoutes from './routes/managerMarket.js';
 import eventRoutes from './routes/events.js';
+import staffRoutes from './routes/staff.js';
+import competitionRoutes from './routes/competitions.js';
+import transferRoutes from './routes/transfers.js';
 import { rateLimit, securityHeaders, requireJwtSecret } from './middleware/security.js';
 
 requireJwtSecret();
@@ -36,7 +39,7 @@ app.use(express.json({ limit: '100kb' }));
 app.use(rateLimit(120, 60_000));
 
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'alym', version: '0.8.0', studio: 'LA MYLA' });
+  res.json({ status: 'ok', service: 'alym', version: '0.9.0', studio: 'LA MYLA' });
 });
 
 app.use('/api/auth', rateLimit(20, 60_000), authRoutes);
@@ -52,9 +55,12 @@ app.use('/api/teams/:teamId/live', liveRoutes);
 app.use('/api/teams/:teamId/legends', legendRoutes);
 app.use('/api/teams/:teamId/manager-market', managerMarketRoutes);
 app.use('/api/teams/:teamId/events', eventRoutes);
+app.use('/api/teams/:teamId/staff', staffRoutes);
+app.use('/api/teams/:teamId/competitions', competitionRoutes);
+app.use('/api/teams/:teamId/transfers', transferRoutes);
 
 app.get('/api', (_req, res) => {
-  res.json({ name: 'ALYM API', version: '0.8.0', studio: 'LA MYLA' });
+  res.json({ name: 'ALYM API', version: '0.9.0', studio: 'LA MYLA' });
 });
 
 const webDist = path.resolve(__dirname, '../../web/dist');
@@ -68,4 +74,11 @@ app.get('*', (req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`ALYM running on port ${PORT}`);
+  // Keep-alive interne (process) — complète le ping externe anti-sleep Render free
+  const selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.KEEP_ALIVE_URL;
+  if (selfUrl) {
+    setInterval(() => {
+      fetch(`${selfUrl.replace(/\/$/, '')}/health`).catch(() => undefined);
+    }, 8 * 60 * 1000);
+  }
 });

@@ -634,8 +634,12 @@ function MarketHub() {
                   </div>
                   <div className="text-right">
                     <div className="data-num text-amber-200">{money(l.price)}</div>
-                    <Button className="mt-2" disabled={loading} onClick={() => buyListing(l)}>
-                      Offre
+                    <Button
+                      className="mt-2"
+                      disabled={loading}
+                      onClick={() => useGame.getState().openNego(l, Math.round(l.price * 0.9))}
+                    >
+                      Négocier
                     </Button>
                   </div>
                 </div>
@@ -660,9 +664,7 @@ function MarketHub() {
         <EmptyState title="Historique mercato" body="Les transferts de la saison apparaîtront ici." />
       )}
 
-      {sub === 'negotiations' && (
-        <EmptyState title="Négociations" body="Lancez une offre depuis Recherche pour ouvrir une négo." />
-      )}
+      {sub === 'negotiations' && <NegotiationsPanel />}
 
       {sub === 'mgr' && (
         <div className="space-y-3">
@@ -1014,6 +1016,150 @@ function MoreCalendar() {
   );
 }
 
+
+function NegotiationsPanel() {
+  const { negotiations, respondNego, completeNego, loading } = useGame();
+  if (!negotiations?.length) {
+    return <EmptyState title="Aucune négociation" body="Depuis Recherche, clique Négocier (offre ~90% du prix)." />;
+  }
+  return (
+    <div className="space-y-3">
+      {negotiations.map((n) => (
+        <Card key={n.id} className="p-4">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <div className="font-semibold text-white">
+                {n.playerName} · {n.position}
+              </div>
+              <div className="text-[12px] text-[var(--muted)]">
+                Étape {n.step} · {n.status} · offre £{Math.round(n.offerAmount).toLocaleString('fr-FR')}
+                {n.counterAmount ? ` · contre £${Math.round(n.counterAmount).toLocaleString('fr-FR')}` : ''}
+              </div>
+            </div>
+            <Badge tone={n.status === 'agreed' || n.status === 'completed' ? 'good' : n.status === 'rejected' ? 'bad' : 'warn'}>
+              {n.status}
+            </Badge>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {n.status === 'countered' && (
+              <>
+                <Button disabled={loading} onClick={() => respondNego(n.id, 'accept_counter')}>
+                  Accepter contre-offre
+                </Button>
+                <Button
+                  disabled={loading}
+                  onClick={() =>
+                    respondNego(n.id, 'raise', Math.round((n.counterAmount || n.offerAmount) * 1.05))
+                  }
+                >
+                  Surenchérir
+                </Button>
+                <Button disabled={loading} onClick={() => respondNego(n.id, 'walk_away')}>
+                  Abandonner
+                </Button>
+              </>
+            )}
+            {n.status === 'agreed' && (
+              <Button disabled={loading} onClick={() => completeNego(n.id)}>
+                Finaliser le transfert
+              </Button>
+            )}
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function MoreStaff() {
+  const { staffCatalog, staffMembers, hireStaff, fireStaff, loading, team } = useGame();
+  return (
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Staff" sub="Recrutement · salaires hebdo" />
+      <div className="grid gap-3 sm:grid-cols-2">
+        {(staffCatalog ?? []).map((c) => (
+          <Card key={c.role} className="p-4">
+            <div className="font-semibold text-white">{c.name}</div>
+            <div className="text-[12px] text-[var(--muted)]">
+              {c.specialty} · note {c.rating} · £{c.salary}/sem
+            </div>
+            {c.hired ? (
+              <Badge tone="good">En poste</Badge>
+            ) : (
+              <Button
+                className="mt-3"
+                disabled={loading || (team?.budget ?? 0) < c.cost}
+                onClick={() => hireStaff(c.role)}
+              >
+                Embaucher · £{c.cost.toLocaleString('fr-FR')}
+              </Button>
+            )}
+          </Card>
+        ))}
+      </div>
+      {(staffMembers ?? []).length > 0 && (
+        <Card className="p-4">
+          <div className="mb-2 text-[14px] font-semibold text-white">Effectif staff</div>
+          {staffMembers.map((s) => (
+            <div key={s.id} className="flex items-center justify-between border-b border-white/5 py-2 text-[13px]">
+              <span className="text-white">
+                {s.name} <span className="text-[var(--muted)]">· {s.role}</span>
+              </span>
+              <Button disabled={loading} onClick={() => fireStaff(s.id)}>
+                Licencier
+              </Button>
+            </div>
+          ))}
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function MoreCompetitions() {
+  const { leagueTable, team } = useGame();
+  return (
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Super Ligue" sub="Classement réel de saison" />
+      <Card className="overflow-hidden">
+        <div className="grid grid-cols-[2rem_1fr_repeat(5,2rem)] gap-1 border-b border-white/10 px-3 py-2 text-[10px] uppercase text-[var(--muted)]">
+          <span>#</span>
+          <span>Club</span>
+          <span className="text-center">J</span>
+          <span className="text-center">V</span>
+          <span className="text-center">N</span>
+          <span className="text-center">D</span>
+          <span className="text-center">Pts</span>
+        </div>
+        {(leagueTable ?? []).map((r) => (
+          <div
+            key={r.teamName}
+            className={`grid grid-cols-[2rem_1fr_repeat(5,2rem)] gap-1 px-3 py-2 text-[13px] ${
+              r.isPlayer ? 'bg-sky-500/10 font-semibold text-sky-100' : 'text-white'
+            }`}
+          >
+            <span className="data-num text-[var(--muted)]">{r.rank}</span>
+            <span className="truncate">{r.teamName}</span>
+            <span className="data-num text-center">{r.played}</span>
+            <span className="data-num text-center">{r.wins}</span>
+            <span className="data-num text-center">{r.draws}</span>
+            <span className="data-num text-center">{r.losses}</span>
+            <span className="data-num text-center font-bold">{r.points}</span>
+          </div>
+        ))}
+        {!(leagueTable ?? []).length && (
+          <p className="p-4 text-[13px] text-[var(--muted)]">Joue un match pour peupler le classement.</p>
+        )}
+      </Card>
+      {team && (
+        <p className="text-[12px] text-[var(--muted)]">
+          Bilan club : {team.wins}V {team.draws}N {team.losses}D
+        </p>
+      )}
+    </div>
+  );
+}
+
 function MoreGeneric({ title, body }: { title: string; body: string }) {
   return (
     <div className="animate-enter">
@@ -1067,11 +1213,11 @@ function MoreRouter() {
     case 'calendar':
       return <MoreCalendar />;
     case 'competitions':
-      return <MoreGeneric title="Compétitions" body="Classement · fixtures — données ligue à peupler." />;
+      return <MoreCompetitions />;
     case 'analytics':
       return <MoreGeneric title="Analytics" body="Tendances équipe / joueurs — mêmes stats match." />;
     case 'staff':
-      return <MoreGeneric title="Staff" body="Entraîneurs · scouts · médical (extension staff hub)." />;
+      return <MoreStaff />;
     case 'settings':
       return <MoreGeneric title="Réglages" body="Compte · notifications · accessibilité." />;
     default:

@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
 import { strengthFromPlayers, simulateMatch, withTimeline, randomOpponentName, randomOpponentStrength, } from '../lib/matchEngine.js';
 import { tickCareerEvents, toLegacyUnexpectedShape, getPendingEvent, } from '../lib/eventEngine.js';
+import { applyMatchToLeague } from '../lib/league.js';
 import { getChallenge } from '../lib/challenges.js';
 import { applyTrainingGains } from './live.js';
 import { tickManagerMarket } from '../lib/managerMarket.js';
@@ -219,6 +220,13 @@ router.post('/play', async (req, res) => {
         }
     }
     await applyTrainingGains(teamId);
+    let leagueTable = null;
+    try {
+        leagueTable = await applyMatchToLeague(teamId, sim.result, sim.homeScore, sim.awayScore);
+    }
+    catch (e) {
+        console.error('league update failed', e);
+    }
     // Manager Market AI world tick
     let marketHeadlines = [];
     try {
@@ -261,6 +269,7 @@ router.post('/play', async (req, res) => {
         eventsCreated,
         challenge: challengeResult,
         marketHeadlines,
+        leagueTable: leagueTable?.slice(0, 12) ?? null,
     });
 });
 export default router;
