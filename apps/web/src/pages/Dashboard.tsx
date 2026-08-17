@@ -518,105 +518,124 @@ function MatchHub() {
     challengeNote,
   } = useGame();
   const sub = (MATCH_SUBS.find((s) => s.id === spaceSub) ? spaceSub : 'preview') as string;
+  const showScore = lastMatch && (sub === 'live' || sub === 'post');
 
   return (
-    <div className="animate-enter">
-      <SectionTitle title="Match Center" sub="Événement · pas un simple dashboard" />
+    <div className="animate-enter space-y-4">
+      <SectionTitle title="Match Center" sub="Événement immersif · preview · live · post" />
       <SubNav items={MATCH_SUBS} active={sub} onChange={setSpaceSub} />
 
-      {(sub === 'preview' || sub === 'live') && (
-        <div className="space-y-4">
-          <Card className="overflow-hidden">
-            <div className="bg-gradient-to-b from-sky-950/40 to-transparent p-6">
-              <div className="text-center text-[11px] uppercase tracking-wider text-sky-300/80">
-                {matchPreview?.competition ?? 'Championnat'} · {matchPreview?.venue ?? 'Domicile'}
-              </div>
-              <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-                <div className="text-right">
-                  <div className="text-xl font-bold text-white">{team?.name ?? 'Vous'}</div>
+      {(sub === 'preview' || sub === 'live' || sub === 'post') && (
+        <ArenaPanel className="p-6">
+          <div className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-300/85">
+            {matchPreview?.competition ?? 'Super Ligue'} · {matchPreview?.venue ?? 'Domicile'}
+          </div>
+          <div className="mt-8 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+            <div className="text-right">
+              <div className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{team?.name ?? 'Vous'}</div>
+              <div className="mt-1 text-[11px] text-white/40">DOM</div>
+            </div>
+            <div className="px-2 text-center">
+              {showScore ? (
+                <div className="data-num text-5xl font-bold tracking-tight text-white sm:text-6xl">
+                  {lastMatch!.homeScore}
+                  <span className="mx-1 text-white/30">–</span>
+                  {lastMatch!.awayScore}
                 </div>
-                <div className="text-center">
-                  {lastMatch && sub === 'live' ? (
-                    <div className="data-num text-3xl font-bold text-white">
-                      {lastMatch.homeScore}–{lastMatch.awayScore}
-                    </div>
-                  ) : (
-                    <div className="text-sm font-bold text-sky-300">VS</div>
-                  )}
-                </div>
-                <div>
-                  <div className="text-xl font-bold text-white">{matchPreview?.opponent ?? lastMatch?.opponent ?? 'Adversaire'}</div>
-                </div>
-              </div>
-              {matchPreview && (
-                <div className="mt-6 grid grid-cols-4 gap-2 text-center text-[12px]">
-                  {(['attack', 'midfield', 'defense', 'gk'] as const).map((k) => (
-                    <div key={k} className="rounded-lg bg-black/30 py-2">
-                      <div className="text-[10px] uppercase text-[var(--muted)]">{k}</div>
-                      <div className="data-num font-semibold text-white">{matchPreview.strength[k]}</div>
-                    </div>
-                  ))}
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-full border border-sky-400/50 bg-sky-500/15 text-sm font-bold text-sky-200">
+                  VS
                 </div>
               )}
             </div>
-            <div className="border-t border-white/8 p-4">
-              <Button className="w-full" disabled={loading} onClick={() => playMatch()}>
-                {loading ? 'Simulation…' : 'Simuler le match'}
-              </Button>
-              {challengeNote && <p className="mt-2 text-center text-[12px] text-amber-200">{challengeNote}</p>}
-            </div>
-          </Card>
-
-          {lastMatch?.stats && (
-            <Card className="p-4">
-              <div className="text-[14px] font-semibold text-white">Statistiques</div>
-              <div className="mt-3 space-y-2 text-[13px]">
-                {[
-                  ['Possession', `${lastMatch.stats.possessionHome}%`, `${lastMatch.stats.possessionAway}%`],
-                  ['Tirs', String(lastMatch.stats.shotsHome), String(lastMatch.stats.shotsAway)],
-                  ['Cadrés', String(lastMatch.stats.shotsOnHome), String(lastMatch.stats.shotsOnAway)],
-                ].map(([label, a, b]) => (
-                  <div key={String(label)} className="grid grid-cols-3 gap-2">
-                    <span className="data-num text-right text-white">{a}</span>
-                    <span className="text-center text-[var(--muted)]">{label}</span>
-                    <span className="data-num text-white">{b}</span>
-                  </div>
-                ))}
+            <div>
+              <div className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                {matchPreview?.opponent ?? lastMatch?.opponent ?? 'Adversaire'}
               </div>
-            </Card>
+              <div className="mt-1 text-[11px] text-white/40">EXT</div>
+            </div>
+          </div>
+
+          {matchPreview && sub === 'preview' && (
+            <div className="mt-8 grid grid-cols-4 gap-2">
+              {(
+                [
+                  ['ATT', matchPreview.strength.attack],
+                  ['MIL', matchPreview.strength.midfield],
+                  ['DEF', matchPreview.strength.defense],
+                  ['GB', matchPreview.strength.gk],
+                ] as const
+              ).map(([k, v]) => (
+                <div key={k} className="rounded-xl bg-black/35 py-3 text-center">
+                  <div className="text-[10px] uppercase tracking-wide text-white/40">{k}</div>
+                  <div className="data-num mt-1 text-xl font-bold text-white">{v}</div>
+                </div>
+              ))}
+            </div>
           )}
 
-          {lastMatch?.timeline && lastMatch.timeline.length > 0 && (
-            <Card className="p-4">
-              <div className="text-[14px] font-semibold text-white">Timeline</div>
-              <ul className="mt-2 space-y-2">
-                {lastMatch.timeline.map((e, i) => (
-                  <li key={i} className="flex gap-3 text-[13px]">
-                    <span className="data-num w-8 text-[var(--muted)]">{e.minute}'</span>
-                    <span className="text-white">{e.label}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+          {sub !== 'post' && (
+            <div className="mt-8 flex flex-col items-center gap-2">
+              <StartCta disabled={loading} onClick={() => playMatch()}>
+                {loading ? 'Simulation…' : 'Simuler le match'}
+              </StartCta>
+              {challengeNote && <p className="text-[12px] text-amber-200">{challengeNote}</p>}
+            </div>
           )}
-        </div>
+
+          {sub === 'post' && lastMatch && (
+            <div className="mt-6 text-center text-[14px] text-white/55">
+              Prime match <span className="data-num font-semibold text-amber-200">{money(lastMatch.prize)}</span>
+            </div>
+          )}
+        </ArenaPanel>
       )}
 
-      {sub === 'post' && (
-        <Card className="p-6 text-center">
-          {lastMatch ? (
-            <>
-              <div className="text-[11px] uppercase text-[var(--muted)]">Résultat final</div>
-              <div className="mt-2 data-num text-4xl font-bold text-white">
-                {lastMatch.homeScore}–{lastMatch.awayScore}
+      {lastMatch?.stats && (sub === 'live' || sub === 'post') && (
+        <Card className="p-4">
+          <div className="mb-3 text-[14px] font-semibold text-white">Statistiques</div>
+          <div className="space-y-3 text-[13px]">
+            {[
+              ['Possession', lastMatch.stats.possessionHome, lastMatch.stats.possessionAway, true],
+              ['Tirs', lastMatch.stats.shotsHome, lastMatch.stats.shotsAway, false],
+              ['Cadrés', lastMatch.stats.shotsOnHome, lastMatch.stats.shotsOnAway, false],
+            ].map(([label, a, b, pct]) => (
+              <div key={String(label)}>
+                <div className="mb-1 grid grid-cols-3 text-[12px]">
+                  <span className="data-num text-right font-semibold text-white">
+                    {a}
+                    {pct ? '%' : ''}
+                  </span>
+                  <span className="text-center text-white/45">{label}</span>
+                  <span className="data-num font-semibold text-white">
+                    {b}
+                    {pct ? '%' : ''}
+                  </span>
+                </div>
+                <div className="flex h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="bg-sky-400"
+                    style={{ width: `${pct ? a : Math.min(100, (Number(a) / Math.max(1, Number(a) + Number(b))) * 100)}%` }}
+                  />
+                  <div className="flex-1 bg-white/15" />
+                </div>
               </div>
-              <div className="mt-2 text-[14px] text-[var(--muted)]">
-                vs {lastMatch.opponent} · Prime {money(lastMatch.prize)}
-              </div>
-            </>
-          ) : (
-            <EmptyState title="Pas encore de match" body="Simulez depuis l’onglet Avant-match." />
-          )}
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {lastMatch?.timeline && lastMatch.timeline.length > 0 && (sub === 'live' || sub === 'post') && (
+        <Card className="p-4">
+          <div className="mb-2 text-[14px] font-semibold text-white">Timeline</div>
+          <ul className="space-y-2">
+            {lastMatch.timeline.map((e, i) => (
+              <li key={i} className="flex gap-3 border-b border-white/5 py-2 text-[13px] last:border-0">
+                <span className="data-num w-10 shrink-0 font-semibold text-sky-300/90">{e.minute}'</span>
+                <span className="text-white">{e.label}</span>
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 
