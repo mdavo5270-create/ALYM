@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
     orderBy: [{ position: 'asc' }, { name: 'asc' }],
   });
 
-  const withRating = players.map((p) => {
+  const withRating = players.map((p: any) => {
     const rating =
       Math.round(
         ((p.speed + p.dribble + p.shot + p.pass + p.defense + p.physique) / 6) * 10

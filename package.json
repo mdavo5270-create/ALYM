@@ -20,7 +20,7 @@
     "setup": "yarn install && yarn db:generate && yarn db:migrate"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   },
   "packageManager": "yarn@1.22.22"
 }

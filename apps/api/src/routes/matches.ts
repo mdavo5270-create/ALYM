@@ -24,7 +24,7 @@ router.get('/preview', async (req, res) => {
     include: { players: true },
   });
   if (!team) return res.status(404).json({ error: 'Équipe introuvable' });
-  const available = team.players.filter((p) => !p.onLoan);
+  const available = team.players.filter((p: { onLoan: boolean }) => !p.onLoan);
   const opponent = randomOpponentName();
   const home = strengthFromPlayers(available);
   res.json({
@@ -53,7 +53,7 @@ router.post('/play', async (req, res) => {
   });
   if (!team) return res.status(404).json({ error: 'Équipe introuvable' });
 
-  const available = team.players.filter((p) => !p.onLoan);
+  const available = team.players.filter((p: { onLoan: boolean }) => !p.onLoan);
   if (available.length < 11) {
     return res.status(400).json({ error: 'Il faut au moins 11 joueurs disponibles (hors prêt)' });
   }
