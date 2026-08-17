@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
 import { strengthFromPlayers, simulateMatch, withTimeline, randomOpponentName, randomOpponentStrength, } from '../lib/matchEngine.js';
-import { rollUnexpectedEvent } from '../lib/gameSystems.js';
+import { tickCareerEvents, toLegacyUnexpectedShape, getPendingEvent, } from '../lib/eventEngine.js';
 import { getChallenge } from '../lib/challenges.js';
 import { applyTrainingGains } from './live.js';
 import { tickManagerMarket } from '../lib/managerMarket.js';
@@ -223,7 +223,15 @@ router.post('/play', async (req, res) => {
     catch (e) {
         console.error('manager market tick failed', e);
     }
-    const event = rollUnexpectedEvent();
+    let event = null;
+    let eventsCreated = [];
+    try {
+        eventsCreated = await tickCareerEvents(teamId, { result: sim.result });
+        event = toLegacyUnexpectedShape(await getPendingEvent(teamId));
+    }
+    catch (e) {
+        console.error('event engine tick failed', e);
+    }
     res.json({
         match: {
             opponent: awayName,
@@ -245,6 +253,7 @@ router.post('/play', async (req, res) => {
         },
         team: { wins, draws, losses, budget: newBudget, goldBalance },
         event,
+        eventsCreated,
         challenge: challengeResult,
         marketHeadlines,
     });

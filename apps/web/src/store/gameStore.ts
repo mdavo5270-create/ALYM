@@ -456,21 +456,37 @@ export const useGame = create<State>((set, get) => ({
     if (!team || !activeEvent) return;
     set({ loading: true });
     try {
-      const res = await api.resolveEvent(team.id, {
-        eventId: activeEvent.id,
-        choiceId: choice.id,
-        effect: choice.effect,
-      });
-      set({
-        team: {
-          ...team,
-          budget: res.budget,
-          jobSecurity: res.jobSecurity,
-          tacticalVision: res.tacticalVision,
-        },
-        activeEvent: null,
-        messages: (await api.messages(team.id)).messages,
-      });
+      // Prefer dedicated event engine endpoint (persisted cuid)
+      try {
+        const res = await api.resolveCareerEvent(team.id, activeEvent.id, choice.id);
+        set({
+          team: {
+            ...team,
+            budget: res.team.budget,
+            jobSecurity: res.team.jobSecurity,
+            tacticalVision: res.team.tacticalVision,
+          },
+          activeEvent: res.legacy,
+          messages: (await api.messages(team.id)).messages,
+          players: (await api.players(team.id)).players,
+        });
+      } catch {
+        const res = await api.resolveEvent(team.id, {
+          eventId: activeEvent.id,
+          choiceId: choice.id,
+          effect: choice.effect,
+        });
+        set({
+          team: {
+            ...team,
+            budget: res.budget,
+            jobSecurity: res.jobSecurity,
+            tacticalVision: res.tacticalVision,
+          },
+          activeEvent: null,
+          messages: (await api.messages(team.id)).messages,
+        });
+      }
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Erreur' });
     } finally {

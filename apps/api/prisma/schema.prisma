@@ -50,6 +50,7 @@ model Team {
   messages     Message[]
   transactions Transaction[]
   achievements Achievement[]
+  careerEvents CareerEvent[]
 
   @@schema("alym")
 }
@@ -192,5 +193,29 @@ model ManagerMarketEvent {
   detail    String?
   createdAt DateTime @default(now())
 
+  @@schema("alym")
+}
+
+// Career event engine
+model CareerEvent {
+  id               String    @id @default(cuid())
+  teamId           Int
+  type             String
+  priority         String    @default("important")
+  title            String
+  body             String
+  contextJson      String?
+  optionsJson      String
+  status           String    @default("pending")
+  choiceId         String?
+  consequenceNote  String?
+  consequenceJson  String?
+  createdAt        DateTime  @default(now())
+  resolvedAt       DateTime?
+  expiresAt        DateTime?
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId, status])
   @@schema("alym")
 }

@@ -13,4 +13,4 @@ ENV NODE_ENV=production
 ENV PORT=3001
 RUN npx --yes prisma@5.22.0 generate --schema=apps/api/prisma/schema.prisma
 EXPOSE 3001
-CMD ["node", "apps/api/dist/index.js"]
+CMD ["sh", "-c", "npx --yes prisma@5.22.0 db push --schema=apps/api/prisma/schema.prisma --accept-data-loss && node apps/api/dist/index.js"]

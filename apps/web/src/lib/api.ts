@@ -115,11 +115,36 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ vision }),
     }),
-  resolveEvent: (teamId: number, body: { eventId: string; choiceId: string; effect: string }) =>
-    request<{ ok: boolean; budget: number; jobSecurity: number; tacticalVision: string; note: string }>(
-      `/teams/${teamId}/career/event/resolve`,
-      { method: 'POST', body: JSON.stringify(body) }
-    ),
+  resolveEvent: (teamId: number, body: { eventId: string; choiceId: string; effect?: string }) =>
+    request<{
+      ok: boolean;
+      budget: number;
+      jobSecurity: number;
+      tacticalVision: string;
+      note: string;
+    }>(`/teams/${teamId}/career/event/resolve`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  events: (teamId: number, status?: string) =>
+    request<{
+      events: CareerEventRecord[];
+      pending: CareerEventRecord | null;
+      legacy: GameEvent | null;
+      counts: { pending: number; resolved: number };
+    }>(`/teams/${teamId}/events${status ? `?status=${status}` : ''}`),
+  resolveCareerEvent: (teamId: number, eventId: string, choiceId: string) =>
+    request<{
+      ok: boolean;
+      event: CareerEventRecord;
+      result: { note: string; budget: number; jobSecurity: number; tacticalVision: string };
+      team: { budget: number; jobSecurity: number; tacticalVision: string };
+      nextPending: CareerEventRecord | null;
+      legacy: GameEvent | null;
+    }>(`/teams/${teamId}/events/${eventId}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({ choiceId }),
+    }),
   youth: (teamId: number) => request<{ youth: Player[]; count: number }>(`/teams/${teamId}/career/youth`),
   scoutYouth: (teamId: number) =>
     request<{ player: Player; potential: number }>(`/teams/${teamId}/career/youth/scout`, {
@@ -252,6 +277,23 @@ export type GameEvent = {
   title: string;
   body: string;
   choices: { id: string; label: string; effect: string }[];
+  type?: string;
+  priority?: string;
+};
+
+export type CareerEventRecord = {
+  id: string;
+  type: string;
+  priority: string;
+  title: string;
+  body: string;
+  context: Record<string, unknown>;
+  options: { id: string; label: string; effects: string[] }[];
+  status: string;
+  choiceId?: string | null;
+  consequenceNote?: string | null;
+  createdAt: string;
+  expiresAt?: string | null;
 };
 
 export type MarketListing = {

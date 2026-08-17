@@ -72,7 +72,7 @@ router.post('/event/resolve', async (req, res) => {
         .object({
         eventId: z.string(),
         choiceId: z.string(),
-        effect: z.string(),
+        effect: z.string().optional(),
     })
         .safeParse(req.body);
     if (!parsed.success)
@@ -80,11 +80,36 @@ router.post('/event/resolve', async (req, res) => {
     const team = await getOwnedTeam(req.user.userId, teamId);
     if (!team)
         return res.status(404).json({ error: 'Équipe introuvable' });
+    // Nouveau moteur : eventId = cuid persisté
+    try {
+        const { resolveCareerEvent } = await import('../lib/eventEngine.js');
+        const exists = await prisma.careerEvent.findFirst({
+            where: { id: parsed.data.eventId, teamId },
+        });
+        if (exists) {
+            const { event, result } = await resolveCareerEvent(teamId, parsed.data.eventId, parsed.data.choiceId);
+            return res.json({
+                ok: true,
+                budget: result.budget,
+                jobSecurity: result.jobSecurity,
+                tacticalVision: result.tacticalVision,
+                note: result.note,
+                event,
+            });
+        }
+    }
+    catch (e) {
+        if (e instanceof Error && e.message !== 'Événement introuvable') {
+            return res.status(400).json({ error: e.message });
+        }
+    }
+    // Legacy effects (anciens ids non persistés)
     let budget = team.budget;
     let jobSecurity = team.jobSecurity;
     let tacticalVision = team.tacticalVision;
     let note = 'Décision enregistrée.';
-    switch (parsed.data.effect) {
+    const effect = parsed.data.effect ?? '';
+    switch (effect) {
         case 'pay_5k':
             budget -= 5000;
             note = 'Soins médicaux : -£5,000.';
@@ -120,12 +145,12 @@ router.post('/event/resolve', async (req, res) => {
             content: note,
         },
     });
-    if (parsed.data.effect === 'pay_5k' || parsed.data.effect === 'bonus_40k') {
+    if (effect === 'pay_5k' || effect === 'bonus_40k') {
         await prisma.transaction.create({
             data: {
                 teamId,
                 type: 'event',
-                amount: parsed.data.effect === 'bonus_40k' ? 40000 : -5000,
+                amount: effect === 'bonus_40k' ? 40000 : -5000,
                 reason: note,
             },
         });
