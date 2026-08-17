@@ -38,14 +38,14 @@ function Home() {
             <div className="label-caps text-sky-300">Prochain match · Championnat</div>
             <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
               <div className="text-right">
-                <div className="text-lg font-semibold text-white sm:text-2xl">{team?.name ?? 'Vous'}</div>
+                <div className="text-lg font-semibold text-[var(--ios-label)] sm:text-2xl">{team?.name ?? 'Vous'}</div>
                 <div className="text-xs text-slate-400">Domicile</div>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/40 data-num text-sm font-bold text-sky-300">
                 VS
               </div>
               <div className="text-left">
-                <div className="text-lg font-semibold text-white sm:text-2xl">
+                <div className="text-lg font-semibold text-[var(--ios-label)] sm:text-2xl">
                   {lastMatch?.opponent ?? 'Adversaire'}
                 </div>
                 <div className="text-xs text-slate-400">Extérieur</div>
@@ -60,7 +60,7 @@ function Home() {
             <div className="relative mt-6 grid gap-3 sm:grid-cols-3">
               <div className="rounded-md border border-white/[0.06] bg-black/30 px-3 py-3">
                 <div className="label-caps">Score</div>
-                <div className="data-num mt-1 text-xl font-semibold text-white">
+                <div className="data-num mt-1 text-xl font-semibold text-[var(--ios-label)]">
                   {lastMatch.homeScore} — {lastMatch.awayScore}
                 </div>
               </div>
@@ -80,7 +80,7 @@ function Home() {
 
         <Panel className="p-5">
           <div className="label-caps">Confiance du conseil</div>
-          <div className="mt-3 text-3xl font-semibold data-num text-white">{sec}%</div>
+          <div className="mt-3 text-3xl font-semibold data-num text-[var(--ios-label)]">{sec}%</div>
           <div className="mt-3">
             <ProgressBar value={sec} tone={sec < 35 ? 'bad' : sec < 55 ? 'brass' : 'good'} />
           </div>
@@ -189,8 +189,8 @@ function Match() {
           <div className="label-caps">Avant-match</div>
           {matchPreview ? (
             <div className="mt-3 space-y-3">
-              <div className="text-xl font-semibold text-white">
-                {matchPreview.homeName} <span className="text-white0">vs</span> {matchPreview.opponent}
+              <div className="text-xl font-semibold text-[var(--ios-label)]">
+                {matchPreview.homeName} <span className="text-[var(--ios-label)]0">vs</span> {matchPreview.opponent}
               </div>
               <div className="flex flex-wrap gap-2 text-xs">
                 <Badge>{matchPreview.competition}</Badge>
@@ -221,9 +221,9 @@ function Match() {
             <div className="mt-3 space-y-4">
               <div className="text-center">
                 <div className="text-sm text-slate-400">vs {lastMatch.opponent}</div>
-                <div className="mt-2 text-4xl font-semibold data-num text-white">
+                <div className="mt-2 text-4xl font-semibold data-num text-[var(--ios-label)]">
                   {lastMatch.homeScore}
-                  <span className="mx-2 text-white0">—</span>
+                  <span className="mx-2 text-[var(--ios-label)]0">—</span>
                   {lastMatch.awayScore}
                 </div>
                 <div className="mt-2 flex justify-center gap-2">
@@ -271,7 +271,7 @@ function Match() {
                 <span className="data-num w-10 text-slate-400">{e.minute}&apos;</span>
                 <Badge tone={e.type === 'goal' ? 'good' : e.type === 'yellow' ? 'warn' : 'neutral'}>{e.type}</Badge>
                 <span className="text-slate-200">{e.label}</span>
-                <span className="ml-auto text-xs text-white0">{e.side}</span>
+                <span className="ml-auto text-xs text-[var(--ios-label)]0">{e.side}</span>
               </li>
             ))}
           </ul>
@@ -378,7 +378,7 @@ function Squad() {
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <PosBadge pos={selected.position} />
-                  <h2 className="text-xl font-semibold text-white">{selected.name}</h2>
+                  <h2 className="text-xl font-semibold text-[var(--ios-label)]">{selected.name}</h2>
                 </div>
                 <p className="mt-1 text-sm text-slate-400">{selected.nation ?? '—'}</p>
               </div>
@@ -439,7 +439,7 @@ function Tactics() {
           <div className="absolute left-1/2 top-8 bottom-8 w-px bg-ink-600" />
           <div className="relative text-center">
             <div className="label-caps">Vision active</div>
-            <div className="mt-2 text-2xl font-semibold capitalize text-white">{current.replace('_', ' ')}</div>
+            <div className="mt-2 text-2xl font-semibold capitalize text-[var(--ios-label)]">{current.replace('_', ' ')}</div>
           </div>
         </Panel>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -455,7 +455,7 @@ function Tactics() {
                   : 'border-white/10 bg-[#0d1420] hover:border-sky-400/30'
               }`}
             >
-              <div className="text-sm font-semibold text-white">{v.name}</div>
+              <div className="text-sm font-semibold text-[var(--ios-label)]">{v.name}</div>
               <div className="mt-1 text-xs text-slate-400">{v.desc}</div>
             </button>
           ))}
@@ -477,7 +477,7 @@ function Board() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel className="p-5">
           <div className="label-caps">Sécurité du poste</div>
-          <div className="mt-2 text-4xl font-semibold data-num text-white">{sec}%</div>
+          <div className="mt-2 text-4xl font-semibold data-num text-[var(--ios-label)]">{sec}%</div>
           <div className="mt-4">
             <ProgressBar value={sec} tone={sec < 35 ? 'bad' : 'good'} />
           </div>
@@ -517,7 +517,7 @@ function Market() {
               <div>
                 <div className="flex items-center gap-2">
                   <PosBadge pos={l.position} />
-                  <span className="font-semibold text-white">{l.name}</span>
+                  <span className="font-semibold text-[var(--ios-label)]">{l.name}</span>
                 </div>
                 <div className="mt-1 text-xs text-slate-400">{l.nation ?? '—'}</div>
               </div>
@@ -558,7 +558,7 @@ function Youth() {
             <div>
               <div className="flex items-center gap-2">
                 <PosBadge pos={p.position} />
-                <span className="font-medium text-white">{p.name}</span>
+                <span className="font-medium text-[var(--ios-label)]">{p.name}</span>
               </div>
               <div className="mt-1 text-xs text-slate-400">
                 Note {p.rating ?? '—'} · Pot. {p.potential ?? '—'}
@@ -610,7 +610,7 @@ function Live() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="label-caps">Défi en cours</div>
-                  <div className="mt-1 text-xl font-semibold text-white">{active.title}</div>
+                  <div className="mt-1 text-xl font-semibold text-[var(--ios-label)]">{active.title}</div>
                   <p className="mt-1 text-sm text-slate-400">{active.description}</p>
                 </div>
                 <Badge tone="brass">{active.difficulty}</Badge>
@@ -652,7 +652,7 @@ function Live() {
               <div key={c.id} className="hub-tile w-[220px] p-4">
                 <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500/80 to-indigo-500/40" />
                 <div className="mt-1 flex items-start justify-between gap-2">
-                  <div className="text-sm font-semibold leading-snug text-white">{c.title}</div>
+                  <div className="text-sm font-semibold leading-snug text-[var(--ios-label)]">{c.title}</div>
                   <span className="chip-sky">{c.difficulty}</span>
                 </div>
                 <p className="mt-2 line-clamp-3 text-xs text-slate-400">{c.description}</p>
@@ -767,7 +767,7 @@ function Messages() {
             className={`panel w-full p-4 text-left transition hover:border-mist-400/20 ${!m.read ? 'border-sky-500/30' : ''}`}
           >
             <div className="flex items-center justify-between gap-2">
-              <div className="font-medium text-white">{m.title}</div>
+              <div className="font-medium text-[var(--ios-label)]">{m.title}</div>
               {!m.read && <Badge tone="brass">Nouveau</Badge>}
             </div>
             <div className="mt-1 text-xs text-slate-400">
@@ -831,7 +831,7 @@ function Shop() {
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {shopItems.map((item) => (
           <Panel key={item.id} className="p-4">
-            <div className="font-semibold text-white">{item.name}</div>
+            <div className="font-semibold text-[var(--ios-label)]">{item.name}</div>
             <p className="mt-1 text-sm text-slate-400">{item.effect}</p>
             <div className="mt-3 flex items-center justify-between">
               <span className="data-num text-amber-300">{item.price} Or</span>
@@ -855,7 +855,7 @@ function Legends() {
         {legends.map((l) => (
           <Panel key={l.code} className="p-4">
             <div className="flex items-center justify-between">
-              <div className="font-semibold text-white">{l.name}</div>
+              <div className="font-semibold text-[var(--ios-label)]">{l.name}</div>
               <PosBadge pos={l.position} />
             </div>
             <p className="mt-1 text-xs text-slate-400">{l.nation} · {l.unlock}</p>
@@ -910,7 +910,7 @@ function MgrMarket() {
             <Panel key={j.clubId} className="p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="font-semibold text-white">{j.clubName}</div>
+                  <div className="font-semibold text-[var(--ios-label)]">{j.clubName}</div>
                   <div className="text-xs text-slate-400">
                     {j.nation ?? '—'} · Vision {j.tacticalVision} · Rep {j.reputation}
                   </div>
@@ -922,7 +922,7 @@ function MgrMarket() {
               <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
                 <span className="data-num text-amber-300">{j.compatibility}% compat.</span>
                 <Badge tone="brass">Chance {j.likelihood}</Badge>
-                {j.managerName && <span className="text-xs text-white0">Coach : {j.managerName}</span>}
+                {j.managerName && <span className="text-xs text-[var(--ios-label)]0">Coach : {j.managerName}</span>}
               </div>
               <Button className="mt-3" disabled={loading} onClick={() => applyJob(j.clubId)}>
                 Candidater
@@ -944,14 +944,14 @@ function MgrMarket() {
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2"
               >
                 <div>
-                  <div className="font-medium text-white">{c.name}</div>
+                  <div className="font-medium text-[var(--ios-label)]">{c.name}</div>
                   <div className="text-xs text-slate-400">
                     {c.manager ? `${c.manager.name} · ${c.manager.status}` : 'Poste vacant'} · {c.tacticalVision}
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="data-num text-sm text-slate-200">{c.jobSecurity}%</div>
-                  <div className="text-[10px] text-white0">{c.record}</div>
+                  <div className="text-[10px] text-[var(--ios-label)]0">{c.record}</div>
                 </div>
               </div>
             ))}
@@ -966,7 +966,7 @@ function MgrMarket() {
             <ul className="space-y-1 text-sm">
               {(mgrMarket?.freeAgents ?? []).map((m) => (
                 <li key={m.id} className="text-slate-200">
-                  {m.name} <span className="text-white0">· rep {m.reputation}</span>
+                  {m.name} <span className="text-[var(--ios-label)]0">· rep {m.reputation}</span>
                 </li>
               ))}
             </ul>
@@ -1000,7 +1000,7 @@ function Achievements() {
         {achievements.map((a) => (
           <Panel key={a.code} className={`p-4 ${a.unlocked ? 'border-sky-500/30' : 'opacity-70'}`}>
             <div className="flex items-center justify-between">
-              <div className="font-semibold text-white">{a.name}</div>
+              <div className="font-semibold text-[var(--ios-label)]">{a.name}</div>
               <Badge tone={a.unlocked ? 'brass' : 'neutral'}>{a.unlocked ? 'Débloqué' : 'Verrouillé'}</Badge>
             </div>
             <p className="mt-1 text-sm text-slate-400">{a.description}</p>
