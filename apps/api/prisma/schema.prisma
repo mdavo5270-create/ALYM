@@ -148,3 +148,49 @@ model Achievement {
 
   @@schema("alym")
 }
+
+model AiManager {
+  id              Int      @id @default(autoincrement())
+  name            String
+  nation          String?
+  reputation      Int      @default(50)
+  preferredVision String   @default("standard")
+  status          String   @default("free")
+  seasonsAtClub   Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  club AiClub?
+
+  @@schema("alym")
+}
+
+model AiClub {
+  id             Int      @id @default(autoincrement())
+  name           String   @unique
+  nation         String?
+  reputation     Int      @default(50)
+  budget         Float    @default(150000)
+  tacticalVision String   @default("standard")
+  leagueTier     Int      @default(2)
+  jobSecurity    Int      @default(70)
+  wins           Int      @default(0)
+  draws          Int      @default(0)
+  losses         Int      @default(0)
+  managerId      Int?     @unique
+  createdAt      DateTime @default(now())
+
+  manager AiManager? @relation(fields: [managerId], references: [id])
+
+  @@schema("alym")
+}
+
+model ManagerMarketEvent {
+  id        Int      @id @default(autoincrement())
+  type      String
+  clubName  String
+  managerName String?
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@schema("alym")
+}
