@@ -65,8 +65,9 @@ export const api = {
   playMatch: (teamId: number) =>
     request<{
       match: { opponent: string; homeScore: number; awayScore: number; result: string; prize: number };
-      team: { wins: number; draws: number; losses: number; budget: number };
+      team: { wins: number; draws: number; losses: number; budget: number; goldBalance?: number };
       event: GameEvent | null;
+      challenge: { status: string; title: string; note: string } | null;
     }>(`/teams/${teamId}/matches/play`, { method: 'POST' }),
   shop: (teamId: number) => request<{ gold: number; items: ShopItem[] }>(`/teams/${teamId}/shop`),
   buy: (teamId: number, itemId: string) =>
@@ -106,6 +107,24 @@ export const api = {
     request<{ ok: boolean; fee: number }>(`/teams/${teamId}/career/market/sell/${playerId}`, {
       method: 'POST',
     }),
+  challenges: (teamId: number) => request<ChallengesResponse>(`/teams/${teamId}/live/challenges`),
+  startChallenge: (teamId: number, challengeId: string) =>
+    request<{ ok: boolean }>(`/teams/${teamId}/live/challenges/start`, {
+      method: 'POST',
+      body: JSON.stringify({ challengeId }),
+    }),
+  abandonChallenge: (teamId: number) =>
+    request<{ ok: boolean }>(`/teams/${teamId}/live/challenges/abandon`, { method: 'POST' }),
+  training: (teamId: number) => request<TrainingInfo>(`/teams/${teamId}/live/training`),
+  setTraining: (teamId: number, playerId: number, plan: string) =>
+    request<{ ok: boolean }>(`/teams/${teamId}/live/training/${playerId}`, {
+      method: 'POST',
+      body: JSON.stringify({ plan }),
+    }),
+  loan: (teamId: number, playerId: number) =>
+    request<{ ok: boolean; fee: number }>(`/teams/${teamId}/live/loan/${playerId}`, { method: 'POST' }),
+  recallLoan: (teamId: number, playerId: number) =>
+    request<{ ok: boolean }>(`/teams/${teamId}/live/loan/${playerId}/recall`, { method: 'POST' }),
 };
 
 export type Team = {
@@ -142,6 +161,8 @@ export type Player = {
   rating?: number;
   potential?: number;
   isYouth?: boolean;
+  onLoan?: boolean;
+  trainingPlan?: string;
 };
 
 export type ShopItem = { id: string; name: string; price: number; effect: string };
@@ -193,4 +214,28 @@ export type MarketListing = {
   potential: number;
   rating: number;
   price: number;
+};
+
+export type ChallengeDef = {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: string;
+  goalType: string;
+  goalTarget: number;
+  matchesLimit: number;
+  rewardGold: number;
+  rewardBudget: number;
+  restriction?: string;
+  progress?: { wins: number; matches: number; streak: number; youth: number };
+};
+
+export type ChallengesResponse = {
+  catalog: ChallengeDef[];
+  active: ChallengeDef | null;
+};
+
+export type TrainingInfo = {
+  plans: { id: string; name: string; focus: string }[];
+  players: { id: number; name: string; position: string; trainingPlan: string; onLoan: boolean; isYouth: boolean }[];
 };
