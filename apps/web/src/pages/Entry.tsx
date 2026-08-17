@@ -23,18 +23,7 @@ export function Title() {
   const { setScreen, setAuthMode } = useGame();
   return (
     <div className="stage-bg flex min-h-screen flex-col justify-center px-6 py-12">
-      {/* Banner visible immédiat — prouve que le déploiement est live */}
-      <div className="fixed left-0 right-0 top-0 z-50 border-b border-[var(--brass)]/40 bg-[var(--brass)]/15 px-4 py-2 text-center backdrop-blur-sm">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--brass)]">
-          Refonte FC-Density v0.3 · live
-        </span>
-        <span className="mx-2 text-[var(--ink-faint)]">·</span>
-        <span className="text-[11px] text-[var(--ink-dim)]">
-          Effectif en rows · Bureau Command Center · plus de grilles de cards
-        </span>
-      </div>
-
-      <div className="animate-enter mx-auto w-full max-w-lg pt-10">
+<div className="animate-enter mx-auto w-full max-w-lg pt-10">
         <div className="flex items-center gap-3">
           <AlymLogo size={40} />
           <div>

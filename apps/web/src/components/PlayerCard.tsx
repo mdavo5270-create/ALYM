@@ -129,18 +129,18 @@ export function PlayerListHeader({
   showContract?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3 border-b border-[var(--rule)] bg-[var(--paper-2)] px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-[var(--ink-faint)]">
+    <div className="flex items-center gap-3 border-b border-[var(--rule)] bg-black/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-faint)]">
       <span className="w-9 shrink-0 text-center">OVR</span>
       <span className="w-8 shrink-0">Pos</span>
-      <span className="flex-1">Joueur</span>
-      {showValue && <span className="hidden w-16 shrink-0 text-right sm:block">Valeur</span>}
-      {showFitness && <span className="hidden w-12 shrink-0 text-right sm:block">Forme</span>}
-      {showContract && <span className="hidden w-12 shrink-0 text-right sm:block">Contrat</span>}
+      <span className="flex-1">Player</span>
+      {showValue && <span className="hidden w-16 shrink-0 text-right sm:block">Value</span>}
+      {showFitness && <span className="hidden w-12 shrink-0 text-right sm:block">Form</span>}
+      {showContract && <span className="hidden w-14 shrink-0 text-right sm:block">Contract</span>}
     </div>
   );
 }
 
-/** Card variants kept for transfer / scout / match contexts */
+
 export function PlayerCard({
   player,
   variant = 'standard',
