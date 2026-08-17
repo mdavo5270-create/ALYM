@@ -11,6 +11,9 @@ import {
   type BoardInfo,
   type GameEvent,
   type MarketListing,
+  type ChallengesResponse,
+  type ChallengeDef,
+  type TrainingInfo,
 } from './lib/api';
 import { AlymLogo, MylaMark } from './components/Logo';
 
@@ -25,7 +28,9 @@ type Tab =
   | 'achievements'
   | 'board'
   | 'youth'
-  | 'market';
+  | 'market'
+  | 'live'
+  | 'training';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -48,6 +53,9 @@ export default function App() {
   const [board, setBoard] = useState<BoardInfo | null>(null);
   const [youth, setYouth] = useState<Player[]>([]);
   const [listings, setListings] = useState<MarketListing[]>([]);
+  const [challenges, setChallenges] = useState<ChallengesResponse | null>(null);
+  const [training, setTraining] = useState<TrainingInfo | null>(null);
+  const [challengeNote, setChallengeNote] = useState<string | null>(null);
   const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
   const [lastMatch, setLastMatch] = useState<{
     opponent: string;
@@ -91,6 +99,8 @@ export default function App() {
         setListings(m.listings);
         setTeam((prev) => (prev ? { ...prev, budget: m.budget } : prev));
       }
+      if (t === 'live') setChallenges(await api.challenges(teamId));
+      if (t === 'training') setTraining(await api.training(teamId));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur chargement');
     }
@@ -176,6 +186,10 @@ export default function App() {
       );
       setMessages((await api.messages(team.id)).messages);
       if (res.event) setActiveEvent(res.event);
+      if (res.challenge) setChallengeNote(`${res.challenge.title}: ${res.challenge.note}`);
+      if (typeof res.team.goldBalance === 'number') {
+        setTeam((prev) => (prev ? { ...prev, goldBalance: res.team.goldBalance! } : prev));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
     } finally {
@@ -275,6 +289,74 @@ export default function App() {
       await api.marketSell(team.id, playerId);
       setPlayers((await api.players(team.id)).players);
       await loadTeamData(team.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function startChallenge(id: string) {
+    if (!team) return;
+    setLoading(true);
+    try {
+      await api.startChallenge(team.id, id);
+      setChallenges(await api.challenges(team.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function abandonChallenge() {
+    if (!team) return;
+    setLoading(true);
+    try {
+      await api.abandonChallenge(team.id);
+      setChallenges(await api.challenges(team.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function setPlan(playerId: number, plan: string) {
+    if (!team) return;
+    setLoading(true);
+    try {
+      await api.setTraining(team.id, playerId, plan);
+      setTraining(await api.training(team.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loanPlayer(playerId: number) {
+    if (!team) return;
+    setLoading(true);
+    try {
+      await api.loan(team.id, playerId);
+      setTraining(await api.training(team.id));
+      setPlayers((await api.players(team.id)).players);
+      await loadTeamData(team.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function recallPlayer(playerId: number) {
+    if (!team) return;
+    setLoading(true);
+    try {
+      await api.recallLoan(team.id, playerId);
+      setTraining(await api.training(team.id));
+      setPlayers((await api.players(team.id)).players);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
     } finally {
@@ -455,7 +537,9 @@ export default function App() {
   const nav: { id: Tab; label: string }[] = [
     { id: 'home', label: 'Accueil' },
     { id: 'match', label: 'Match' },
+    { id: 'live', label: 'Manager Live' },
     { id: 'board', label: 'Board' },
+    { id: 'training', label: 'Training' },
     { id: 'messages', label: `Messages${unread ? ` (${unread})` : ''}` },
     { id: 'squad', label: 'Effectif' },
     { id: 'market', label: 'Mercato' },
@@ -734,6 +818,110 @@ export default function App() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+
+        {tab === 'live' && challenges && (
+          <div className="max-w-2xl space-y-4">
+            <h2 className="text-lg font-bold text-alym-gold">Manager Live</h2>
+            {challengeNote && (
+              <p className="text-sm text-alym-gold border border-alym-gold/30 rounded-lg p-3">{challengeNote}</p>
+            )}
+            {challenges.active ? (
+              <div className="bg-alym-surface border border-alym-gold/40 rounded-xl p-4 space-y-2">
+                <div className="font-bold">{challenges.active.title}</div>
+                <p className="text-sm text-gray-400">{challenges.active.description}</p>
+                <p className="text-xs text-gray-500">
+                  Progression matchs {challenges.active.progress?.matches ?? 0}/{challenges.active.matchesLimit}
+                  {' '}· wins {challenges.active.progress?.wins ?? 0}
+                  {' '}· streak {challenges.active.progress?.streak ?? 0}
+                </p>
+                <button
+                  onClick={abandonChallenge}
+                  disabled={loading}
+                  className="text-xs text-red-400 hover:underline"
+                >
+                  Abandonner le défi
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {challenges.catalog.map((c: ChallengeDef) => (
+                  <div
+                    key={c.id}
+                    className="bg-alym-surface border border-gray-800 rounded-xl p-4 flex justify-between gap-3"
+                  >
+                    <div>
+                      <div className="font-semibold">{c.title}</div>
+                      <p className="text-xs text-gray-400 mt-1">{c.description}</p>
+                      <p className="text-xs text-alym-gold mt-2">
+                        {c.difficulty} · +{c.rewardGold} Or + £{c.rewardBudget.toLocaleString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => startChallenge(c.id)}
+                      disabled={loading}
+                      className="self-center bg-alym-gold text-black text-xs font-bold px-3 py-2 rounded-lg"
+                    >
+                      Lancer
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'training' && training && (
+          <div className="max-w-2xl space-y-4">
+            <h2 className="text-lg font-bold text-alym-gold">Plans d'entrainement</h2>
+            <p className="text-xs text-gray-500">Les stats progressent légèrement après chaque match.</p>
+            {training.players.map((p) => (
+              <div
+                key={p.id}
+                className="bg-alym-surface border border-gray-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2"
+              >
+                <div>
+                  <div className="font-semibold text-sm">
+                    {p.name} <span className="text-alym-gold text-xs">{p.position}</span>
+                    {p.onLoan ? <span className="text-xs text-gray-500"> · PRÊT</span> : null}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1 items-center">
+                  <select
+                    className="bg-alym-dark border border-gray-700 rounded px-2 py-1 text-xs"
+                    value={p.trainingPlan}
+                    disabled={loading || p.onLoan}
+                    onChange={(e) => setPlan(p.id, e.target.value)}
+                  >
+                    {training.plans.map((pl) => (
+                      <option key={pl.id} value={pl.id}>
+                        {pl.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!p.onLoan && !p.isYouth && (
+                    <button
+                      onClick={() => loanPlayer(p.id)}
+                      disabled={loading}
+                      className="text-xs text-gray-400 hover:text-alym-gold"
+                    >
+                      Prêter
+                    </button>
+                  )}
+                  {p.onLoan && (
+                    <button
+                      onClick={() => recallPlayer(p.id)}
+                      disabled={loading}
+                      className="text-xs text-alym-gold"
+                    >
+                      Rappeler
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
