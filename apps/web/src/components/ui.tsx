@@ -17,7 +17,7 @@ export function PageHeader({
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-slate-400">{subtitle}</p>}
+        {subtitle && <p className="mt-1 text-sm text-[var(--ink-dim)]">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -37,19 +37,19 @@ export function StatCard({
 }) {
   const toneCls =
     tone === 'good'
-      ? 'text-emerald-400'
+      ? 'text-[var(--alym-rise)]'
       : tone === 'warn'
         ? 'text-signal-warn'
         : tone === 'bad'
-          ? 'text-rose-400'
+          ? 'text-[var(--alym-fall)]'
           : tone === 'brass'
-            ? 'text-amber-400'
+            ? 'text-[var(--alym-flare)]'
             : 'text-white';
   return (
     <div className="panel-soft p-4">
       <div className="label-caps">{label}</div>
       <div className={`mt-2 text-2xl font-semibold data-num ${toneCls}`}>{value}</div>
-      {hint && <div className="mt-1 text-xs text-slate-400">{hint}</div>}
+      {hint && <div className="mt-1 text-xs text-[var(--ink-dim)]">{hint}</div>}
     </div>
   );
 }
@@ -62,11 +62,11 @@ export function Badge({
   tone?: 'neutral' | 'good' | 'warn' | 'bad' | 'brass';
 }) {
   const map = {
-    neutral: 'bg-white/10 text-slate-200',
-    good: 'bg-emerald-500/15 text-emerald-400',
-    warn: 'bg-signal-warn/15 text-signal-warn',
-    bad: 'bg-rose-500/15 text-rose-400',
-    brass: 'bg-amber-500/15 text-amber-300',
+    neutral: 'bg-white/10 text-[var(--ink)]',
+    good: 'bg-[var(--alym-rise)]/15 text-[var(--alym-rise)]',
+    warn: 'bg-amber-500/15 text-amber-300',
+    bad: 'bg-[var(--alym-fall)]/15 text-[var(--alym-fall)]',
+    brass: 'bg-[var(--alym-flare)]/15 text-[var(--alym-flare)]',
   };
   return (
     <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ${map[tone]}`}>
@@ -88,7 +88,7 @@ export function ProgressBar({
 }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   const bar =
-    tone === 'good' ? 'bg-emerald-500' : tone === 'bad' ? 'bg-rose-500' : 'bg-sky-400';
+    tone === 'good' ? 'bg-[var(--alym-rise)]' : tone === 'bad' ? 'bg-[var(--alym-fall)]' : 'bg-[var(--alym-flare)]';
   return (
     <div className={`h-1.5 w-full overflow-hidden rounded-full bg-white/10 ${className}`}>
       <div className={`h-full rounded-full transition-all duration-500 ${bar}`} style={{ width: `${pct}%` }} />
@@ -145,7 +145,7 @@ export function Modal({
           <div className="mb-4 flex items-start justify-between gap-3">
             {title ? <h2 className="text-lg font-semibold text-white">{title}</h2> : <span />}
             {onClose && (
-              <button type="button" className="btn-ghost px-2 py-1 text-slate-400" onClick={onClose} aria-label="Fermer">
+              <button type="button" className="btn-ghost px-2 py-1 text-[var(--ink-dim)]" onClick={onClose} aria-label="Fermer">
                 ✕
               </button>
             )}
@@ -158,7 +158,7 @@ export function Modal({
 }
 
 export function Rating({ value }: { value: number }) {
-  const tone = value >= 80 ? 'text-amber-300' : value >= 70 ? 'text-slate-100' : 'text-slate-400';
+  const tone = value >= 80 ? 'text-amber-300' : value >= 70 ? 'text-slate-100' : 'text-[var(--ink-dim)]';
   return <span className={`data-num font-semibold ${tone}`}>{value}</span>;
 }
 
@@ -173,7 +173,7 @@ export function EmptyState({ title, body }: { title: string; body?: string }) {
   return (
     <div className="panel-soft flex flex-col items-center justify-center px-6 py-12 text-center">
       <p className="text-sm font-medium text-slate-200">{title}</p>
-      {body && <p className="mt-1 max-w-sm text-xs text-slate-400">{body}</p>}
+      {body && <p className="mt-1 max-w-sm text-xs text-[var(--ink-dim)]">{body}</p>}
     </div>
   );
 }

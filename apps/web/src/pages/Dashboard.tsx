@@ -1644,99 +1644,157 @@ function MoreAcademy() {
   );
 }
 
+
 function MoreTraining() {
   const { training, players, setTraining, loading } = useGame();
   const plans = training?.plans ?? [
-    { id: 'balanced', name: 'Équilibré', focus: 'all' },
-    { id: 'attacking', name: 'Offensif', focus: 'shot' },
-    { id: 'defensive', name: 'Défensif', focus: 'defense' },
-    { id: 'technical', name: 'Technique', focus: 'dribble' },
-    { id: 'physical', name: 'Physique', focus: 'physique' },
+    { id: 'balanced', name: 'Balanced', focus: 'all' },
+    { id: 'attacking', name: 'Attacking', focus: 'shot' },
+    { id: 'defensive', name: 'Defensive', focus: 'defense' },
+    { id: 'technical', name: 'Technical', focus: 'dribble' },
+    { id: 'physical', name: 'Physical', focus: 'physique' },
   ];
   return (
     <div className="animate-enter space-y-4">
-      <SectionTitle title="Entraînement" sub="Plans individuels · gains après match" />
-      <div className="grid gap-2 sm:grid-cols-2">
-        {players.filter((p) => !p.onLoan).map((p) => (
-          <Card key={p.id} className="p-3">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <div className="font-semibold text-white">{p.name}</div>
-                <div className="text-[12px] text-[var(--muted)]">{p.position} · plan {p.trainingPlan ?? 'balanced'}</div>
-              </div>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-1">
-              {plans.map((pl) => (
-                <button
-                  key={pl.id}
-                  type="button"
-                  disabled={loading}
-                  onClick={() => setTraining(p.id, pl.id)}
-                  className={`rounded-lg px-2 py-1 text-[11px] ${
-                    (p.trainingPlan ?? 'balanced') === pl.id
-                      ? 'bg-[var(--brass)]/20 text-[var(--brass)]'
-                      : 'bg-white/5 text-[var(--muted)]'
-                  }`}
-                >
-                  {pl.name}
-                </button>
-              ))}
-            </div>
-          </Card>
+      <div>
+        <h1 className="type-display text-[26px] text-[var(--ink)]">Training</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">Plans · focus · development load</p>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-5">
+        {plans.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            className="panel px-3 py-3 text-left transition hover:border-[var(--alym-flare)]/50"
+            onClick={() => {
+              const target = players[0];
+              if (target) setTraining(target.id, p.id);
+            }}
+          >
+            <div className="label-caps text-[var(--alym-flare)]">{p.focus}</div>
+            <div className="mt-1 text-[14px] font-semibold text-[var(--ink)]">{p.name}</div>
+          </button>
         ))}
+      </div>
+      <div className="panel overflow-hidden">
+        <div className="grid grid-cols-[40px_40px_1fr_100px] gap-2 border-b border-[var(--rule)] px-3 py-1.5 text-[10px] uppercase tracking-wider text-[var(--ink-faint)]">
+          <span>OVR</span>
+          <span>Pos</span>
+          <span>Player</span>
+          <span className="text-right">Assign</span>
+        </div>
+        {players
+          .slice()
+          .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+          .slice(0, 16)
+          .map((p) => (
+            <div
+              key={p.id}
+              className="grid grid-cols-[40px_40px_1fr_100px] items-center gap-2 border-b border-[var(--rule)] px-3 py-2"
+            >
+              <span className="data-num text-[13px] font-semibold">{p.rating ?? 60}</span>
+              <span className="text-[11px] text-[var(--alym-flare)]">{p.position}</span>
+              <span className="truncate text-[13px]">{p.name}</span>
+              <Button
+                className="justify-self-end"
+                disabled={loading}
+                onClick={() => setTraining(p.id, 'balanced')}
+              >
+                Train
+              </Button>
+            </div>
+          ))}
       </div>
     </div>
   );
 }
 
 function MoreLegends() {
-  const { legends, recruitLegend, loading, team } = useGame();
+  const { legends, recruitLegend, loading } = useGame();
+  const list = legends ?? [];
   return (
     <div className="animate-enter space-y-4">
-      <SectionTitle title="Légendes" sub="ICONs & Heroes · £80k" />
-      <div className="grid gap-3 sm:grid-cols-2">
-        {(legends ?? []).map((l) => (
-          <Card key={l.code} className={`p-4 ${l.owned ? 'border-emerald-500/30' : ''}`}>
-            <div className="flex justify-between gap-2">
-              <div>
-                <div className="font-bold text-white">{l.name}</div>
-                <div className="text-[12px] text-[var(--muted)]">{l.position} · {l.nation}</div>
-              </div>
-              <Badge tone={l.owned ? 'good' : l.unlocked ? 'brass' : 'neutral'}>
-                {l.owned ? 'Recruté' : l.unlocked ? 'Dispo' : 'Verrouillé'}
-              </Badge>
-            </div>
-            <p className="mt-2 text-[12px] text-[var(--muted)]">Déblocage : {l.unlock}</p>
-            <Button
-              className="mt-3"
-              disabled={loading || !l.unlocked || l.owned || (team?.budget ?? 0) < 80000}
-              onClick={() => recruitLegend(l.code)}
-            >
-              Recruter · £80,000
-            </Button>
-          </Card>
-        ))}
+      <div>
+        <h1 className="type-display text-[26px] text-[var(--ink)]">Legends</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">Icons · short contracts · impact</p>
       </div>
-      {!(legends ?? []).length && <EmptyState title="Chargement…" body="Ouvre cet onglet après connexion." />}
+      <div className="panel overflow-hidden">
+        <div className="grid grid-cols-[40px_40px_1fr_72px_88px] gap-2 border-b border-[var(--rule)] px-3 py-1.5 text-[10px] uppercase tracking-wider text-[var(--ink-faint)]">
+          <span>OVR</span>
+          <span>Pos</span>
+          <span>Name</span>
+          <span className="text-right">Fee</span>
+          <span className="text-right">Action</span>
+        </div>
+        {list.map((l: any, i: number) => {
+          const st = l.stats;
+          const ovr = st
+            ? Math.round((st.speed + st.dribble + st.shot + st.pass + st.defense + st.physique) / 6)
+            : 85;
+          return (
+            <div
+              key={l.code ?? i}
+              className="grid grid-cols-[40px_40px_1fr_72px_88px] items-center gap-2 border-b border-[var(--rule)] px-3 py-2.5"
+            >
+              <span className="data-num text-[13px] font-semibold text-[var(--alym-rise)]">{ovr}</span>
+              <span className="text-[11px] text-[var(--alym-flare)]">{l.position ?? '—'}</span>
+              <span className="truncate text-[13px] text-[var(--ink)]">{l.name}</span>
+              <span className="data-num text-right text-[12px] text-[var(--ink-dim)]">
+                {l.salary != null ? money(l.salary) : '—'}
+              </span>
+              <Button
+                className="justify-self-end"
+                disabled={loading || l.owned}
+                onClick={() => recruitLegend(String(l.code))}
+              >
+                {l.owned ? 'Owned' : 'Hire'}
+              </Button>
+            </div>
+          );
+        })}
+        {!list.length && (
+          <p className="px-3 py-6 text-[13px] text-[var(--ink-dim)]">No legends available this window.</p>
+        )}
+      </div>
     </div>
   );
 }
 
 function MoreShop() {
   const { shopItems, buyShop, loading, team } = useGame();
+  const items = shopItems ?? [];
   return (
     <div className="animate-enter space-y-4">
-      <SectionTitle title="Boutique" sub={`Or disponible : ${team?.goldBalance ?? 0}`} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        {(shopItems ?? []).map((it) => (
-          <Card key={it.id} className="p-4">
-            <div className="font-semibold text-white">{it.name}</div>
-            <div className="mt-1 text-[12px] text-[var(--muted)]">{it.effect}</div>
-            <Button className="mt-3" disabled={loading || (team?.goldBalance ?? 0) < it.price} onClick={() => buyShop(it.id)}>
-              Acheter · {it.price} Or
-            </Button>
-          </Card>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="type-display text-[26px] text-[var(--ink)]">Shop</h1>
+          <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">Boosts · facilities · consumables</p>
+        </div>
+        <div className="data-num text-[14px] text-[var(--alym-flare)]">
+          Gold {team?.goldBalance ?? 0}
+        </div>
+      </div>
+      <div className="panel overflow-hidden">
+        {items.map((it: any, i: number) => (
+          <div
+            key={it.id ?? i}
+            className="flex items-center justify-between gap-3 border-b border-[var(--rule)] px-3 py-3"
+          >
+            <div className="min-w-0">
+              <div className="text-[14px] font-semibold text-[var(--ink)]">{it.name ?? it.title}</div>
+              <div className="truncate text-[12px] text-[var(--ink-dim)]">{it.description ?? it.effect ?? ''}</div>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              <span className="data-num text-[13px] text-[var(--alym-flare)]">{it.price ?? it.cost ?? '—'}</span>
+              <Button disabled={loading} onClick={() => buyShop?.(String(it.id))}>
+                Buy
+              </Button>
+            </div>
+          </div>
         ))}
+        {!items.length && (
+          <p className="px-3 py-6 text-[13px] text-[var(--ink-dim)]">Shop inventory empty.</p>
+        )}
       </div>
     </div>
   );
@@ -1744,52 +1802,317 @@ function MoreShop() {
 
 function MoreAchievements() {
   const { achievements } = useGame();
+  const list = achievements ?? [];
   return (
     <div className="animate-enter space-y-4">
-      <SectionTitle title="Succès" />
-      <div className="grid gap-2 sm:grid-cols-2">
-        {(achievements ?? []).map((a) => (
-          <Card key={a.code} className={`p-3 ${a.unlocked ? 'border-[var(--brass)]/30' : 'opacity-70'}`}>
-            <div className="flex justify-between">
-              <span className="font-semibold text-white">{a.name}</span>
-              <Badge tone={a.unlocked ? 'brass' : 'neutral'}>{a.unlocked ? 'OK' : '—'}</Badge>
+      <div>
+        <h1 className="type-display text-[26px] text-[var(--ink)]">Achievements</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">Career milestones · unlocks</p>
+      </div>
+      <StatBlock
+        items={[
+          { label: 'Unlocked', value: list.filter((a: any) => a.unlocked || a.done).length, accent: true },
+          { label: 'Total', value: list.length || '—' },
+          { label: 'Season', value: '1' },
+          { label: 'Progress', value: list.length ? `${Math.round((list.filter((a: any) => a.unlocked || a.done).length / list.length) * 100)}%` : '—' },
+        ]}
+      />
+      <div className="panel overflow-hidden">
+        {list.map((a: any, i: number) => (
+          <div
+            key={a.id ?? i}
+            className={`flex items-center justify-between border-b border-[var(--rule)] px-3 py-3 ${
+              a.unlocked || a.done ? '' : 'opacity-50'
+            }`}
+          >
+            <div>
+              <div className="text-[14px] font-medium text-[var(--ink)]">{a.title ?? a.name}</div>
+              <div className="text-[12px] text-[var(--ink-dim)]">{a.description ?? ''}</div>
             </div>
-            <p className="mt-1 text-[12px] text-[var(--muted)]">{a.description}</p>
-          </Card>
+            <span className={`text-[11px] font-semibold uppercase ${(a.unlocked || a.done) ? 'text-[var(--alym-rise)]' : 'text-[var(--ink-faint)]'}`}>
+              {(a.unlocked || a.done) ? 'Done' : 'Locked'}
+            </span>
+          </div>
         ))}
+        {!list.length && (
+          <p className="px-3 py-6 text-[13px] text-[var(--ink-dim)]">Play matches to unlock achievements.</p>
+        )}
       </div>
     </div>
   );
 }
 
 function MoreCalendar() {
-  const { team, lastMatch, matchPreview } = useGame();
-  const played = (team?.wins ?? 0) + (team?.draws ?? 0) + (team?.losses ?? 0);
-  const days = Array.from({ length: 14 }, (_, i) => {
-    const j = played + i;
-    const isMatch = i % 3 === 0;
-    return { j, isMatch, label: isMatch ? (i === 0 ? matchPreview?.opponent ?? 'Adversaire' : 'Journée') : 'Entraînement' };
-  });
+  const { lastMatch, matchPreview, team, goSpace } = useGame();
+  const days = Array.from({ length: 8 }).map((_, j) => ({
+    j,
+    label: j === 0 ? 'Next match' : j === 1 ? 'Recovery' : `Fixture window ${j}`,
+  }));
   return (
     <div className="animate-enter space-y-4">
-      <SectionTitle title="Calendrier" sub={`Saison 1 · J${played + 1}`} />
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {days.map((d) => (
-          <Card key={d.j} className={`p-3 ${d.isMatch ? 'border-[var(--brass)]/25' : ''}`}>
-            <div className="text-[11px] text-[var(--muted)]">J{d.j + 1}</div>
-            <div className="text-[13px] font-medium text-white">{d.label}</div>
-          </Card>
+      <div>
+        <h1 className="type-display text-[26px] text-[var(--ink)]">Calendar</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">Fixtures · recovery · windows</p>
+      </div>
+      <div className="panel overflow-hidden">
+        <button
+          type="button"
+          onClick={() => goSpace('match', 'preview')}
+          className="flex w-full items-center justify-between border-b border-[var(--rule)] px-3 py-3 text-left hover:bg-[var(--panel-2)]"
+        >
+          <div>
+            <div className="label-caps text-[var(--alym-flare)]">Next</div>
+            <div className="text-[14px] font-semibold text-[var(--ink)]">
+              {team?.name ?? 'You'} vs {matchPreview?.opponent ?? 'Opponent'}
+            </div>
+          </div>
+          <span className="text-[12px] text-[var(--ink-dim)]">{matchPreview?.kickoffLabel ?? 'TBD'}</span>
+        </button>
+        {days.slice(1).map((d) => (
+          <div key={d.j} className="flex items-center justify-between border-b border-[var(--rule)] px-3 py-2.5">
+            <span className="text-[13px] text-[var(--ink)]">{d.label}</span>
+            <span className="data-num text-[12px] text-[var(--ink-faint)]">J{d.j + 1}</span>
+          </div>
         ))}
       </div>
       {lastMatch && (
-        <p className="text-[12px] text-[var(--muted)]">
-          Dernier : {lastMatch.homeScore}-{lastMatch.awayScore} vs {lastMatch.opponent}
-        </p>
+        <div className="panel px-3 py-3 text-[13px] text-[var(--ink-dim)]">
+          Last: <span className="data-num text-[var(--ink)]">{lastMatch.homeScore}-{lastMatch.awayScore}</span> vs{' '}
+          {lastMatch.opponent}
+        </div>
       )}
     </div>
   );
 }
 
+function MoreStaff() {
+  const { staff, hireStaff, fireStaff, loading } = useGame() as any;
+  const list = staff ?? [];
+  const roles = ['Assistant', 'Fitness', 'Scout', 'Medic', 'Analyst'];
+  return (
+    <div className="animate-enter space-y-4">
+      <div>
+        <h1 className="type-display text-[26px] text-[var(--ink)]">Staff</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">Roles · hire · fire</p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {roles.map((r) => (
+          <Button key={r} disabled={loading} onClick={() => hireStaff?.(r.toLowerCase())}>
+            Hire {r}
+          </Button>
+        ))}
+      </div>
+      <div className="panel overflow-hidden">
+        {list.map((s: any, i: number) => (
+          <div
+            key={s.id ?? i}
+            className="flex items-center justify-between border-b border-[var(--rule)] px-3 py-3"
+          >
+            <div>
+              <div className="text-[14px] font-medium text-[var(--ink)]">{s.name ?? s.role}</div>
+              <div className="text-[12px] text-[var(--ink-dim)]">{s.role ?? s.title ?? ''}</div>
+            </div>
+            <Button disabled={loading} onClick={() => fireStaff?.(s.id)}>
+              Fire
+            </Button>
+          </div>
+        ))}
+        {!list.length && (
+          <p className="px-3 py-6 text-[13px] text-[var(--ink-dim)]">No staff hired yet.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MoreCompetitions() {
+  const { team, matchPreview, goSpace } = useGame();
+  return (
+    <div className="animate-enter space-y-4">
+      <div>
+        <h1 className="type-display text-[26px] text-[var(--ink)]">Competitions</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">League · cups · Europe path</p>
+      </div>
+      <StatBlock
+        items={[
+          { label: 'Played', value: (team?.wins ?? 0) + (team?.draws ?? 0) + (team?.losses ?? 0) },
+          { label: 'W', value: team?.wins ?? 0, accent: true },
+          { label: 'D', value: team?.draws ?? 0 },
+          { label: 'L', value: team?.losses ?? 0 },
+        ]}
+      />
+      <div className="panel overflow-hidden">
+        <div className="border-b border-[var(--rule)] px-3 py-2 label-caps text-[var(--alym-flare)]">Active</div>
+        <button
+          type="button"
+          onClick={() => goSpace('match', 'preview')}
+          className="flex w-full items-center justify-between px-3 py-3 text-left hover:bg-[var(--panel-2)]"
+        >
+          <div>
+            <div className="text-[14px] font-semibold text-[var(--ink)]">
+              {matchPreview?.competition ?? 'Domestic League'}
+            </div>
+            <div className="text-[12px] text-[var(--ink-dim)]">
+              Next: {matchPreview?.opponent ?? 'TBD'}
+            </div>
+          </div>
+          <span className="text-[12px] text-[var(--alym-flare)]">Open ›</span>
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <LevelTile label="League" level="Active" tone="high" />
+        <LevelTile label="Cup" level="Pending" tone="mid" />
+        <LevelTile label="Europe" level="Locked" tone="low" />
+      </div>
+    </div>
+  );
+}
+
+function MoreAnalytics() {
+  const { team, players, lastMatch } = useGame();
+  const avg =
+    players.length > 0
+      ? Math.round(players.reduce((s, p) => s + (p.rating ?? 0), 0) / players.length)
+      : 0;
+  return (
+    <div className="animate-enter space-y-4">
+      <div>
+        <h1 className="type-display text-[26px] text-[var(--ink)]">Analytics</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">Squad metrics · form · trends</p>
+      </div>
+      <StatBlock
+        items={[
+          { label: 'Squad OVR', value: avg, accent: true },
+          { label: 'Players', value: players.length },
+          { label: 'Budget', value: team ? money(team.budget) : '—' },
+          { label: 'Board', value: `${team?.jobSecurity ?? 70}%` },
+        ]}
+      />
+      {lastMatch?.stats && (
+        <div className="panel p-4">
+          <div className="label-caps text-[var(--alym-signal)]">Last match data</div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div>
+              <div className="data-num text-xl">{lastMatch.stats.possessionHome}%</div>
+              <div className="label-caps">Possession</div>
+            </div>
+            <div>
+              <div className="data-num text-xl">{lastMatch.stats.shotsHome}</div>
+              <div className="label-caps">Shots</div>
+            </div>
+            <div>
+              <div className="data-num text-xl">{lastMatch.stats.shotsOnHome}</div>
+              <div className="label-caps">On target</div>
+            </div>
+            <div>
+              <div className="data-num text-xl">
+                {lastMatch.homeScore}-{lastMatch.awayScore}
+              </div>
+              <div className="label-caps">Score</div>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="panel overflow-hidden">
+        <div className="border-b border-[var(--rule)] px-3 py-2 label-caps text-[var(--alym-flare)]">Top ratings</div>
+        {[...players]
+          .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+          .slice(0, 8)
+          .map((p) => (
+            <div key={p.id} className="flex items-center gap-3 border-b border-[var(--rule)] px-3 py-2">
+              <span className="data-num w-8 text-[13px] font-semibold">{p.rating}</span>
+              <span className="w-8 text-[11px] text-[var(--alym-flare)]">{p.position}</span>
+              <span className="flex-1 truncate text-[13px]">{p.name}</span>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+}
+
+function MoreSettings() {
+  const { logout, userLabel } = useGame();
+  return (
+    <div className="animate-enter space-y-4">
+      <div>
+        <h1 className="type-display text-[26px] text-[var(--ink)]">Settings</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">Account · session · accessibility</p>
+      </div>
+      <div className="panel overflow-hidden">
+        <div className="flex items-center justify-between border-b border-[var(--rule)] px-3 py-3">
+          <div>
+            <div className="text-[14px] font-medium">Profile</div>
+            <div className="text-[12px] text-[var(--ink-dim)]">{userLabel || 'Manager'}</div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between border-b border-[var(--rule)] px-3 py-3">
+          <div>
+            <div className="text-[14px] font-medium">Reduced motion</div>
+            <div className="text-[12px] text-[var(--ink-dim)]">Respects system prefers-reduced-motion</div>
+          </div>
+          <span className="text-[11px] text-[var(--alym-signal)]">System</span>
+        </div>
+        <div className="flex items-center justify-between px-3 py-3">
+          <div>
+            <div className="text-[14px] font-medium">Session</div>
+            <div className="text-[12px] text-[var(--ink-dim)]">End career session on this device</div>
+          </div>
+          <Button onClick={logout}>Quit</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MoreClub() {
+  const { team, board, goMore } = useGame();
+  const sec = team?.jobSecurity ?? board?.jobSecurity ?? 70;
+  return (
+    <div className="animate-enter space-y-4">
+      <div>
+        <h1 className="type-display text-[26px] text-[var(--ink)]">Club</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">Identity · board · finances</p>
+      </div>
+      <div className="grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="panel flex flex-col items-center p-6">
+          <ClubCrest name={team?.name ?? 'Club'} nation={team?.nation} stars={3} size="lg" />
+        </div>
+        <div className="space-y-3">
+          <StatBlock
+            items={[
+              { label: 'Budget', value: team ? money(team.budget) : '—', accent: true },
+              { label: 'Board', value: `${sec}%` },
+              { label: 'W-D-L', value: `${team?.wins ?? 0}-${team?.draws ?? 0}-${team?.losses ?? 0}` },
+              { label: 'Vision', value: team?.tacticalVision ?? 'standard' },
+            ]}
+          />
+          <div className="grid grid-cols-3 gap-2">
+            <LevelTile label="Fans" level="Medium" tone="mid" />
+            <LevelTile label="Academy" level="Building" tone="mid" />
+            <LevelTile label="Finance" level={sec >= 55 ? 'Stable' : 'Pressure'} tone={sec >= 55 ? 'high' : 'low'} />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => goMore('board')}>Board</Button>
+            <Button onClick={() => goMore('finance')}>Finance</Button>
+            <Button onClick={() => goMore('staff')}>Staff</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MoreGeneric({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="animate-enter space-y-4">
+      <div>
+        <h1 className="type-display text-[26px] text-[var(--ink)]">{title}</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-dim)]">{body}</p>
+      </div>
+      <div className="panel p-6 text-[13px] text-[var(--ink-dim)]">{body}</div>
+    </div>
+  );
+}
 
 function NegotiationsPanel() {
   const { negotiations, respondNego, completeNego, loading } = useGame();
@@ -1868,109 +2191,6 @@ function NegotiationsPanel() {
   );
 }
 
-function MoreStaff() {
-  const { staffCatalog, staffMembers, hireStaff, fireStaff, loading, team } = useGame();
-  return (
-    <div className="animate-enter space-y-4">
-      <SectionTitle title="Staff" sub="Recrutement · salaires hebdo" />
-      <div className="grid gap-3 sm:grid-cols-2">
-        {(staffCatalog ?? []).map((c) => (
-          <Card key={c.role} className="p-4">
-            <div className="font-semibold text-white">{c.name}</div>
-            <div className="text-[12px] text-[var(--muted)]">
-              {c.specialty} · note {c.rating} · £{c.salary}/sem
-            </div>
-            {c.hired ? (
-              <Badge tone="good">En poste</Badge>
-            ) : (
-              <Button
-                className="mt-3"
-                disabled={loading || (team?.budget ?? 0) < c.cost}
-                onClick={() => hireStaff(c.role)}
-              >
-                Embaucher · £{c.cost.toLocaleString('fr-FR')}
-              </Button>
-            )}
-          </Card>
-        ))}
-      </div>
-      {(staffMembers ?? []).length > 0 && (
-        <Card className="p-4">
-          <div className="mb-2 text-[14px] font-semibold text-white">Effectif staff</div>
-          {staffMembers.map((s) => (
-            <div key={s.id} className="flex items-center justify-between border-b border-white/5 py-2 text-[13px]">
-              <span className="text-white">
-                {s.name} <span className="text-[var(--muted)]">· {s.role}</span>
-              </span>
-              <Button disabled={loading} onClick={() => fireStaff(s.id)}>
-                Licencier
-              </Button>
-            </div>
-          ))}
-        </Card>
-      )}
-    </div>
-  );
-}
-
-function MoreCompetitions() {
-  const { leagueTable, team } = useGame();
-  return (
-    <div className="animate-enter space-y-4">
-      <SectionTitle title="Super Ligue" sub="Classement réel de saison" />
-      <Card className="overflow-hidden">
-        <div className="grid grid-cols-[2rem_1fr_repeat(5,2rem)] gap-1 border-b border-white/10 px-3 py-2 text-[10px] uppercase text-[var(--muted)]">
-          <span>#</span>
-          <span>Club</span>
-          <span className="text-center">J</span>
-          <span className="text-center">V</span>
-          <span className="text-center">N</span>
-          <span className="text-center">D</span>
-          <span className="text-center">Pts</span>
-        </div>
-        {(leagueTable ?? []).map((r) => (
-          <div
-            key={r.teamName}
-            className={`grid grid-cols-[2rem_1fr_repeat(5,2rem)] gap-1 px-3 py-2 text-[13px] ${
-              r.isPlayer ? 'bg-[var(--brass)]/10 font-semibold text-[var(--ink)]' : 'text-white'
-            }`}
-          >
-            <span className="data-num text-[var(--muted)]">{r.rank}</span>
-            <span className="truncate">{r.teamName}</span>
-            <span className="data-num text-center">{r.played}</span>
-            <span className="data-num text-center">{r.wins}</span>
-            <span className="data-num text-center">{r.draws}</span>
-            <span className="data-num text-center">{r.losses}</span>
-            <span className="data-num text-center font-bold">{r.points}</span>
-          </div>
-        ))}
-        {!(leagueTable ?? []).length && (
-          <p className="p-4 text-[13px] text-[var(--muted)]">Joue un match pour peupler le classement.</p>
-        )}
-      </Card>
-      {team && (
-        <p className="text-[12px] text-[var(--muted)]">
-          Bilan club : {team.wins}V {team.draws}N {team.losses}D
-        </p>
-      )}
-    </div>
-  );
-}
-
-function MoreGeneric({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="animate-enter">
-      <SectionTitle title={title} />
-      <Card className="p-6">
-        <p className="text-[14px] text-[var(--muted)]">{body}</p>
-        <p className="mt-3 text-[12px] text-[var(--muted)]">
-          Même shell · mêmes données carrière · module relié au registre 625 (sous-vues / drawers).
-        </p>
-      </Card>
-    </div>
-  );
-}
-
 function MoreRouter() {
   const more = useGame((s) => s.moreSection);
   switch (more) {
@@ -2015,11 +2235,11 @@ function MoreRouter() {
     case 'chronicle':
       return <MoreChronicle />;
     case 'analytics':
-      return <MoreGeneric title="Analytics" body="Tendances équipe / joueurs — mêmes stats match." />;
+      return <MoreAnalytics />;
     case 'staff':
       return <MoreStaff />;
     case 'settings':
-      return <MoreGeneric title="Réglages" body="Compte · notifications · accessibilité." />;
+      return <MoreSettings />;
     default:
       return <MoreGeneric title="Plus" body="Choisissez une section dans le menu Plus." />;
   }

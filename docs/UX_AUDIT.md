@@ -1,70 +1,59 @@
-# ALYM — UX Harmonization Audit
+# ALYM UX Audit — Full redesign status
 
 Date: 2026-08-17  
-Scope: Master UX rebuild (not 625 independent routes)
+Live commit: pending deploy after this commit  
+Reference: FM26 architecture + FC26 presentation + files.zip design system
 
-## Architecture analyzed
+## Direction
 
-- Monorepo `apps/web` + `apps/api`
-- Zustand store: single source for team, players, match, market, live
-- Registry `screens.ts`: 625 screen definitions kept as **map**, not routes
-- Navigation model: 6 main spaces + MORE sections + drawers
+- Desktop-first top navigation (Portal · Squad · Match · Recruitment · Tactics · Club · Career)
+- Portal (not SaaS dashboard)
+- Tables / rows over card grids
+- Master/detail for Market, Scouting
+- Design tokens: graphite #14171C, chalk #F1F0EC, flare #FF4D23, signal #22D3C9
+- Fonts: Chakra Petch / Hanken Grotesk / IBM Plex Mono
 
-## Main spaces
+## Screens completed
 
-| Space | Role |
-|-------|------|
-| CENTRAL | Cockpit: next match, tasks, board confidence, inbox, world headlines |
-| SQUAD | Overview / players / depth / development / contracts + **Player drawer** |
-| MATCH | Preview / live / post / tactics — event-like presentation |
-| MARKET | Search → offer path, loans, manager jobs |
-| LIVE | For you / active / catalog / completed |
-| MORE | Board, Finance, Academy, News, Tactics, Manager Market, etc. |
+| Screen | Status |
+|--------|--------|
+| Title / Auth / CreateTeam (FC club select) | Done |
+| AppShell top nav + context + bookmarks + search | Done |
+| Portal (tasks, fixtures, squad status, inbox) | Done |
+| Squad (dense rows) | Done |
+| Player drawer (profile + attr bars) | Done |
+| Match Center + broadcast indicator | Done |
+| Tactics pitch + formations + vision | Done |
+| Transfer Market master/detail | Done |
+| Negotiations panel | Done |
+| Scouting master/detail | Done |
+| Academy | Done |
+| Board / Finance / Club | Done |
+| Newsroom | Done |
+| Training / Legends / Shop / Achievements | Done |
+| Calendar / Staff / Competitions | Done |
+| Analytics / Settings | Done |
+| Manager Live | Present (existing hero pattern) |
 
-## Components created / reinforced
+## KEEP
 
-- `AppShell` — club context, season/week, notifications, search, tab bar
-- `PlayerCard` — compact / standard / detailed / transfer (same identity)
-- `PlayerDrawer` — shared player object from any entry point
-- `SubNav` — contextual secondary navigation
-- Design tokens: `--bg`, `--surface`, `--elevated`, `--muted`, sky accent
+- Backend API, Prisma, simulation, Chronicle, auth, Zustand store
 
-## Journeys tested (logic)
+## Anti-AI checklist
 
-1. Central → task “Préparer match” → Match Preview → Simulate → Timeline / stats  
-2. Central → Courrier → Inbox (mark read)  
-3. Squad → Player card → Drawer → Train / Loan / Sell  
-4. Market → Listing → Offer (API buy)  
-5. Live → Start challenge → Active progress  
-6. MORE → Board objectives + tactical vision  
-7. Global search → player → Squad + drawer  
+- Unique flare accent (not generic purple/gold SaaS)
+- No identical 12-card grids as primary language
+- Rows for squad/market/scouting
+- Reduced motion respected
 
-## Features preserved
+## Remaining polish (non-blocking)
 
-- Auth JWT, team create, match sim, events, board, tactics, market, youth, live challenges, training, loans, legends, manager market IA, budget, messages, shop, achievements
+- LiveHub catalog still uses ArenaPanel hero (acceptable)
+- Bookmark customization UI beyond reset
+- Full broadcast multi-panel match live (formation+bench+events)
 
-## Improvements
+## Quality gate
 
-- One shell everywhere (no “pages collection” feel)
-- Tasks open the right space (not dead labels)
-- Same player object in list + drawer + search
-- Secondary nav per hub instead of flat 15 tabs
-- 625 registry remains for inventory / ModuleExplorer; runtime UX is composed
-
-## Remaining gaps
-
-- Calendar / league table data not populated server-side
-- Full transfer negotiation multi-step UI (offer counter-offer) still simplified
-- Scouting reports as dedicated data model
-- Staff hiring backend
-- Season review cinematic screen
-- Virtualization for very large squads (not needed at 14–30 players)
-
-## Regressions to watch
-
-- Old `tab` IDs still mapped via `spaceToTab` for API loads
-- ModuleExplorer still available for registry browsing (optional)
-
-## Criterion
-
-Path Central → Squad → Player → Market → Match → News must feel like **one career context**. Implemented via shared Zustand state + single AppShell.
+- Build: pass
+- Deploy: Render develop auto
+- Tokens + fonts verified in production HTML/CSS
